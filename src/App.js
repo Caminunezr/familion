@@ -6,6 +6,7 @@ import Login from './components/Login';
 import Signup from './components/Signup';
 import Dashboard from './components/Dashboard';
 import GestionCuentas from './components/GestionCuentas';
+import Presupuesto from './components/Presupuesto';
 import './App.css';
 
 function App() {
@@ -29,6 +30,14 @@ function App() {
               element={
                 <ProtectedRoute>
                   <GestionCuentas />
+                </ProtectedRoute>
+              } 
+            />
+            <Route 
+              path="/presupuesto" 
+              element={
+                <ProtectedRoute>
+                  <Presupuesto />
                 </ProtectedRoute>
               } 
             />

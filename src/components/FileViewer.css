@@ -17,14 +17,15 @@
 
 .file-viewer-header h3 {
   margin: 0;
-  font-size: 18px;
+  font-size: 16px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   max-width: 70%;
+  color: #333;
 }
 
-.download-button {
+.download-button, .fallback-button {
   background-color: #3498db;
   color: white;
   padding: 8px 15px;
@@ -32,41 +33,114 @@
   text-decoration: none;
   font-size: 14px;
   transition: background-color 0.3s;
+  display: inline-block;
 }
 
-.download-button:hover {
+.download-button:hover, .fallback-button:hover {
   background-color: #2980b9;
+  text-decoration: none;
+}
+
+.file-preview-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+  overflow: hidden;
+  min-height: 200px;
+  max-height: 400px;
 }
 
 .file-preview {
   max-width: 100%;
-  max-height: 500px;
+  max-height: 400px;
   object-fit: contain;
-  margin: 0 auto;
-  display: block;
 }
 
 .pdf-preview {
   width: 100%;
-  height: 500px;
+  height: 400px;
   border: none;
+}
+
+.pdf-fallback {
+  padding: 20px;
+  text-align: center;
 }
 
 .file-viewer-loading,
 .file-viewer-error,
-.file-viewer-empty,
-.file-unavailable {
+.file-viewer-empty {
   padding: 20px;
   text-align: center;
   color: #555;
+  background-color: #f5f5f5;
+  border-radius: 4px;
+}
+
+.file-viewer-loading {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 150px;
+}
+
+.file-viewer-loading::after {
+  content: "";
+  width: 30px;
+  height: 30px;
+  border: 3px solid #ddd;
+  border-top: 3px solid #3498db;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-left: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
 .file-viewer-error {
   color: #e74c3c;
+  background-color: #fde8e7;
 }
 
 .file-unavailable {
-  background-color: #f8f9fa;
-  border-radius: 4px;
-  padding: 30px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 30px 20px;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+}
+
+.file-icon {
+  font-size: 40px;
+  margin-bottom: 15px;
+  color: #7f8c8d;
+}
+
+@media (max-width: 768px) {
+  .file-viewer-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .file-viewer-header h3 {
+    max-width: 100%;
+    margin-bottom: 10px;
+  }
+  
+  .download-button, .fallback-button {
+    width: 100%;
+    text-align: center;
+  }
+  
+  .pdf-preview, .file-preview-container {
+    height: 300px;
+  }
 }

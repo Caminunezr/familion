@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import db from '../utils/database';
 import { saveFile } from '../utils/fileStorage';
 import { useAuth } from '../contexts/AuthContext';
 import './CuentaForm.css';
 
-const CuentaForm = ({ onSuccess, onCancel }) => {
+const CuentaForm = ({ cuentaToEdit, onSuccess, onCancel }) => {
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
     nombre: '',
@@ -15,7 +15,25 @@ const CuentaForm = ({ onSuccess, onCancel }) => {
     descripcion: ''
   });
   const [factura, setFactura] = useState(null);
+  const [facturaActual, setFacturaActual] = useState(null);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
+  const isEditing = !!cuentaToEdit;
+
+  // Cargar datos existentes si estamos editando
+  useEffect(() => {
+    if (cuentaToEdit) {
+      setFormData({
+        nombre: cuentaToEdit.nombre || '',
+        proveedor: cuentaToEdit.proveedor || '',
+        monto: cuentaToEdit.monto.toString() || '',
+        fechaVencimiento: cuentaToEdit.fechaVencimiento || '',
+        categoria: cuentaToEdit.categoria || '',
+        descripcion: cuentaToEdit.descripcion || ''
+      });
+      setFacturaActual(cuentaToEdit.rutaFactura);
+    }
+  }, [cuentaToEdit]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -39,41 +57,58 @@ const CuentaForm = ({ onSuccess, onCancel }) => {
       return;
     }
     
+    setLoading(true);
+    
     try {
-      let rutaFactura = null;
+      let rutaFactura = facturaActual;
       
+      // Si hay un nuevo archivo de factura, guardarlo
       if (factura) {
         rutaFactura = await saveFile(factura, 'facturas');
       }
       
-      // Guardar en IndexedDB
-      await db.cuentas.add({
+      const cuentaData = {
         ...formData,
         monto: parseFloat(formData.monto),
         rutaFactura,
-        usuarioCreacion: currentUser.uid,
-        fechaCreacion: new Date().toISOString()
-      });
+        usuarioCreacion: isEditing ? cuentaToEdit.usuarioCreacion : currentUser.uid,
+        fechaCreacion: isEditing ? cuentaToEdit.fechaCreacion : new Date().toISOString(),
+        fechaModificacion: new Date().toISOString()
+      };
       
-      setFormData({
-        nombre: '',
-        proveedor: '',
-        monto: '',
-        fechaVencimiento: '',
-        categoria: '',
-        descripcion: ''
-      });
-      setFactura(null);
+      if (isEditing) {
+        // Actualizar cuenta existente
+        await db.cuentas.update(cuentaToEdit.id, cuentaData);
+      } else {
+        // Crear nueva cuenta
+        await db.cuentas.add(cuentaData);
+      }
+      
+      // Limpiar el formulario si no estamos editando
+      if (!isEditing) {
+        setFormData({
+          nombre: '',
+          proveedor: '',
+          monto: '',
+          fechaVencimiento: '',
+          categoria: '',
+          descripcion: ''
+        });
+        setFactura(null);
+        setFacturaActual(null);
+      }
+      
       setError('');
       
       if (onSuccess) onSuccess();
     } catch (error) {
-      console.error('Error al guardar cuenta:', error);
-      setError('Error al guardar la cuenta');
+      console.error(`Error al ${isEditing ? 'actualizar' : 'guardar'} cuenta:`, error);
+      setError(`Error al ${isEditing ? 'actualizar' : 'guardar'} la cuenta`);
+    } finally {
+      setLoading(false);
     }
   };
 
-  // Renderizado del formulario
   return (
     <form className="cuenta-form" onSubmit={handleSubmit}>
       {error && <div className="error-message">{error}</div>}
@@ -143,7 +178,15 @@ const CuentaForm = ({ onSuccess, onCancel }) => {
       ></textarea>
       
       <div className="file-input-container">
-        <label className="file-input-label" htmlFor="factura">Factura (PDF o imagen)</label>
+        <label className="file-input-label" htmlFor="factura">
+          {facturaActual ? 'Cambiar factura actual' : 'Factura (PDF o imagen)'}
+        </label>
+        {facturaActual && (
+          <div className="factura-actual">
+            <span className="factura-icon">📄</span>
+            Ya existe una factura adjunta
+          </div>
+        )}
         <input 
           type="file"
           id="factura"
@@ -154,12 +197,16 @@ const CuentaForm = ({ onSuccess, onCancel }) => {
       
       <div className="form-buttons">
         {onCancel && 
-          <button type="button" className="cancel-button" onClick={onCancel}>
+          <button type="button" className="cancel-button" onClick={onCancel} disabled={loading}>
             Cancelar
           </button>
         }
-        <button type="submit" className="submit-button">
-          Guardar cuenta
+        <button type="submit" className="submit-button" disabled={loading}>
+          {loading 
+            ? 'Guardando...' 
+            : isEditing 
+              ? 'Actualizar cuenta' 
+              : 'Guardar cuenta'}
         </button>
       </div>
     </form>

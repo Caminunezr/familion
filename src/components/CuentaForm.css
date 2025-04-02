@@ -33,10 +33,24 @@
   font-weight: 500;
 }
 
+.factura-actual {
+  background-color: #e8f4fd;
+  padding: 8px 12px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+
+.factura-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
 .form-buttons {
   display: flex;
   justify-content: space-between;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .submit-button {
@@ -70,4 +84,39 @@
 .error-message {
   color: #f44336;
   margin-bottom: 15px;
+  background-color: #ffebee;
+  padding: 10px;
+  border-radius: 4px;
+}
+
+@media (max-width: 768px) {
+  .cuenta-form label {
+    font-size: 0.9rem;
+  }
+  
+  .cuenta-form input,
+  .cuenta-form select,
+  .cuenta-form textarea {
+    padding: 12px 8px; /* Más alto para ser más fácil de tocar */
+    margin-bottom: 12px;
+    font-size: 16px !important; /* Evitar zoom en iOS */
+  }
+  
+  .form-buttons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  
+  .submit-button,
+  .cancel-button {
+    width: 100%;
+    padding: 12px;
+    margin-top: 5px;
+  }
+  
+  /* Mejorar upload de archivos en móvil */
+  input[type="file"] {
+    width: 100%;
+    padding: 10px 0;
+  }
 }

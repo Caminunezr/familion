@@ -4,6 +4,7 @@
   color: #333;
   background-color: #f5f5f5;
   min-height: 100vh;
+  overflow-x: hidden; /* Evitar scroll horizontal */
 }
 
 .App-logo {
@@ -56,6 +57,8 @@ button {
   max-width: 1200px;
   margin: 0 auto;
   padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .card {
@@ -63,6 +66,9 @@ button {
   border-radius: 8px;
   box-shadow: 0 0 10px rgba(0,0,0,0.1);
   padding: 20px;
+  margin-bottom: 15px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .mb-10 {
@@ -79,4 +85,27 @@ button {
 
 .mt-20 {
   margin-top: 20px;
+}
+
+/* Ajustes responsivos generales */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+  
+  h1 {
+    font-size: 1.8rem;
+  }
+  
+  h2 {
+    font-size: 1.5rem;
+  }
+  
+  h3 {
+    font-size: 1.2rem;
+  }
+  
+  button, input, select, textarea {
+    font-size: 16px !important; /* Evitar zoom en iOS */
+  }
 }

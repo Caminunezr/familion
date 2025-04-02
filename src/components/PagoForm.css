@@ -82,3 +82,42 @@ button:disabled {
   background-color: #cccccc;
   cursor: not-allowed;
 }
+
+.checkbox-group {
+  display: flex;
+  align-items: center;
+  margin-bottom: 10px;
+}
+
+.checkbox-group input[type="checkbox"] {
+  margin-right: 10px;
+  width: auto;
+}
+
+.checkbox-group label {
+  margin-bottom: 0;
+  font-weight: 500;
+}
+
+.presupuesto-section {
+  background-color: #f8f9fa;
+  border-radius: 4px;
+  padding: 15px;
+  margin-bottom: 20px;
+  border-left: 3px solid #3498db;
+}
+
+.no-presupuesto-warning {
+  background-color: #fff3cd;
+  border: 1px solid #ffeeba;
+  color: #856404;
+  padding: 10px;
+  border-radius: 4px;
+  margin-top: 10px;
+  font-size: 14px;
+}
+
+.no-presupuesto-warning a {
+  color: #0056b3;
+  text-decoration: underline;
+}
