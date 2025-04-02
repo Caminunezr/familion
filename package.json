@@ -10,7 +10,12 @@
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
     "react-scripts": "5.0.1",
-    "web-vitals": "^2.1.4"
+    "web-vitals": "^2.1.4",
+    "dexie": "^3.2.4",
+    "firebase": "^10.6.0",
+    "chart.js": "^4.4.0",
+    "react-chartjs-2": "^5.2.0",
+    "react-router-dom": "^6.18.0"
   },
   "scripts": {
     "start": "react-scripts start",

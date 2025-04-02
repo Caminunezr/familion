@@ -1,0 +1,87 @@
+.dashboard-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.dashboard-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.dashboard-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.tab-buttons {
+  display: flex;
+  gap: 10px;
+}
+
+.tab-buttons button {
+  background-color: #f1f1f1;
+  color: #333;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: 500;
+  transition: all 0.3s;
+  width: auto;
+}
+
+.tab-buttons button:hover {
+  background-color: #e0e0e0;
+}
+
+.tab-buttons button.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.dashboard-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 20px;
+  min-height: 500px;
+}
+
+.cuentas-container {
+  width: 100%;
+}
+
+.loading-message {
+  text-align: center;
+  padding: 20px;
+  color: #666;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .dashboard-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .dashboard-header h2 {
+    margin-bottom: 10px;
+  }
+  
+  .tab-buttons {
+    width: 100%;
+  }
+  
+  .tab-buttons button {
+    flex: 1;
+    text-align: center;
+  }
+}

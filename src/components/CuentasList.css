@@ -1,0 +1,143 @@
+.cuentas-list {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  width: 100%;
+}
+
+.cuenta-card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  padding: 15px;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border-left: 4px solid #ddd;
+}
+
+.cuenta-pendiente {
+  border-left-color: #e74c3c;
+}
+
+.cuenta-pagada {
+  border-left-color: #2ecc71;
+}
+
+.cuenta-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+}
+
+.cuenta-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 10px;
+}
+
+.cuenta-header h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.cuenta-badges {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-end;
+}
+
+.cuenta-categoria, .cuenta-estado {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 12px;
+  color: white;
+  text-align: center;
+}
+
+.estado-pendiente {
+  background-color: #e74c3c;
+}
+
+.estado-pagado {
+  background-color: #2ecc71;
+}
+
+.categoria-servicios { background-color: #3498db; }
+.categoria-alimentos { background-color: #e67e22; }
+.categoria-transporte { background-color: #2ecc71; }
+.categoria-entretenimiento { background-color: #9b59b6; }
+.categoria-salud { background-color: #e74c3c; }
+.categoria-educacion { background-color: #f1c40f; }
+.categoria-otros { background-color: #95a5a6; }
+
+.cuenta-details {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.cuenta-provider, .cuenta-due-date {
+  grid-column: 1;
+  font-size: 14px;
+}
+
+.cuenta-amount, .cuenta-payment {
+  grid-column: 2;
+  font-size: 14px;
+  text-align: right;
+  font-weight: bold;
+}
+
+.cuenta-factura {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #666;
+  margin-top: 8px;
+}
+
+.factura-icon {
+  margin-right: 5px;
+}
+
+.cuenta-creator {
+  display: flex;
+  justify-content: flex-end;
+  font-size: 12px;
+  color: #777;
+  margin-top: 10px;
+}
+
+.creator-label {
+  margin-right: 5px;
+}
+
+.cuentas-loading, .cuentas-empty {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .cuenta-details {
+    grid-template-columns: 1fr;
+  }
+  
+  .cuenta-amount, .cuenta-payment {
+    grid-column: 1;
+    text-align: left;
+  }
+  
+  .cuenta-header {
+    flex-direction: column;
+  }
+  
+  .cuenta-badges {
+    align-items: flex-start;
+    margin-top: 5px;
+  }
+}

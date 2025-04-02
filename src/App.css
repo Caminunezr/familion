@@ -1,5 +1,9 @@
+/* Estilos globales para toda la aplicación */
 .App {
-  text-align: center;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
+  background-color: #f5f5f5;
+  min-height: 100vh;
 }
 
 .App-logo {
@@ -35,4 +39,44 @@
   to {
     transform: rotate(360deg);
   }
+}
+
+/* Estilos para botones y formularios a nivel global */
+button {
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+
+/* Estilos de utilidad reutilizables */
+.text-center {
+  text-align: center;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.card {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.mb-10 {
+  margin-bottom: 10px;
+}
+
+.mb-20 {
+  margin-bottom: 20px;
+}
+
+.mt-10 {
+  margin-top: 10px;
+}
+
+.mt-20 {
+  margin-top: 20px;
 }

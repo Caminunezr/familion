@@ -1,0 +1,117 @@
+.gestion-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.gestion-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.gestion-header {
+  margin-bottom: 20px;
+}
+
+.gestion-header h2 {
+  margin: 0;
+  color: #333;
+}
+
+.gestion-content {
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  padding: 20px;
+}
+
+.gestion-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+
+.form-section, .list-section {
+  padding: 15px;
+}
+
+.form-section h3, .list-section h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eee;
+  color: #333;
+}
+
+.cuentas-table-container {
+  overflow-x: auto;
+}
+
+.cuentas-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.cuentas-table th,
+.cuentas-table td {
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid #eee;
+}
+
+.cuentas-table th {
+  background-color: #f5f5f5;
+  font-weight: 600;
+}
+
+.cuentas-table tr:hover {
+  background-color: #f9f9f9;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.edit-button, .delete-button {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  width: auto;
+}
+
+.edit-button {
+  background-color: #3498db;
+  color: white;
+}
+
+.edit-button:hover {
+  background-color: #2980b9;
+}
+
+.delete-button {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.delete-button:hover {
+  background-color: #c0392b;
+}
+
+.loading-message, .empty-message {
+  padding: 20px;
+  text-align: center;
+  color: #666;
+}
+
+.empty-message {
+  font-style: italic;
+}
+
+@media (max-width: 768px) {
+  .gestion-grid {
+    grid-template-columns: 1fr;
+  }
+}
