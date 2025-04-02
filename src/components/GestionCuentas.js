@@ -1,465 +1,572 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import NavBar from './NavBar';
-import CuentaForm from './CuentaForm';
-import FileViewer from './FileViewer';
-import db from '../utils/database';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import db from '../utils/database';
+import { getFile } from '../utils/fileStorage';
+import FileViewer from './FileViewer';
+import CuentaForm from './CuentaForm';
+import NavBar from './NavBar';
 import './GestionCuentas.css';
 
 const GestionCuentas = () => {
-  const { currentUser } = useAuth(); // Usamos currentUser directamente
+  const { currentUser } = useAuth();
+  const navigate = useNavigate();
+  
+  // Estados para la gestión de cuentas
   const [cuentas, setCuentas] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [editingCuenta, setEditingCuenta] = useState(null);
-  const [refreshKey, setRefreshKey] = useState(0);
-  const [filter, setFilter] = useState('');
-  const [activeTab, setActiveTab] = useState('todas');
+  const [cuentasFiltradas, setCuentasFiltradas] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [categoriaSeleccionada, setCategoriaSeleccionada] = useState('todas');
+  const [showCategorias, setShowCategorias] = useState(false);
+  
+  // Estados para búsqueda y ordenamiento
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortBy, setSortBy] = useState('fecha');
+  const [sortDirection, setSortDirection] = useState('asc');
+  
+  // Estados para el panel lateral y formularios
   const [showForm, setShowForm] = useState(false);
-  const [showDetailsCard, setShowDetailsCard] = useState(null);
+  const [editingCuenta, setEditingCuenta] = useState(null);
+  const [selectedCuenta, setSelectedCuenta] = useState(null);
+  const [viewingFactura, setViewingFactura] = useState(false);
+  
+  // Estados para UI
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
   const [notification, setNotification] = useState(null);
-  const [allCategories, setAllCategories] = useState([]);
-  const [mobileView, setMobileView] = useState(window.innerWidth <= 768);
-  const [expandedCategories, setExpandedCategories] = useState(true);
-  const [sortOrder, setSortOrder] = useState('date-desc');
   const [confirmDelete, setConfirmDelete] = useState(null);
-  const [showFileViewer, setShowFileViewer] = useState(false);
-  const [currentFilePath, setCurrentFilePath] = useState(null);
-  const [dashboardStats, setDashboardStats] = useState({
+  const [statsVisible, setStatsVisible] = useState(false);
+  const [mobileView, setMobileView] = useState(window.innerWidth <= 768);
+  
+  // Estadísticas
+  const [stats, setStats] = useState({
     totalCuentas: 0,
-    pendientesPago: 0,
-    totalMonto: 0,
+    pendientes: 0, 
+    montoTotal: 0,
     proximasVencer: 0
   });
-  const [visibleStats, setVisibleStats] = useState(false);
   
   const contentRef = useRef(null);
   const searchInputRef = useRef(null);
-
-  // Función reutilizable para obtener cuentas de la base de datos
-  const fetchCuentas = useCallback(async () => {
+  
+  // Cargar datos iniciales
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Obtener todas las cuentas
-      const cuentasArray = await db.cuentas.toArray();
+      // Obtener categorías
+      const categoriasArray = await db.categorias.toArray();
+      setCategorias(categoriasArray);
       
-      // Extraer todas las categorías para usar en filtros
-      const categorias = [...new Set(cuentasArray
-        .map(cuenta => cuenta.categoria)
-        .filter(Boolean))];
+      // Obtener cuentas
+      const cuentasArray = await db.cuentas
+        .where('userId')
+        .equals(currentUser.uid)
+        .toArray();
       
-      setAllCategories(categorias);
       setCuentas(cuentasArray);
       
-      // Cargar también los pagos para calcular estadísticas
-      const pagosArray = await db.pagos.toArray();
+      // Aplicar filtros iniciales
+      aplicarFiltros(cuentasArray, categoriaSeleccionada, searchTerm, sortBy, sortDirection);
       
-      // Procesar estadísticas
-      const today = new Date();
-      const proximasSemana = new Date();
-      proximasSemana.setDate(today.getDate() + 7);
+      // Calcular estadísticas
+      calcularEstadisticas(cuentasArray);
       
-      const pagadas = new Set(
-        pagosArray.reduce((acc, pago) => {
-          const cuentaId = pago.cuentaId;
-          const cuenta = cuentasArray.find(c => c.id === cuentaId);
-          
-          if (cuenta && pago.montoPagado >= cuenta.monto) {
-            acc.push(cuentaId);
-          }
-          return acc;
-        }, [])
-      );
-      
-      const stats = {
-        totalCuentas: cuentasArray.length,
-        pendientesPago: cuentasArray.length - pagadas.size,
-        totalMonto: cuentasArray.reduce((sum, cuenta) => sum + cuenta.monto, 0),
-        proximasVencer: cuentasArray.filter(cuenta => {
-          if (!cuenta.fechaVencimiento) return false;
-          const fechaVencimiento = new Date(cuenta.fechaVencimiento);
-          return !pagadas.has(cuenta.id) && 
-                  fechaVencimiento >= today && 
-                  fechaVencimiento <= proximasSemana;
-        }).length
-      };
-      
-      setDashboardStats(stats);
-      
-      return cuentasArray;
-    } catch (error) {
-      console.error('Error al cargar cuentas:', error);
-      showNotification('Error al cargar los datos', 'error');
-      return [];
+      // Mostrar las estadísticas con una animación suave
+      setTimeout(() => setStatsVisible(true), 100);
+    } catch (err) {
+      console.error('Error al cargar datos:', err);
+      setError('Ocurrió un error al cargar las cuentas. Por favor, intenta de nuevo.');
     } finally {
       setLoading(false);
     }
-  }, []);
-
-  // Efecto inicial para cargar y ordenar datos
+  }, [currentUser.uid, categoriaSeleccionada, searchTerm, sortBy, sortDirection]);
+  
+  // Cargar datos cuando se monta el componente
   useEffect(() => {
-    const loadAndSortData = async () => {
-      const cuentasArray = await fetchCuentas();
-      sortCuentas(cuentasArray, sortOrder);
-      
-      // Mostrar estadísticas después de 300ms para una mejor experiencia visual
-      setTimeout(() => setVisibleStats(true), 300);
-    };
+    fetchData();
     
-    loadAndSortData();
-    
-    // Listener para el tamaño de la ventana
+    // Listener para responsive
     const handleResize = () => {
       setMobileView(window.innerWidth <= 768);
     };
     
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [fetchCuentas, refreshKey, sortOrder]);
-
-  // Función para mostrar notificaciones de manera centralizada
+  }, [fetchData]);
+  
+  // Aplicar filtros y ordenamiento a las cuentas
+  const aplicarFiltros = useCallback((cuentasArray, categoria, busqueda, ordenarPor, direccion) => {
+    let result = [...cuentasArray];
+    
+    // Filtrar por categoría
+    if (categoria !== 'todas') {
+      result = result.filter(cuenta => cuenta.categoria === categoria);
+    }
+    
+    // Filtrar por búsqueda
+    if (busqueda) {
+      const terminoBusqueda = busqueda.toLowerCase();
+      result = result.filter(cuenta => 
+        cuenta.nombre.toLowerCase().includes(terminoBusqueda) ||
+        (cuenta.proveedor && cuenta.proveedor.toLowerCase().includes(terminoBusqueda))
+      );
+    }
+    
+    // Ordenar resultados
+    result.sort((a, b) => {
+      let valA, valB;
+      
+      switch (ordenarPor) {
+        case 'nombre':
+          valA = a.nombre.toLowerCase();
+          valB = b.nombre.toLowerCase();
+          break;
+        case 'monto':
+          valA = a.monto;
+          valB = b.monto;
+          break;
+        case 'vencimiento':
+          valA = new Date(a.fechaVencimiento || 0).getTime();
+          valB = new Date(b.fechaVencimiento || 0).getTime();
+          break;
+        case 'fecha':
+        default:
+          valA = new Date(a.fechaCreacion || 0).getTime();
+          valB = new Date(b.fechaCreacion || 0).getTime();
+      }
+      
+      // Aplicar dirección de ordenamiento
+      if (direccion === 'asc') {
+        return valA > valB ? 1 : -1;
+      } else {
+        return valA < valB ? 1 : -1;
+      }
+    });
+    
+    setCuentasFiltradas(result);
+  }, []);
+  
+  // Calcular estadísticas de cuentas
+  const calcularEstadisticas = useCallback((cuentasArray) => {
+    const hoy = new Date();
+    const enDiezDias = new Date();
+    enDiezDias.setDate(hoy.getDate() + 10);
+    
+    // Cuentas próximas a vencer (en los próximos 10 días y no pagadas)
+    const proximas = cuentasArray.filter(cuenta => {
+      if (!cuenta.fechaVencimiento || cuenta.estaPagada) return false;
+      
+      const fechaVencimiento = new Date(cuenta.fechaVencimiento);
+      return fechaVencimiento >= hoy && fechaVencimiento <= enDiezDias;
+    }).length;
+    
+    setStats({
+      totalCuentas: cuentasArray.length,
+      pendientes: cuentasArray.filter(cuenta => !cuenta.estaPagada).length,
+      montoTotal: cuentasArray.reduce((total, cuenta) => total + cuenta.monto, 0),
+      proximasVencer: proximas
+    });
+  }, []);
+  
+  // Mostrar notificación con tiempo de expiración
   const showNotification = (message, type = 'success', duration = 3000) => {
     setNotification({ message, type });
     if (duration) {
       setTimeout(() => setNotification(null), duration);
     }
   };
-
-  // Función para ordenar cuentas
-  const sortCuentas = (cuentasToSort, order) => {
-    let sortedCuentas = [...cuentasToSort];
-    
-    switch (order) {
-      case 'date-asc':
-        sortedCuentas.sort((a, b) => new Date(a.fechaCreacion) - new Date(b.fechaCreacion));
-        break;
-      case 'date-desc':
-        sortedCuentas.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
-        break;
-      case 'name-asc':
-        sortedCuentas.sort((a, b) => a.nombre.localeCompare(b.nombre));
-        break;
-      case 'name-desc':
-        sortedCuentas.sort((a, b) => b.nombre.localeCompare(a.nombre));
-        break;
-      case 'amount-asc':
-        sortedCuentas.sort((a, b) => a.monto - b.monto);
-        break;
-      case 'amount-desc':
-        sortedCuentas.sort((a, b) => b.monto - a.monto);
-        break;
-      case 'due-date':
-        sortedCuentas.sort((a, b) => {
-          // Si no tiene fecha, va al final
-          if (!a.fechaVencimiento) return 1;
-          if (!b.fechaVencimiento) return -1;
-          return new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento);
-        });
-        break;
-      default:
-        sortedCuentas.sort((a, b) => new Date(b.fechaCreacion) - new Date(a.fechaCreacion));
-    }
-    
-    setCuentas(sortedCuentas);
-  };
-
-  // Handler para cuando una cuenta es creada o actualizada exitosamente
-  const handleCuentaSuccess = (accion, cuentaData) => {
-    setEditingCuenta(null);
-    setShowForm(false);
-    setRefreshKey(prev => prev + 1);
-    
-    // Mostrar notificación
-    showNotification(
-      accion === 'create' 
-        ? `Cuenta "${cuentaData.nombre}" creada exitosamente` 
-        : `Cuenta "${cuentaData.nombre}" actualizada exitosamente`
-    );
-  };
-
-  // Handler para eliminación de cuenta con nueva confirmación
-  const handleDeleteRequest = useCallback((id, nombre, event) => {
-    if (event) event.stopPropagation();
-    setConfirmDelete({ id, nombre });
-  }, []);
-
-  const handleConfirmDelete = async () => {
-    if (!confirmDelete) return;
-    
-    try {
-      // Eliminar primero los pagos asociados a esta cuenta
-      await db.pagos.where('cuentaId').equals(confirmDelete.id).delete();
-      
-      // Buscar aportes relacionados con pagos de esta cuenta
-      const aportesRelacionados = await db.aportes
-        .where('cuentaId')
-        .equals(confirmDelete.id)
-        .toArray();
-      
-      // Eliminar aportes relacionados
-      for (const aporte of aportesRelacionados) {
-        await db.aportes.delete(aporte.id);
-      }
-      
-      // Eliminar la cuenta
-      await db.cuentas.delete(confirmDelete.id);
-      
-      // Mostrar notificación
-      showNotification(`Cuenta "${confirmDelete.nombre}" eliminada exitosamente`);
-      
-      // Refrescar la lista y reiniciar estados
-      setRefreshKey(prev => prev + 1);
-      setShowDetailsCard(null);
-      setConfirmDelete(null);
-      
-    } catch (error) {
-      console.error('Error al eliminar la cuenta:', error);
-      showNotification('Error al eliminar la cuenta. Inténtalo de nuevo.', 'error');
-    }
-  };
-
-  const handleCancelDelete = () => {
-    setConfirmDelete(null);
-  };
-
-  // Handlers para edición y visualización
-  const handleEditCuenta = useCallback((cuenta, event) => {
-    if (event) event.stopPropagation();
-    setEditingCuenta(cuenta);
-    setShowForm(true);
-    setShowDetailsCard(null);
-    setShowFileViewer(false);
-    
-    // En móvil, scroll al principio
-    if (mobileView && contentRef.current) {
-      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [mobileView]);
-
-  const handleCrearCuenta = useCallback(() => {
-    setEditingCuenta(null);
-    setShowForm(true);
-    setShowDetailsCard(null);
-    setShowFileViewer(false);
-    
-    // En móvil, scroll al principio
-    if (mobileView && contentRef.current) {
-      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [mobileView]);
-
-  const handleCancelForm = () => {
-    setEditingCuenta(null);
-    setShowForm(false);
-  };
-
-  const handleShowDetails = useCallback((cuenta) => {
-    setShowDetailsCard(cuenta);
-    setShowForm(false);
-    setShowFileViewer(false);
-    
-    // En móvil, scroll al principio
-    if (mobileView && contentRef.current) {
-      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }, [mobileView]);
-
-  const handleBackFromDetails = () => {
-    setShowDetailsCard(null);
+  
+  // Gestionar búsqueda
+  const handleSearch = (e) => {
+    const value = e.target.value;
+    setSearchTerm(value);
+    aplicarFiltros(cuentas, categoriaSeleccionada, value, sortBy, sortDirection);
   };
   
-  // Ver factura o comprobante
-  const handleViewFile = useCallback((filePath, event) => {
-    if (event) event.stopPropagation();
-    setCurrentFilePath(filePath);
-    setShowFileViewer(true);
-  }, []);
-
-  // Nuevo handler para limpiar búsqueda y enfocar
-  const handleClearSearch = () => {
-    setFilter('');
+  // Limpiar búsqueda
+  const clearSearch = () => {
+    setSearchTerm('');
+    aplicarFiltros(cuentas, categoriaSeleccionada, '', sortBy, sortDirection);
     if (searchInputRef.current) {
       searchInputRef.current.focus();
     }
   };
-
-  // Obtener estado de pago para una cuenta específica
-  const obtenerEstadoPago = useCallback(async (cuentaId) => {
+  
+  // Gestionar cambio de ordenamiento
+  const handleSortChange = (e) => {
+    const value = e.target.value;
+    setSortBy(value);
+    aplicarFiltros(cuentas, categoriaSeleccionada, searchTerm, value, sortDirection);
+  };
+  
+  // Gestionar cambio de dirección de ordenamiento
+  const handleSortDirectionChange = () => {
+    const newDirection = sortDirection === 'asc' ? 'desc' : 'asc';
+    setSortDirection(newDirection);
+    aplicarFiltros(cuentas, categoriaSeleccionada, searchTerm, sortBy, newDirection);
+  };
+  
+  // Gestionar selección de categoría
+  const handleCategoriaChange = (categoria) => {
+    setCategoriaSeleccionada(categoria);
+    aplicarFiltros(cuentas, categoria, searchTerm, sortBy, sortDirection);
+  };
+  
+  // Gestionar guardado de cuenta (nueva o editada)
+  const handleSaveCuenta = async (cuentaData) => {
     try {
-      const pagos = await db.pagos.where('cuentaId').equals(cuentaId).toArray();
-      const totalPagado = pagos.reduce((sum, pago) => sum + pago.montoPagado, 0);
-      const cuenta = cuentas.find(c => c.id === cuentaId);
+      if (editingCuenta) {
+        // Actualizar cuenta existente
+        await db.cuentas.update(editingCuenta.id, {
+          ...cuentaData,
+          fechaActualizacion: new Date().toISOString()
+        });
+        showNotification('Cuenta actualizada correctamente');
+      } else {
+        // Crear nueva cuenta
+        await db.cuentas.add({
+          ...cuentaData,
+          userId: currentUser.uid,
+          estaPagada: false,
+          fechaCreacion: new Date().toISOString()
+        });
+        showNotification('Cuenta creada correctamente');
+      }
       
-      if (!cuenta) return { pagada: false, monto: 0, pagado: 0 };
-      
-      return {
-        pagada: totalPagado >= cuenta.monto,
-        monto: cuenta.monto,
-        pagado: totalPagado
-      };
+      setShowForm(false);
+      setEditingCuenta(null);
+      fetchData();
     } catch (error) {
-      console.error('Error al obtener estado de pago:', error);
-      return { pagada: false, monto: 0, pagado: 0 };
+      console.error('Error al guardar la cuenta:', error);
+      showNotification('Error al guardar la cuenta', 'error');
     }
-  }, [cuentas]);
-
-  // Formatear fechas
+  };
+  
+  // Gestionar cierre de formulario
+  const handleCloseForm = () => {
+    setShowForm(false);
+    setEditingCuenta(null);
+  };
+  
+  // Gestionar cierre de detalles
+  const handleCloseDetails = () => {
+    setSelectedCuenta(null);
+    setViewingFactura(false);
+  };
+  
+  // Gestionar selección de cuenta
+  const handleSelectCuenta = (cuenta) => {
+    setSelectedCuenta(cuenta);
+    setViewingFactura(false);
+    
+    if (mobileView) {
+      // Scroll al inicio en vista móvil
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Gestionar clic en editar cuenta
+  const handleEditCuenta = (e, cuenta) => {
+    e.stopPropagation(); // Evitar que se seleccione la cuenta
+    setEditingCuenta(cuenta);
+    setShowForm(true);
+    setSelectedCuenta(null);
+    
+    if (mobileView && contentRef.current) {
+      contentRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
+  // Gestionar clic en ver factura
+  const handleViewFactura = (e, cuenta) => {
+    e.stopPropagation(); // Evitar que se seleccione la cuenta
+    setSelectedCuenta(cuenta);
+    setViewingFactura(true);
+    
+    if (mobileView) {
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Mostrar diálogo de confirmación de eliminación
+  const handleDeleteClick = (e, cuenta) => {
+    e.stopPropagation(); // Evitar que se seleccione la cuenta
+    setConfirmDelete(cuenta);
+  };
+  
+  // Confirmar eliminación de cuenta
+  const confirmDeleteCuenta = async () => {
+    if (!confirmDelete) return;
+    
+    try {
+      await db.cuentas.delete(confirmDelete.id);
+      showNotification('Cuenta eliminada correctamente');
+      
+      // Si estamos viendo los detalles de la cuenta eliminada, cerrarlos
+      if (selectedCuenta && selectedCuenta.id === confirmDelete.id) {
+        setSelectedCuenta(null);
+      }
+      
+      fetchData();
+    } catch (error) {
+      console.error('Error al eliminar la cuenta:', error);
+      showNotification('Error al eliminar la cuenta', 'error');
+    } finally {
+      setConfirmDelete(null);
+    }
+  };
+  
+  // Cancelar eliminación
+  const cancelDelete = () => {
+    setConfirmDelete(null);
+  };
+  
+  // Crear nueva cuenta
+  const handleCrearCuenta = () => {
+    setEditingCuenta(null);
+    setShowForm(true);
+    setSelectedCuenta(null);
+    
+    if (mobileView && contentRef.current) {
+      contentRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+  
+  // Formatear fecha
   const formatFecha = (fechaString) => {
     if (!fechaString) return 'Sin fecha';
     const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString('es-ES');
+    return fecha.toLocaleDateString('es-CL');
   };
-
-  // Formatear montos
+  
+  // Formatear monto (CORREGIDO: de COP a CLP)
   const formatMonto = (monto) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'COP',
+      currency: 'CLP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(monto);
   };
-
-  // Determinar clase de categoría para estilos
-  const getCategoriaClase = (categoria) => {
-    return categoria ? `categoria-${categoria}` : 'categoria-otros';
-  };
-
-  // Determinar si una cuenta está próxima a vencer
-  const esProximaVencer = (fechaVencimiento) => {
-    if (!fechaVencimiento) return false;
+  
+  // Verificar si una cuenta está próxima a vencer
+  const isProximaVencer = (cuenta) => {
+    if (!cuenta.fechaVencimiento || cuenta.estaPagada) return false;
     
     const hoy = new Date();
-    const vencimiento = new Date(fechaVencimiento);
-    const diasRestantes = Math.floor((vencimiento - hoy) / (1000 * 60 * 60 * 24));
+    const enDiezDias = new Date();
+    enDiezDias.setDate(hoy.getDate() + 10);
+    const fechaVencimiento = new Date(cuenta.fechaVencimiento);
     
-    return diasRestantes >= 0 && diasRestantes <= 7;
+    return fechaVencimiento >= hoy && fechaVencimiento <= enDiezDias;
   };
-
-  // Filtrar cuentas por texto y categoría
-  const filteredCuentas = cuentas.filter(cuenta => {
-    // Filtro de texto
-    const matchesText = filter === '' || 
-      cuenta.nombre.toLowerCase().includes(filter.toLowerCase()) ||
-      (cuenta.proveedor && cuenta.proveedor.toLowerCase().includes(filter.toLowerCase())) ||
-      (cuenta.categoria && cuenta.categoria.toLowerCase().includes(filter.toLowerCase())) ||
-      (cuenta.descripcion && cuenta.descripcion.toLowerCase().includes(filter.toLowerCase()));
-    
-    // Filtro de categoría
-    if (activeTab === 'todas') return matchesText;
-    return cuenta.categoria === activeTab && matchesText;
-  });
-
-  // Renderizar mensaje cuando no hay resultados específicos
-  const renderNoResultsMessage = () => {
-    if (filter && activeTab !== 'todas') {
-      return (
-        <div className="empty-state">
-          <div className="empty-icon">🔍</div>
-          <h3>No se encontraron resultados</h3>
-          <p>No hay cuentas de categoría "{activeTab}" que coincidan con "{filter}"</p>
-          <div className="empty-state-actions">
-            <button 
-              className="action-button"
-              onClick={() => setActiveTab('todas')}
-            >
-              Ver todas las categorías
-            </button>
-            <button 
-              className="action-button secondary"
-              onClick={handleClearSearch}
-            >
-              Limpiar búsqueda
-            </button>
-          </div>
-        </div>
-      );
-    } 
-    
-    if (filter) {
-      return (
-        <div className="empty-state">
-          <div className="empty-icon">🔍</div>
-          <h3>No se encontraron resultados</h3>
-          <p>No hay cuentas que coincidan con "{filter}"</p>
-          <button 
-            className="action-button"
-            onClick={handleClearSearch}
-          >
-            Limpiar búsqueda
-          </button>
-        </div>
-      );
-    }
-    
-    if (activeTab !== 'todas') {
-      return (
-        <div className="empty-state">
-          <div className="empty-icon">📂</div>
-          <h3>No hay cuentas en esta categoría</h3>
-          <p>No se encontraron cuentas en la categoría "{activeTab}"</p>
-          <button 
-            className="action-button"
-            onClick={() => setActiveTab('todas')}
-          >
-            Ver todas las categorías
-          </button>
-        </div>
-      );
-    }
+  
+  // Renderizar tarjeta de cuenta
+  const renderCuentaCard = (cuenta) => {
+    const esProxima = isProximaVencer(cuenta);
+    const categoriaClass = cuenta.categoria ? `category-${cuenta.categoria.toLowerCase()}` : '';
+    const cardClasses = [
+      'cuenta-card',
+      categoriaClass,
+      esProxima ? 'proxima-vencer' : '',
+      selectedCuenta && selectedCuenta.id === cuenta.id ? 'selected' : ''
+    ].filter(Boolean).join(' ');
     
     return (
-      <div className="empty-state">
-        <div className="empty-icon">📋</div>
-        <h3>No hay cuentas registradas</h3>
-        <p>Crea tu primera cuenta para comenzar a gestionar tus pagos familiares</p>
-        <button 
-          className="crear-cuenta-button-empty"
-          onClick={handleCrearCuenta}
-        >
-          Crear Primera Cuenta
-        </button>
+      <div 
+        key={cuenta.id} 
+        className={cardClasses}
+        onClick={() => handleSelectCuenta(cuenta)}
+      >
+        <div className="cuenta-content">
+          <div className="cuenta-header">
+            <h3 className="cuenta-titulo">{cuenta.nombre}</h3>
+            <div className="badge-container">
+              {cuenta.categoria && (
+                <span className={`badge category-${cuenta.categoria.toLowerCase()}`}>
+                  {cuenta.categoria}
+                </span>
+              )}
+              {esProxima && (
+                <span className="badge urgente">Próxima a vencer</span>
+              )}
+            </div>
+          </div>
+          
+          <div className="cuenta-body">
+            <div className="cuenta-info">
+              {cuenta.proveedor && (
+                <div className="info-item">
+                  <span className="info-label">Proveedor:</span>
+                  <span className="info-value">{cuenta.proveedor}</span>
+                </div>
+              )}
+              
+              <div className="info-item amount">
+                <span className="info-label">Monto:</span>
+                <span className="info-value">{formatMonto(cuenta.monto)}</span>
+              </div>
+              
+              {cuenta.fechaVencimiento && (
+                <div className="info-item">
+                  <span className="info-label">Vencimiento:</span>
+                  <span className={`info-value ${esProxima ? 'proxima' : ''}`}>
+                    {formatFecha(cuenta.fechaVencimiento)}
+                    {esProxima && <span className="aviso-proxima">¡Próxima!</span>}
+                  </span>
+                </div>
+              )}
+            </div>
+            
+            <div className="cuenta-actions">
+              <button 
+                className="edit-button" 
+                onClick={(e) => handleEditCuenta(e, cuenta)}
+                aria-label="Editar cuenta"
+              >
+                <span className="edit-icon">✏️</span>
+              </button>
+              <button 
+                className="delete-button" 
+                onClick={(e) => handleDeleteClick(e, cuenta)}
+                aria-label="Eliminar cuenta"
+              >
+                <span className="delete-icon">🗑️</span>
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        {cuenta.rutaFactura && (
+          <div 
+            className="cuenta-has-factura" 
+            onClick={(e) => handleViewFactura(e, cuenta)}
+            aria-label="Ver factura"
+          >
+            <span className="factura-indicator">📄</span>
+            <span className="factura-tooltip">Ver factura</span>
+          </div>
+        )}
       </div>
     );
   };
-
-  // Renderizar las tarjetas de estadísticas
-  const renderStatCards = () => (
-    <div className={`stats-container ${visibleStats ? 'visible' : ''}`}>
-      <div className="stat-card total-cuentas">
-        <div className="stat-icon">📊</div>
-        <div className="stat-content">
-          <div className="stat-value">{dashboardStats.totalCuentas}</div>
-          <div className="stat-label">Total de Cuentas</div>
+  
+  // Renderizar detalles de cuenta
+  const renderCuentaDetails = () => {
+    if (!selectedCuenta) return null;
+    
+    return (
+      <div className="side-panel">
+        <div className="panel-header">
+          <h3>{viewingFactura ? 'Factura' : 'Detalles de la Cuenta'}</h3>
+          <button 
+            className="close-panel" 
+            onClick={handleCloseDetails}
+            aria-label="Cerrar panel"
+          >
+            ×
+          </button>
+        </div>
+        
+        <div className="panel-content">
+          {viewingFactura ? (
+            <FileViewer filePath={selectedCuenta.rutaFactura} />
+          ) : (
+            <>
+              <div className="details-section">
+                <div className="detail-header">
+                  <h2>{selectedCuenta.nombre}</h2>
+                  {selectedCuenta.categoria && (
+                    <span className={`badge large category-${selectedCuenta.categoria.toLowerCase()}`}>
+                      {selectedCuenta.categoria}
+                    </span>
+                  )}
+                </div>
+                
+                <div className="detail-row highlight">
+                  <span className="detail-label">Monto</span>
+                  <span className="detail-value">{formatMonto(selectedCuenta.monto)}</span>
+                </div>
+              </div>
+              
+              <div className="details-section">
+                <h4>Información General</h4>
+                
+                {selectedCuenta.proveedor && (
+                  <div className="detail-row">
+                    <span className="detail-label">Proveedor</span>
+                    <span className="detail-value">{selectedCuenta.proveedor}</span>
+                  </div>
+                )}
+                
+                {selectedCuenta.fechaVencimiento && (
+                  <div className="detail-row">
+                    <span className="detail-label">Fecha de Vencimiento</span>
+                    <span className="detail-value">
+                      {formatFecha(selectedCuenta.fechaVencimiento)}
+                      {isProximaVencer(selectedCuenta) && (
+                        <span className="aviso-detalle-proxima"> ¡Próxima a vencer!</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+                
+                <div className="detail-row">
+                  <span className="detail-label">Fecha de Creación</span>
+                  <span className="detail-value">{formatFecha(selectedCuenta.fechaCreacion)}</span>
+                </div>
+              </div>
+              
+              {selectedCuenta.descripcion && (
+                <div className="details-section">
+                  <h4>Descripción</h4>
+                  <p className="description-text">{selectedCuenta.descripcion}</p>
+                </div>
+              )}
+              
+              {selectedCuenta.rutaFactura && (
+                <div className="details-section">
+                  <h4>Factura</h4>
+                  <div className="factura-info">
+                    <span className="factura-icon">📄</span>
+                    <span>Factura disponible para esta cuenta</span>
+                  </div>
+                  <button 
+                    className="ver-factura-button"
+                    onClick={() => setViewingFactura(true)}
+                  >
+                    Ver Factura
+                  </button>
+                </div>
+              )}
+              
+              <div className="detail-actions">
+                <button 
+                  className="action-button edit"
+                  onClick={() => {
+                    setEditingCuenta(selectedCuenta);
+                    setShowForm(true);
+                    setSelectedCuenta(null);
+                  }}
+                >
+                  <span className="action-icon">✏️</span> Editar Cuenta
+                </button>
+                
+                <button 
+                  className="action-button delete"
+                  onClick={() => setConfirmDelete(selectedCuenta)}
+                >
+                  <span className="action-icon">🗑️</span> Eliminar Cuenta
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </div>
-      
-      <div className="stat-card pendientes">
-        <div className="stat-icon">⏳</div>
-        <div className="stat-content">
-          <div className="stat-value">{dashboardStats.pendientesPago}</div>
-          <div className="stat-label">Pendientes de Pago</div>
-        </div>
-      </div>
-      
-      <div className="stat-card monto-total">
-        <div className="stat-icon">💰</div>
-        <div className="stat-content">
-          <div className="stat-value">{formatMonto(dashboardStats.totalMonto)}</div>
-          <div className="stat-label">Monto Total</div>
-        </div>
-      </div>
-      
-      <div className="stat-card proximas-vencer">
-        <div className="stat-icon">⚠️</div>
-        <div className="stat-content">
-          <div className="stat-value">{dashboardStats.proximasVencer}</div>
-          <div className="stat-label">Próximas a Vencer (7 días)</div>
-        </div>
-      </div>
-    </div>
-  );
-
+    );
+  };
+  
   return (
     <div className="gestion-page">
       <NavBar />
@@ -467,37 +574,63 @@ const GestionCuentas = () => {
       <div className="gestion-container">
         <div className="gestion-header">
           <h2>Gestión de Cuentas</h2>
-          
           <button 
-            className="crear-cuenta-button"
+            className="crear-cuenta-button" 
             onClick={handleCrearCuenta}
           >
-            <i className="icon">+</i> Crear Cuenta
+            <span className="icon">+</span> Crear Cuenta
           </button>
         </div>
         
-        {/* Stats dashboard */}
-        {!showForm && !showDetailsCard && !showFileViewer && renderStatCards()}
+        <div className={`stats-container ${statsVisible ? 'visible' : ''}`}>
+          <div className="stat-card total-cuentas">
+            <div className="stat-icon">📊</div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.totalCuentas}</div>
+              <div className="stat-label">Total de Cuentas</div>
+            </div>
+          </div>
+          
+          <div className="stat-card pendientes">
+            <div className="stat-icon">⏳</div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.pendientes}</div>
+              <div className="stat-label">Cuentas Pendientes</div>
+            </div>
+          </div>
+          
+          <div className="stat-card monto-total">
+            <div className="stat-icon">💰</div>
+            <div className="stat-content">
+              <div className="stat-value">{formatMonto(stats.montoTotal)}</div>
+              <div className="stat-label">Monto Total</div>
+            </div>
+          </div>
+          
+          <div className="stat-card proximas-vencer">
+            <div className="stat-icon">🔔</div>
+            <div className="stat-content">
+              <div className="stat-value">{stats.proximasVencer}</div>
+              <div className="stat-label">Próximas a Vencer</div>
+            </div>
+          </div>
+        </div>
         
         <div className="filter-bar-container">
           <div className="filter-bar">
             <div className="search-box">
-              <i className="search-icon">🔍</i>
+              <span className="search-icon">🔍</span>
               <input
-                ref={searchInputRef}
                 type="text"
-                placeholder="Buscar por nombre, proveedor o descripción..."
-                value={filter}
-                onChange={(e) => setFilter(e.target.value)}
+                placeholder="Buscar cuenta por nombre o proveedor..."
+                value={searchTerm}
+                onChange={handleSearch}
                 className="search-input"
+                ref={searchInputRef}
               />
-              {filter && (
-                <button 
-                  className="clear-search" 
-                  onClick={handleClearSearch}
-                  aria-label="Limpiar búsqueda"
-                >
-                  ×
+              {searchTerm && (
+                <button className="clear-search" onClick={clearSearch} aria-label="Limpiar búsqueda">
+                  ✕
                 </button>
               )}
             </div>
@@ -507,57 +640,56 @@ const GestionCuentas = () => {
                 <label htmlFor="sort-select">Ordenar por:</label>
                 <select 
                   id="sort-select"
-                  value={sortOrder}
-                  onChange={(e) => setSortOrder(e.target.value)}
+                  value={sortBy}
+                  onChange={handleSortChange}
                   className="sort-select"
                 >
-                  <option value="date-desc">Más recientes</option>
-                  <option value="date-asc">Más antiguas</option>
-                  <option value="name-asc">Nombre (A-Z)</option>
-                  <option value="name-desc">Nombre (Z-A)</option>
-                  <option value="amount-desc">Mayor monto</option>
-                  <option value="amount-asc">Menor monto</option>
-                  <option value="due-date">Fecha de vencimiento</option>
+                  <option value="fecha">Fecha de creación</option>
+                  <option value="nombre">Nombre</option>
+                  <option value="monto">Monto</option>
+                  <option value="vencimiento">Fecha de vencimiento</option>
                 </select>
+                <button 
+                  onClick={handleSortDirectionChange}
+                  className="toggle-categories-button"
+                  aria-label={`Ordenar ${sortDirection === 'asc' ? 'descendente' : 'ascendente'}`}
+                >
+                  ↕️ {sortDirection === 'asc' ? 'Asc' : 'Desc'}
+                </button>
               </div>
               
               <button 
-                className="toggle-categories-button"
-                onClick={() => setExpandedCategories(!expandedCategories)}
+                className="toggle-categories-button" 
+                onClick={() => setShowCategorias(!showCategorias)}
               >
-                {expandedCategories ? 'Ocultar categorías' : 'Mostrar categorías'}
+                {showCategorias ? 'Ocultar Categorías' : 'Mostrar Categorías'}
               </button>
             </div>
-          </div>
-          
-          {expandedCategories && (
-            <div className="category-tabs">
-              <button 
-                className={`category-tab ${activeTab === 'todas' ? 'active' : ''}`}
-                onClick={() => setActiveTab('todas')}
-              >
-                Todas
-              </button>
-              {allCategories.map(categoria => (
-                <button 
-                  key={categoria}
-                  className={`category-tab ${activeTab === categoria ? 'active' : ''}`}
-                  onClick={() => setActiveTab(categoria)}
+            
+            {showCategorias && (
+              <div className="category-tabs">
+                <button
+                  className={`category-tab ${categoriaSeleccionada === 'todas' ? 'active' : ''}`}
+                  onClick={() => handleCategoriaChange('todas')}
                 >
-                  {categoria.charAt(0).toUpperCase() + categoria.slice(1)}
+                  Todas
                 </button>
-              ))}
-            </div>
-          )}
+                {categorias.map(categoria => (
+                  <button
+                    key={categoria.id}
+                    className={`category-tab ${categoriaSeleccionada === categoria.nombre ? 'active' : ''}`}
+                    onClick={() => handleCategoriaChange(categoria.nombre)}
+                  >
+                    {categoria.nombre}
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
         </div>
         
-        <div 
-          ref={contentRef}
-          className={`gestion-content ${
-            (showForm || showDetailsCard || showFileViewer) ? 'with-side-panel' : ''
-          } ${mobileView ? 'mobile-view' : ''}`}
-        >
-          <div className={`cuentas-grid ${showFileViewer ? 'hidden' : ''}`}>
+        <div ref={contentRef} className={`gestion-content ${(showForm || selectedCuenta) ? 'with-side-panel' : ''} ${mobileView ? 'mobile-view' : ''}`}>
+          <div className={`cuentas-grid ${showForm && mobileView ? 'hidden' : ''}`}>
             {loading ? (
               <div className="loading-indicator">
                 <div className="loading-content">
@@ -565,86 +697,41 @@ const GestionCuentas = () => {
                   <p>Cargando cuentas...</p>
                 </div>
               </div>
-            ) : filteredCuentas.length === 0 ? (
-              renderNoResultsMessage()
+            ) : error ? (
+              <div className="empty-state">
+                <div className="empty-icon">⚠️</div>
+                <h3>Error al cargar cuentas</h3>
+                <p>{error}</p>
+                <div className="empty-state-actions">
+                  <button className="action-button" onClick={fetchData}>
+                    Intentar de nuevo
+                  </button>
+                </div>
+              </div>
+            ) : cuentasFiltradas.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">📋</div>
+                <h3>No se encontraron cuentas</h3>
+                <p>
+                  {searchTerm 
+                    ? 'No hay resultados para tu búsqueda. Intenta con otros términos.' 
+                    : categoriaSeleccionada !== 'todas' 
+                      ? `No hay cuentas en la categoría "${categoriaSeleccionada}".` 
+                      : 'No tienes cuentas creadas. ¡Crea tu primera cuenta!'}
+                </p>
+                <div className="empty-state-actions">
+                  {searchTerm && (
+                    <button className="action-button secondary" onClick={clearSearch}>
+                      Limpiar búsqueda
+                    </button>
+                  )}
+                  <button className="crear-cuenta-button-empty" onClick={handleCrearCuenta}>
+                    <span className="icon">+</span> Crear Nueva Cuenta
+                  </button>
+                </div>
+              </div>
             ) : (
-              <>
-                {filteredCuentas.map(cuenta => (
-                  <div 
-                    key={cuenta.id} 
-                    className={`cuenta-card 
-                      ${editingCuenta?.id === cuenta.id ? 'editing' : ''} 
-                      ${showDetailsCard?.id === cuenta.id ? 'selected' : ''} 
-                      ${esProximaVencer(cuenta.fechaVencimiento) ? 'proxima-vencer' : ''} 
-                      ${cuenta.categoria ? 'category-' + cuenta.categoria : 'category-otros'}`}
-                    onClick={() => handleShowDetails(cuenta)}
-                  >
-                    <div className="cuenta-content">
-                      <div className="cuenta-header">
-                        <h3 className="cuenta-titulo">{cuenta.nombre}</h3>
-                        <div className="badge-container">
-                          {cuenta.categoria && (
-                            <span className={`badge ${getCategoriaClase(cuenta.categoria)}`}>
-                              {cuenta.categoria}
-                            </span>
-                          )}
-                          {esProximaVencer(cuenta.fechaVencimiento) && (
-                            <span className="badge urgente">
-                              Próximo vencimiento
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                      
-                      <div className="cuenta-body">
-                        <div className="cuenta-info">
-                          <div className="info-item">
-                            <span className="info-label">Proveedor</span>
-                            <span className="info-value">{cuenta.proveedor || 'No especificado'}</span>
-                          </div>
-                          <div className="info-item amount">
-                            <span className="info-label">Monto</span>
-                            <span className="info-value monto">{formatMonto(cuenta.monto)}</span>
-                          </div>
-                          <div className="info-item">
-                            <span className="info-label">Vencimiento</span>
-                            <span className={`info-value ${esProximaVencer(cuenta.fechaVencimiento) ? 'proxima' : ''}`}>
-                              {formatFecha(cuenta.fechaVencimiento)}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-                      
-                      <div className="cuenta-actions">
-                        <button 
-                          className="edit-button"
-                          onClick={(e) => handleEditCuenta(cuenta, e)}
-                          aria-label="Editar cuenta"
-                        >
-                          <i className="edit-icon">✏️</i>
-                        </button>
-                        <button 
-                          className="delete-button"
-                          onClick={(e) => handleDeleteRequest(cuenta.id, cuenta.nombre, e)}
-                          aria-label="Eliminar cuenta"
-                        >
-                          <i className="delete-icon">🗑️</i>
-                        </button>
-                      </div>
-                      
-                      {cuenta.rutaFactura && (
-                        <div 
-                          className="cuenta-has-factura"
-                          onClick={(e) => handleViewFile(cuenta.rutaFactura, e)}
-                        >
-                          <span className="factura-indicator">📄</span>
-                          <span className="factura-tooltip">Ver factura</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </>
+              cuentasFiltradas.map(cuenta => renderCuentaCard(cuenta))
             )}
           </div>
           
@@ -653,171 +740,61 @@ const GestionCuentas = () => {
               <div className="panel-header">
                 <h3>{editingCuenta ? 'Editar Cuenta' : 'Nueva Cuenta'}</h3>
                 <button 
-                  className="close-panel"
-                  onClick={handleCancelForm}
-                  aria-label="Cerrar panel"
+                  className="close-panel" 
+                  onClick={handleCloseForm}
+                  aria-label="Cerrar formulario"
                 >
                   ×
                 </button>
               </div>
               <div className="panel-content">
                 <CuentaForm 
-                  cuentaToEdit={editingCuenta}
-                  onSuccess={handleCuentaSuccess}
-                  onCancel={handleCancelForm}
-                  categorias={allCategories}
+                  cuenta={editingCuenta}
+                  categorias={categorias}
+                  onSave={handleSaveCuenta}
+                  onCancel={handleCloseForm}
                 />
               </div>
             </div>
           )}
           
-          {showDetailsCard && (
-            <div className={`side-panel details-panel ${mobileView ? 'mobile' : ''}`}>
-              <div className="panel-header">
-                <h3>Detalles de la Cuenta</h3>
-                <button 
-                  className="close-panel"
-                  onClick={handleBackFromDetails}
-                  aria-label="Cerrar panel"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="panel-content">
-                <div className="detail-header">
-                  <h2>{showDetailsCard.nombre}</h2>
-                  {showDetailsCard.categoria && (
-                    <span className={`badge large ${getCategoriaClase(showDetailsCard.categoria)}`}>
-                      {showDetailsCard.categoria}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="details-section">
-                  <div className="detail-row">
-                    <span className="detail-label">Proveedor</span>
-                    <span className="detail-value">{showDetailsCard.proveedor || 'No especificado'}</span>
-                  </div>
-                  <div className="detail-row highlight">
-                    <span className="detail-label">Monto</span>
-                    <span className="detail-value">{formatMonto(showDetailsCard.monto)}</span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Fecha de vencimiento</span>
-                    <span className={`detail-value ${esProximaVencer(showDetailsCard.fechaVencimiento) ? 'proxima' : ''}`}>
-                      {formatFecha(showDetailsCard.fechaVencimiento)}
-                      {esProximaVencer(showDetailsCard.fechaVencimiento) && 
-                        <span className="aviso-detalle-proxima"> (¡Próxima a vencer!)</span>
-                      }
-                    </span>
-                  </div>
-                  <div className="detail-row">
-                    <span className="detail-label">Fecha de creación</span>
-                    <span className="detail-value">{formatFecha(showDetailsCard.fechaCreacion)}</span>
-                  </div>
-                </div>
-                
-                {showDetailsCard.descripcion && (
-                  <div className="details-section">
-                    <h4>Descripción</h4>
-                    <p className="description-text">{showDetailsCard.descripcion}</p>
-                  </div>
-                )}
-                
-                {showDetailsCard.rutaFactura && (
-                  <div className="details-section factura-section">
-                    <h4>Factura adjunta</h4>
-                    <div className="factura-info">
-                      <span className="factura-icon">📄</span>
-                      <span>Esta cuenta tiene una factura adjunta</span>
-                    </div>
-                    <button 
-                      className="ver-factura-button"
-                      onClick={() => handleViewFile(showDetailsCard.rutaFactura)}
-                    >
-                      Ver factura
-                    </button>
-                  </div>
-                )}
-                
-                <div className="detail-actions">
-                  <button 
-                    className="action-button edit"
-                    onClick={(e) => handleEditCuenta(showDetailsCard, e)}
-                  >
-                    <i className="action-icon">✏️</i> Editar cuenta
-                  </button>
-                  <button 
-                    className="action-button delete"
-                    onClick={(e) => handleDeleteRequest(showDetailsCard.id, showDetailsCard.nombre, e)}
-                  >
-                    <i className="action-icon">🗑️</i> Eliminar cuenta
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
-          
-          {showFileViewer && (
-            <div className={`side-panel file-viewer-panel ${mobileView ? 'mobile' : ''}`}>
-              <div className="panel-header">
-                <h3>Vista de Documento</h3>
-                <button 
-                  className="close-panel"
-                  onClick={() => setShowFileViewer(false)}
-                  aria-label="Cerrar visor"
-                >
-                  ×
-                </button>
-              </div>
-              <div className="panel-content">
-                <FileViewer filePath={currentFilePath} />
-              </div>
-            </div>
-          )}
+          {selectedCuenta && !showForm && renderCuentaDetails()}
         </div>
         
+        {/* Botón flotante para volver en móvil */}
+        {mobileView && (selectedCuenta || showForm) && (
+          <button 
+            className="floating-back-button"
+            onClick={selectedCuenta ? handleCloseDetails : handleCloseForm}
+          >
+            ← Volver
+          </button>
+        )}
+        
+        {/* Notificaciones */}
         {notification && (
           <div className={`notification ${notification.type}`}>
             {notification.message}
           </div>
         )}
         
+        {/* Modal de confirmación */}
         {confirmDelete && (
           <div className="confirmation-modal">
             <div className="confirmation-content">
-              <h3>¿Eliminar cuenta?</h3>
-              <p>¿Estás seguro de que deseas eliminar la cuenta <strong>"{confirmDelete.nombre}"</strong>?</p>
-              <p className="modal-warning">Esta acción no se puede deshacer y eliminará todos los pagos asociados.</p>
+              <h3>Confirmar eliminación</h3>
+              <p>¿Estás seguro de eliminar la cuenta "{confirmDelete.nombre}"?</p>
+              <div className="modal-warning">Esta acción no se puede deshacer.</div>
               <div className="modal-actions">
-                <button 
-                  className="modal-button cancel"
-                  onClick={handleCancelDelete}
-                >
+                <button className="modal-button cancel" onClick={cancelDelete}>
                   Cancelar
                 </button>
-                <button 
-                  className="modal-button confirm"
-                  onClick={handleConfirmDelete}
-                >
+                <button className="modal-button confirm" onClick={confirmDeleteCuenta}>
                   Eliminar
                 </button>
               </div>
             </div>
           </div>
-        )}
-        
-        {mobileView && (showForm || showDetailsCard || showFileViewer) && (
-          <button 
-            className="floating-back-button"
-            onClick={() => {
-              if (showForm) handleCancelForm();
-              else if (showDetailsCard) handleBackFromDetails();
-              else if (showFileViewer) setShowFileViewer(false);
-            }}
-          >
-            ← Volver a la lista
-          </button>
         )}
       </div>
     </div>

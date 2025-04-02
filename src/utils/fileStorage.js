@@ -1,76 +1,93 @@
-import db from './database';
+import Dexie from 'dexie';
 
-// Almacenamiento de archivos usando IndexedDB
-const saveFile = async (file, directory) => {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = async (event) => {
-      try {
-        // Guardar en IndexedDB
-        const fileData = {
-          name: file.name,
-          type: file.type || getMimeType(file.name), // Asegurar que tengamos un tipo MIME
-          data: event.target.result,  // Contenido binario del archivo
-          directory,                  // 'facturas' o 'comprobantes'
-          timestamp: new Date().toISOString()
-        };
-        
-        // Agregar a la tabla archivos
-        const fileId = await db.archivos.add(fileData);
-        resolve(`${directory}/${fileId}`);
-      } catch (error) {
-        reject(error);
-      }
-    };
-    reader.onerror = reject;
-    // El archivo se lee como ArrayBuffer
-    reader.readAsArrayBuffer(file);
-  });
+// Base de datos específica para archivos
+const fileDB = new Dexie('familionFilesDB');
+
+// Definir esquema para almacenamiento de archivos
+fileDB.version(1).stores({
+  files: '++id, name, type, size, data, directory, dateAdded'
+});
+
+/**
+ * Guarda un archivo en la base de datos
+ * @param {File} file - El archivo a guardar
+ * @param {string} directory - Directorio virtual para clasificar el archivo
+ * @returns {Promise<string>} - Ruta de acceso al archivo guardado
+ */
+export const saveFile = async (file, directory = 'general') => {
+  try {
+    // Leer el archivo como ArrayBuffer
+    const arrayBuffer = await file.arrayBuffer();
+    
+    // Crear registro en la base de datos
+    const id = await fileDB.files.add({
+      name: file.name,
+      type: file.type,
+      size: file.size,
+      data: arrayBuffer,
+      directory,
+      dateAdded: new Date().toISOString()
+    });
+    
+    // Devolver una "ruta virtual" al archivo
+    return `${directory}/${id}`;
+  } catch (error) {
+    console.error('Error al guardar archivo:', error);
+    throw error;
+  }
 };
 
-// Función para leer un archivo
-const getFile = async (fileId) => {
+/**
+ * Obtiene un archivo desde la base de datos
+ * @param {string|number} fileId - ID del archivo a obtener
+ * @returns {Promise<Object>} - Objeto con información y datos del archivo
+ */
+export const getFile = async (fileId) => {
   try {
-    const id = parseInt(fileId, 10);
-    if (isNaN(id)) {
+    const numericId = parseInt(fileId, 10);
+    if (isNaN(numericId)) {
       throw new Error('ID de archivo inválido');
     }
     
-    const file = await db.archivos.get(id);
-    
-    if (!file) {
+    const fileRecord = await fileDB.files.get(numericId);
+    if (!fileRecord) {
       throw new Error('Archivo no encontrado');
     }
     
-    // Asegurar que hay un tipo MIME para el archivo
-    if (!file.type) {
-      file.type = getMimeType(file.name);
-    }
-    
-    return file;
+    return fileRecord;
   } catch (error) {
     console.error('Error al obtener archivo:', error);
     throw error;
   }
 };
 
-// Función auxiliar para determinar el tipo MIME según la extensión
-const getMimeType = (filename) => {
-  const extension = filename.split('.').pop().toLowerCase();
-  const mimeTypes = {
-    'pdf': 'application/pdf',
-    'jpg': 'image/jpeg',
-    'jpeg': 'image/jpeg',
-    'png': 'image/png',
-    'gif': 'image/gif',
-    'txt': 'text/plain',
-    'doc': 'application/msword',
-    'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-    'xls': 'application/vnd.ms-excel',
-    'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-  };
-  
-  return mimeTypes[extension] || 'application/octet-stream';
+/**
+ * Elimina un archivo de la base de datos
+ * @param {string} filePath - Ruta del archivo a eliminar
+ * @returns {Promise<boolean>} - True si se eliminó correctamente
+ */
+export const deleteFile = async (filePath) => {
+  try {
+    if (!filePath) return false;
+    
+    const [directory, fileId] = filePath.split('/');
+    const numericId = parseInt(fileId, 10);
+    
+    if (isNaN(numericId)) {
+      throw new Error('Ruta de archivo inválida');
+    }
+    
+    await fileDB.files.delete(numericId);
+    return true;
+  } catch (error) {
+    console.error('Error al eliminar archivo:', error);
+    return false;
+  }
 };
 
-export { saveFile, getFile };
+// Manejo de errores al abrir la base de datos
+fileDB.open().catch(err => {
+  console.error('Error al abrir la base de datos de archivos:', err);
+});
+
+export default fileDB;

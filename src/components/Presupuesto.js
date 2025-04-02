@@ -1,787 +1,637 @@
-import React, { useState, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useRef } from 'react';
 import NavBar from './NavBar';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Pie, Bar } from 'react-chartjs-2';
+import db from '../utils/database';
 import { useAuth } from '../contexts/AuthContext';
-import db, { resetDatabase } from '../utils/database';
-import { saveFile } from '../utils/fileStorage';
-import FileViewer from './FileViewer';
 import './Presupuesto.css';
-import { migratePresupuestos } from '../utils/dataMigration';
 
-// Componente para renderizar la tarjeta de un presupuesto
-const PresupuestoCard = React.memo(({ presupuesto, onClick, formatoMes }) => (
-  <div className="presupuesto-card" onClick={() => onClick(presupuesto)}>
-    <div className="presupuesto-mes">{formatoMes(presupuesto.mes)}</div>
-    <div className="presupuesto-monto">
-      <span>Aporte:</span>
-      <span className="monto-value">
-        ${(presupuesto.montoAporte || presupuesto.montoObjetivo).toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-      </span>
-    </div>
-    <div className="presupuesto-fecha">
-      Creado el {new Date(presupuesto.fechaCreacion).toLocaleDateString('es-ES')}
-    </div>
-    <div className="presupuesto-creador">
-      <span className="creador-label">Por:</span>
-      <span className="creador-value">
-        {presupuesto.creadorNombre || 'Usuario'}
-      </span>
-    </div>
-  </div>
-));
-
-// Componente para renderizar un aporte
-const AporteItem = React.memo(({ aporte, getNombreUsuario, mostrarComprobante, toggleComprobante }) => (
-  <div key={aporte.id} className={`aporte-card ${aporte.tipoPago === 'cuenta' ? 'aporte-cuenta' : ''}`}>
-    <div className="aporte-type-indicator">
-      {aporte.tipoPago === 'cuenta' ? '💸 Pago de cuenta' : '💰 Aporte directo'}
-    </div>
-    <div className="aporte-info">
-      <div className="aporte-monto">
-        ${aporte.monto.toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-      </div>
-      <div className="aporte-detalles">
-        <div className="aporte-miembro">
-          <span className="detalles-label">Miembro:</span>
-          <span className="detalles-value">{getNombreUsuario(aporte.miembroId)}</span>
-        </div>
-        <div className="aporte-fecha">
-          <span className="detalles-label">Fecha:</span>
-          <span className="detalles-value">{new Date(aporte.fechaAporte).toLocaleDateString('es-ES')}</span>
-        </div>
-        {aporte.tipoPago === 'cuenta' && (
-          <div className="aporte-cuenta-info">
-            <span className="detalles-label">Pago de cuenta:</span>
-            <span className="detalles-value cuenta-value">{aporte.cuentaNombre}</span>
-          </div>
-        )}
-      </div>
-    </div>
-    
-    {aporte.rutaComprobante && (
-      <div className="aporte-comprobante">
-        <button 
-          className="ver-comprobante-button"
-          onClick={() => toggleComprobante(aporte.rutaComprobante)}
-        >
-          {aporte.rutaComprobante === mostrarComprobante ? 
-            <><span className="button-icon">👁️</span> Ocultar</> : 
-            <><span className="button-icon">📄</span> Ver Comprobante</>}
-        </button>
-      </div>
-    )}
-    
-    {mostrarComprobante === aporte.rutaComprobante && (
-      <div className="comprobante-viewer">
-        <FileViewer filePath={aporte.rutaComprobante} />
-      </div>
-    )}
-  </div>
-));
+// Registrar componentes de Chart.js
+ChartJS.register(ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title);
 
 const Presupuesto = () => {
   const { currentUser } = useAuth();
-  const [presupuestos, setPresupuestos] = useState({});
-  const [selectedPresupuesto, setSelectedPresupuesto] = useState(null);
-  const [aportes, setAportes] = useState([]);
-  const [usuarios, setUsuarios] = useState([]);
+  const [presupuestos, setPresupuestos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [cuentas, setCuentas] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [mostrarFormulario, setMostrarFormulario] = useState(false);
-  const [mostrarFormularioAporte, setMostrarFormularioAporte] = useState(false);
-  const [formData, setFormData] = useState({
-    mes: new Date().toISOString().slice(0, 7), // YYYY-MM
-    montoAporte: '150000', // Valor predeterminado de 150,000
-    descripcion: ''
+  const [editingPresupuesto, setEditingPresupuesto] = useState(null);
+  const [showForm, setShowForm] = useState(false);
+  const [notification, setNotification] = useState(null);
+  const [filtroMes, setFiltroMes] = useState(new Date().getMonth());
+  const [filtroAno, setFiltroAno] = useState(new Date().getFullYear());
+  const [resumenPresupuesto, setResumenPresupuesto] = useState({
+    totalAsignado: 0,
+    totalGastado: 0,
+    porcentajeGastado: 0,
+    categoriasMasGastadas: []
   });
-  const [formAporte, setFormAporte] = useState({
-    monto: '',
-    fechaAporte: new Date().toISOString().split('T')[0]
-  });
-  const [comprobante, setComprobante] = useState(null);
-  const [error, setError] = useState('');
-  const [mostrarComprobante, setMostrarComprobante] = useState(null);
-  const [dbError, setDbError] = useState(false);
-  const [busqueda, setBusqueda] = useState('');
-  const [refreshKey, setRefreshKey] = useState(0);
+  const [mobileView, setMobileView] = useState(window.innerWidth <= 768);
   
-  // Handler para alternar la visualización de un comprobante
-  const toggleComprobante = useCallback((rutaComprobante) => {
-    setMostrarComprobante(prevRuta => 
-      prevRuta === rutaComprobante ? null : rutaComprobante
-    );
-  }, []);
-
-  useEffect(() => {
-    const checkDatabase = async () => {
-      try {
-        setLoading(true);
-        // Intentar acceder a la tabla presupuestos
-        await db.presupuestos.toArray();
-        
-        // Ejecutar migración
-        await migratePresupuestos();
-        
-        // Si llega aquí, la tabla existe
-        fetchData();
-      } catch (error) {
-        console.error('Error al verificar la base de datos:', error);
-        setDbError(true);
-        setLoading(false);
-      }
-    };
-    
-    const fetchData = async () => {
-      try {
-        // Obtener presupuestos
-        const presupuestosData = await db.presupuestos.toArray();
-        
-        // Obtener usuarios para mapear IDs a nombres
-        // En un entorno real, esto debería cargar todos los usuarios de la familia
-        const usuariosArray = [{
-          uid: currentUser.uid,
-          displayName: currentUser.displayName || currentUser.email
-        }];
-        
-        setUsuarios(usuariosArray);
-        
-        // Agrupar presupuestos por usuario creador
-        const presupuestosPorUsuario = {};
-        
-        presupuestosData.forEach(presupuesto => {
-          const creadorId = presupuesto.creadorId || 'desconocido';
-          
-          if (!presupuestosPorUsuario[creadorId]) {
-            presupuestosPorUsuario[creadorId] = [];
-          }
-          
-          presupuestosPorUsuario[creadorId].push(presupuesto);
-        });
-        
-        // Ordenar presupuestos por mes (más reciente primero) dentro de cada grupo de usuario
-        Object.keys(presupuestosPorUsuario).forEach(userId => {
-          presupuestosPorUsuario[userId].sort((a, b) => {
-            // Ordenar por año y mes (formato: YYYY-MM)
-            return b.mes.localeCompare(a.mes);
-          });
-        });
-        
-        // Establecer los presupuestos agrupados
-        setPresupuestos(presupuestosPorUsuario);
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-        setError('Error al cargar los datos');
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    checkDatabase();
-  }, [currentUser, refreshKey]);
-
-  useEffect(() => {
-    const fetchAportes = async () => {
-      if (!selectedPresupuesto) return;
-      
-      try {
-        const aportesData = await db.aportes
-          .where('presupuestoId')
-          .equals(selectedPresupuesto.id)
-          .toArray();
-        
-        // Ordenar por fecha (más reciente primero)
-        aportesData.sort((a, b) => new Date(b.fechaAporte) - new Date(a.fechaAporte));
-        
-        setAportes(aportesData);
-      } catch (error) {
-        console.error('Error al cargar aportes:', error);
-      }
-    };
-    
-    fetchAportes();
-  }, [selectedPresupuesto]);
-
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
-
-  const handleAporteChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormAporte(prev => ({
-      ...prev,
-      [name]: value
-    }));
-  }, []);
+  const contentRef = useRef(null);
   
-  const handleFileChange = useCallback((e) => {
-    if (e.target.files.length > 0) {
-      setComprobante(e.target.files[0]);
-    }
-  }, []);
-
-  // Función para eliminar un presupuesto
-  const handleDeletePresupuesto = useCallback(async () => {
-    if (!selectedPresupuesto) return;
-  
-    if (window.confirm(`¿Estás seguro de que deseas eliminar el presupuesto de ${formatoMes(selectedPresupuesto.mes)}? Esta acción eliminará también todos los aportes asociados.`)) {
-      try {
-        // Primero eliminar todos los aportes asociados
-        await db.aportes
-          .where('presupuestoId')
-          .equals(selectedPresupuesto.id)
-          .delete();
-        
-        // Luego eliminar el presupuesto
-        await db.presupuestos.delete(selectedPresupuesto.id);
-        
-        // Actualizar UI y mostrar mensaje
-        setSelectedPresupuesto(null);
-        setRefreshKey(prev => prev + 1);
-        setError('');
-      } catch (error) {
-        console.error('Error al eliminar presupuesto:', error);
-        setError('Error al eliminar el presupuesto');
-      }
-    }
-  }, [selectedPresupuesto]);
-
-  const handleSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    
-    if (!formData.mes || !formData.montoAporte) {
-      setError('El mes y monto de aporte son obligatorios');
-      return;
-    }
-    
+  // Función para obtener datos desde la base de datos
+  const fetchData = useCallback(async () => {
     try {
-      const presupuestoData = {
-        ...formData,
-        montoAporte: parseFloat(formData.montoAporte),
-        estado: 'activo',
-        fechaCreacion: new Date().toISOString(),
-        creadorId: currentUser.uid,
-        creadorNombre: currentUser.displayName || currentUser.email // Guardar el nombre del creador
-      };
+      setLoading(true);
       
-      await db.presupuestos.add(presupuestoData);
+      // Obtener presupuestos
+      const presupuestosArray = await db.presupuestos.toArray();
+      setPresupuestos(presupuestosArray);
       
-      // Resetear el formulario
-      setFormData({
-        mes: new Date().toISOString().slice(0, 7),
-        montoAporte: '150000',
-        descripcion: ''
-      });
+      // Obtener categorías para uso en formularios y filtros
+      const categoriasArray = await db.categorias.toArray();
+      setCategorias(categoriasArray);
       
-      setMostrarFormulario(false);
-      setError('');
-      setRefreshKey(prev => prev + 1); // Refrescar datos
+      // Obtener cuentas para referencia
+      const cuentasArray = await db.cuentas.toArray();
+      setCuentas(cuentasArray);
+      
+      // Calcular resumen del presupuesto
+      await calcularResumenPresupuesto(presupuestosArray, cuentasArray);
+      
+      return { presupuestosArray, categoriasArray, cuentasArray };
+    } catch (error) {
+      console.error('Error al cargar datos de presupuesto:', error);
+      showNotification('Error al cargar datos del presupuesto', 'error');
+      return {};
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+  
+  // Calcular estadísticas de presupuesto
+  const calcularResumenPresupuesto = useCallback(async (presupuestosArr = presupuestos, cuentasArr = cuentas) => {
+    // Filtrar presupuestos por mes y año seleccionados
+    const presupuestosFiltrados = presupuestosArr.filter(p => {
+      const fecha = new Date(p.fechaCreacion);
+      return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+    });
+    
+    // Calcular totales
+    const totalAsignado = presupuestosFiltrados.reduce((sum, p) => sum + p.montoAsignado, 0);
+    
+    // Calcular gastos por categoría
+    const gastosPorCategoria = {};
+    for (const cuenta of cuentasArr) {
+      const fechaCuenta = new Date(cuenta.fechaCreacion);
+      if (fechaCuenta.getMonth() === filtroMes && fechaCuenta.getFullYear() === filtroAno) {
+        const categoria = cuenta.categoria || 'sin_categoria';
+        if (!gastosPorCategoria[categoria]) gastosPorCategoria[categoria] = 0;
+        gastosPorCategoria[categoria] += cuenta.monto;
+      }
+    }
+    
+    // Obtener total gastado
+    const totalGastado = Object.values(gastosPorCategoria).reduce((sum, monto) => sum + monto, 0);
+    
+    // Calcular porcentaje gastado
+    const porcentajeGastado = totalAsignado > 0 ? Math.round((totalGastado / totalAsignado) * 100) : 0;
+    
+    // Categorías más gastadas (ordenadas)
+    const categoriasMasGastadas = Object.entries(gastosPorCategoria)
+      .sort((a, b) => b[1] - a[1])
+      .map(([categoria, monto]) => ({ 
+        categoria, 
+        monto,
+        porcentaje: totalGastado > 0 ? Math.round((monto / totalGastado) * 100) : 0
+      }));
+    
+    setResumenPresupuesto({
+      totalAsignado,
+      totalGastado,
+      porcentajeGastado,
+      categoriasMasGastadas
+    });
+  }, [filtroMes, filtroAno, presupuestos, cuentas]);
+  
+  // Efecto para cargar datos iniciales
+  useEffect(() => {
+    fetchData();
+    
+    // Listener para responsive
+    const handleResize = () => {
+      setMobileView(window.innerWidth <= 768);
+    };
+    
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [fetchData]);
+  
+  // Efecto para recalcular al cambiar filtros
+  useEffect(() => {
+    calcularResumenPresupuesto();
+  }, [filtroMes, filtroAno, calcularResumenPresupuesto]);
+  
+  // Función para mostrar notificaciones de manera centralizada
+  const showNotification = (message, type = 'success', duration = 3000) => {
+    setNotification({ message, type });
+    if (duration) {
+      setTimeout(() => setNotification(null), duration);
+    }
+  };
+  
+  // Handler para crear nuevo presupuesto
+  const handleCrearPresupuesto = () => {
+    setEditingPresupuesto(null);
+    setShowForm(true);
+    
+    // En móvil, scroll al principio
+    if (mobileView && contentRef.current) {
+      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Handler para editar presupuesto
+  const handleEditarPresupuesto = (presupuesto) => {
+    setEditingPresupuesto(presupuesto);
+    setShowForm(true);
+    
+    // En móvil, scroll al principio
+    if (mobileView && contentRef.current) {
+      contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+  };
+  
+  // Handler para guardar presupuesto
+  const handleGuardarPresupuesto = async (presupuestoData) => {
+    try {
+      const isEditing = !!presupuestoData.id;
+      
+      if (isEditing) {
+        // Actualizar presupuesto existente
+        await db.presupuestos.update(presupuestoData.id, presupuestoData);
+        showNotification(`Presupuesto actualizado correctamente`);
+      } else {
+        // Crear nuevo presupuesto
+        const id = await db.presupuestos.add({
+          ...presupuestoData,
+          fechaCreacion: new Date().toISOString(),
+          userId: currentUser.uid
+        });
+        showNotification(`Presupuesto creado correctamente`);
+      }
+      
+      // Actualizar lista y cerrar formulario
+      fetchData();
+      setShowForm(false);
+      setEditingPresupuesto(null);
+      
     } catch (error) {
       console.error('Error al guardar presupuesto:', error);
-      setError('Error al guardar el presupuesto');
+      showNotification('Error al guardar el presupuesto', 'error');
     }
-  }, [formData, currentUser]);
-
-  const handleAporteSubmit = useCallback(async (e) => {
-    e.preventDefault();
-    
-    if (!formAporte.monto || !formAporte.fechaAporte) {
-      setError('El monto y la fecha son obligatorios');
-      return;
-    }
-    
+  };
+  
+  // Handler para eliminar presupuesto
+  const handleEliminarPresupuesto = async (id) => {
     try {
-      let rutaComprobante = null;
-      
-      if (comprobante) {
-        rutaComprobante = await saveFile(comprobante, 'comprobantes_aportes');
-      }
-      
-      const aporteData = {
-        presupuestoId: selectedPresupuesto.id,
-        miembroId: currentUser.uid,
-        monto: parseFloat(formAporte.monto),
-        fechaAporte: formAporte.fechaAporte,
-        rutaComprobante,
-        fechaCreacion: new Date().toISOString()
-      };
-      
-      await db.aportes.add(aporteData);
-      
-      // Resetear el formulario
-      setFormAporte({
-        monto: '',
-        fechaAporte: new Date().toISOString().split('T')[0]
-      });
-      setComprobante(null);
-      setMostrarFormularioAporte(false);
-      setError('');
-      
-      // Actualizar lista de aportes
-      const aportesData = await db.aportes
-        .where('presupuestoId')
-        .equals(selectedPresupuesto.id)
-        .toArray();
-      
-      // Ordenar por fecha (más reciente primero)
-      aportesData.sort((a, b) => new Date(b.fechaAporte) - new Date(a.fechaAporte));
-      
-      setAportes(aportesData);
+      await db.presupuestos.delete(id);
+      showNotification('Presupuesto eliminado correctamente');
+      fetchData();
     } catch (error) {
-      console.error('Error al guardar aporte:', error);
-      setError('Error al guardar el aporte');
+      console.error('Error al eliminar presupuesto:', error);
+      showNotification('Error al eliminar el presupuesto', 'error');
     }
-  }, [formAporte, selectedPresupuesto, currentUser, comprobante]);
-
-  const formatoMes = useCallback((mesString) => {
-    const [año, mes] = mesString.split('-');
-    const nombresMeses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  };
+  
+  // Formatear montos
+  const formatMonto = (monto) => {
+    return new Intl.NumberFormat('es-ES', {
+      style: 'currency',
+      currency: 'COP',
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(monto);
+  };
+  
+  // Generar datos para el gráfico de pastel
+  const getPieChartData = () => {
+    const colors = [
+      '#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0',
+      '#3F51B5', '#E91E63', '#00BCD4', '#8BC34A', '#FF9800',
+      '#009688', '#673AB7', '#FFEB3B', '#795548', '#607D8B'
     ];
-    return `${nombresMeses[parseInt(mes) - 1]} ${año}`;
-  }, []);
-
-  const calcularTotalAportado = useCallback(() => {
-    // Si es un presupuesto antiguo, podría tener montoObjetivo en lugar de montoAporte
-    if (selectedPresupuesto && !selectedPresupuesto.montoAporte && selectedPresupuesto.montoObjetivo) {
-      return selectedPresupuesto.montoObjetivo;
-    }
-    return aportes.reduce((total, aporte) => total + aporte.monto, 0);
-  }, [selectedPresupuesto, aportes]);
-
-  const getNombreUsuario = useCallback((uid) => {
-    const usuario = usuarios.find(u => u.uid === uid);
-    return usuario ? usuario.displayName : 'Usuario desconocido';
-  }, [usuarios]);
-
-  const handleResetDatabase = useCallback(async () => {
-    if (window.confirm('¿Estás seguro de que quieres resetear la base de datos? Todos los datos se perderán.')) {
-      await resetDatabase();
-      window.location.reload();
-    }
-  }, []);
-  
-  const handleSelectPresupuesto = useCallback((presupuesto) => {
-    setSelectedPresupuesto(presupuesto);
-    setMostrarFormularioAporte(false);
-    setMostrarComprobante(null);
-  }, []);
-  
-  const handleBackToList = useCallback(() => {
-    setSelectedPresupuesto(null);
-    setMostrarFormularioAporte(false);
-    setMostrarComprobante(null);
-  }, []);
-  
-  const handleBusquedaChange = useCallback((e) => {
-    setBusqueda(e.target.value);
-  }, []);
-  
-  // Calcular el progreso como un porcentaje
-  const progresoPorcentaje = useMemo(() => {
-    if (!selectedPresupuesto) return 0;
     
-    const montoObjetivo = selectedPresupuesto.montoAporte || selectedPresupuesto.montoObjetivo;
-    const porcentaje = (calcularTotalAportado() / montoObjetivo) * 100;
-    return Math.min(porcentaje, 100).toFixed(0);
-  }, [selectedPresupuesto, calcularTotalAportado]);
+    const labels = resumenPresupuesto.categoriasMasGastadas.map(c => 
+      c.categoria === 'sin_categoria' ? 'Sin categoría' : c.categoria
+    );
+    
+    const data = resumenPresupuesto.categoriasMasGastadas.map(c => c.monto);
+    
+    return {
+      labels,
+      datasets: [
+        {
+          data,
+          backgroundColor: colors.slice(0, data.length),
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
   
-  // Lista de presupuestos filtrados por búsqueda
-  const presupuestosFiltrados = useMemo(() => {
-    if (!busqueda) return presupuestos;
-    
-    const busquedaLower = busqueda.toLowerCase();
-    const resultado = {};
-    
-    Object.keys(presupuestos).forEach(userId => {
-      const presupuestosFiltrados = presupuestos[userId].filter(presupuesto => {
-        const nombreMes = formatoMes(presupuesto.mes).toLowerCase();
-        return nombreMes.includes(busquedaLower) || 
-               presupuesto.descripcion?.toLowerCase().includes(busquedaLower) ||
-               presupuesto.creadorNombre?.toLowerCase().includes(busquedaLower);
-      });
-      
-      if (presupuestosFiltrados.length > 0) {
-        resultado[userId] = presupuestosFiltrados;
+  // Generar datos para el gráfico de barras (Presupuesto vs Gasto)
+  const getBarChartData = () => {
+    // Obtener presupuestos por categoría
+    const presupuestoPorCategoria = {};
+    presupuestos.forEach(p => {
+      const fecha = new Date(p.fechaCreacion);
+      if (fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno) {
+        if (!presupuestoPorCategoria[p.categoria]) {
+          presupuestoPorCategoria[p.categoria] = 0;
+        }
+        presupuestoPorCategoria[p.categoria] += p.montoAsignado;
       }
     });
     
-    return resultado;
-  }, [presupuestos, busqueda, formatoMes]);
-
-  if (dbError) {
-    return (
-      <div className="presupuesto-page">
-        <NavBar />
-        <div className="presupuesto-container">
-          <div className="db-error-container">
-            <div className="error-icon">⚠️</div>
-            <h2>Error de Base de Datos</h2>
-            <p>Parece que hay un problema con la estructura de la base de datos. Es posible que necesites reiniciarla para aplicar los últimos cambios.</p>
-            <button className="reset-db-button" onClick={handleResetDatabase}>
-              Reiniciar Base de Datos
-            </button>
-            <p className="warning-text">Advertencia: Esta acción eliminará todos los datos existentes.</p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
+    // Preparar datos para el gráfico
+    const categorias = [...new Set([
+      ...Object.keys(presupuestoPorCategoria),
+      ...resumenPresupuesto.categoriasMasGastadas.map(c => c.categoria)
+    ])];
+    
+    const presupuestosData = [];
+    const gastosData = [];
+    
+    categorias.forEach(categoria => {
+      presupuestosData.push(presupuestoPorCategoria[categoria] || 0);
+      
+      const gastoCategoria = resumenPresupuesto.categoriasMasGastadas
+        .find(c => c.categoria === categoria);
+      gastosData.push(gastoCategoria ? gastoCategoria.monto : 0);
+    });
+    
+    return {
+      labels: categorias.map(c => c === 'sin_categoria' ? 'Sin categoría' : c),
+      datasets: [
+        {
+          label: 'Presupuesto',
+          data: presupuestosData,
+          backgroundColor: 'rgba(54, 162, 235, 0.5)',
+          borderColor: 'rgba(54, 162, 235, 1)',
+          borderWidth: 1,
+        },
+        {
+          label: 'Gasto Real',
+          data: gastosData,
+          backgroundColor: 'rgba(255, 99, 132, 0.5)',
+          borderColor: 'rgba(255, 99, 132, 1)',
+          borderWidth: 1,
+        },
+      ],
+    };
+  };
+  
+  // Opciones para los gráficos
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        position: 'bottom',
+        labels: {
+          boxWidth: 15,
+          padding: 15,
+          font: {
+            size: 12
+          }
+        }
+      },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            const value = context.raw;
+            return formatMonto(value);
+          }
+        }
+      }
+    }
+  };
+  
+  // Nombres de los meses para el selector
+  const meses = [
+    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+  ];
+  
+  // Generar array de años para el selector (5 años atrás hasta 5 años adelante)
+  const getYearsArray = () => {
+    const currentYear = new Date().getFullYear();
+    const years = [];
+    for (let i = currentYear - 5; i <= currentYear + 5; i++) {
+      years.push(i);
+    }
+    return years;
+  };
+  
   return (
     <div className="presupuesto-page">
       <NavBar />
+      
       <div className="presupuesto-container">
         <div className="presupuesto-header">
           <h2>Presupuesto Familiar</h2>
           
-          {!mostrarFormulario && !selectedPresupuesto && (
-            <div className="header-actions">
-              <div className="search-box">
-                <input 
-                  type="text"
-                  placeholder="Buscar presupuesto..." 
-                  value={busqueda}
-                  onChange={handleBusquedaChange}
-                  className="search-input"
-                />
-                {busqueda && (
-                  <button 
-                    className="clear-search"
-                    onClick={() => setBusqueda('')}
-                  >
-                    ×
-                  </button>
-                )}
-              </div>
-              
-              <button 
-                className="crear-button"
-                onClick={() => setMostrarFormulario(true)}
-              >
-                <span className="button-icon">+</span> Nuevo Presupuesto
-              </button>
-            </div>
-          )}
+          <button 
+            className="crear-presupuesto-button"
+            onClick={handleCrearPresupuesto}
+          >
+            <i className="icon">+</i> Crear Presupuesto
+          </button>
         </div>
         
-        {error && <div className="error-message">{error}</div>}
-        
-        {mostrarFormulario ? (
-          <div className="form-container animate-in">
-            <h3>Registrar Aporte Mensual</h3>
-            <div className="form-info-box">
-              <p><span className="info-icon">💡</span> El aporte mensual aproximado por persona es de $150,000, aunque puede variar según las cuentas que ya hayas pagado directamente.</p>
-            </div>
-            <form onSubmit={handleSubmit} className="presupuesto-form">
-              <div className="form-group">
-                <label htmlFor="mes">Mes *</label>
-                <input
-                  type="month"
-                  id="mes"
-                  name="mes"
-                  value={formData.mes}
-                  onChange={handleChange}
-                  required
-                />
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="montoAporte">Monto de Aporte Mensual *</label>
-                <input
-                  type="number"
-                  id="montoAporte"
-                  name="montoAporte"
-                  value={formData.montoAporte}
-                  onChange={handleChange}
-                  step="0.01"
-                  required
-                />
-                <small className="input-help">El monto estándar es $150,000 pero puede ajustarse según las cuentas ya pagadas.</small>
-              </div>
-              
-              <div className="form-group">
-                <label htmlFor="descripcion">Motivo/Descripción</label>
-                <textarea
-                  id="descripcion"
-                  name="descripcion"
-                  value={formData.descripcion}
-                  onChange={handleChange}
-                  placeholder="Indique para qué se destinará este aporte (ej: pago de servicios, alimentos, etc.)"
-                />
-              </div>
-              
-              <div className="form-buttons">
-                <button 
-                  type="button" 
-                  className="cancel-button"
-                  onClick={() => setMostrarFormulario(false)}
-                >
-                  Cancelar
-                </button>
-                <button type="submit" className="submit-button">
-                  Registrar Presupuesto
-                </button>
-              </div>
-            </form>
+        {/* Filtros de período */}
+        <div className="periodo-filter">
+          <div className="filter-title">Período seleccionado:</div>
+          <div className="filter-controls">
+            <select 
+              value={filtroMes}
+              onChange={(e) => setFiltroMes(parseInt(e.target.value))}
+              className="mes-select"
+            >
+              {meses.map((mes, index) => (
+                <option key={index} value={index}>{mes}</option>
+              ))}
+            </select>
+            
+            <select 
+              value={filtroAno}
+              onChange={(e) => setFiltroAno(parseInt(e.target.value))}
+              className="ano-select"
+            >
+              {getYearsArray().map(year => (
+                <option key={year} value={year}>{year}</option>
+              ))}
+            </select>
           </div>
-        ) : selectedPresupuesto ? (
-          <div className="presupuesto-detalle animate-in">
-            <div className="detalle-header">
-              <div className="header-left">
-                <button 
-                  className="back-button"
-                  onClick={handleBackToList}
-                >
-                  ← Volver
-                </button>
+        </div>
+        
+        <div 
+          ref={contentRef} 
+          className={`presupuesto-content ${showForm ? 'with-side-panel' : ''} ${mobileView ? 'mobile-view' : ''}`}
+        >
+          {/* Panel principal de presupuesto */}
+          <div className="panel-principal">
+            {loading ? (
+              <div className="loading-indicator">
+                <div className="loading-content">
+                  <div className="spinner"></div>
+                  <p>Cargando presupuesto...</p>
+                </div>
               </div>
-              <h3>{formatoMes(selectedPresupuesto.mes)}</h3>
-              <div className="header-actions">
-                <button 
-                  className="delete-presupuesto-button"
-                  onClick={handleDeletePresupuesto}
-                >
-                  <span className="delete-icon">🗑️</span> Eliminar
-                </button>
-              </div>
-            </div>
-            
-            <div className="presupuesto-info-card">
-              <div className="card-header">
-                <h4>Información del Presupuesto</h4>
-              </div>
-              <div className="presupuesto-info">
-                <div className="info-row">
-                  <span className="info-label">Aporte Mensual:</span>
-                  <span className="monto-aporte">
-                    ${(selectedPresupuesto.montoAporte || selectedPresupuesto.montoObjetivo)
-                      .toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                  </span>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Total Aportado:</span>
-                  <div className="info-value">
-                    <span className="total-aportado">
-                      ${calcularTotalAportado().toFixed(0).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}
-                    </span>
-                    <span className="info-tooltip" title="Incluye aportes directos y pagos de cuentas">ⓘ</span>
-                  </div>
-                </div>
-                
-                <div className="info-row">
-                  <span className="info-label">Creado por:</span>
-                  <span className="creador-nombre">{selectedPresupuesto.creadorNombre || 'Usuario'}</span>
-                </div>
-                
-                <div className="progreso-container">
-                  <div className="progreso-label">
-                    <span>Progreso del Aporte</span>
-                    <span className="progreso-porcentaje">{progresoPorcentaje}%</span>
-                  </div>
-                  <div className="progreso-barra">
-                    <div 
-                      className="progreso-relleno"
-                      style={{ width: `${progresoPorcentaje}%` }}
-                    ></div>
-                  </div>
-                </div>
-                
-                {selectedPresupuesto.descripcion && (
-                  <div className="info-descripcion">
-                    <h5>Descripción:</h5>
-                    <p>{selectedPresupuesto.descripcion}</p>
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            {mostrarFormularioAporte ? (
-              <div className="form-container animate-in">
-                <div className="form-header">
-                  <h3>Registrar Aporte</h3>
-                  <div className="form-info-text">
-                    <span className="info-icon">💸</span> Estás registrando un aporte para {formatoMes(selectedPresupuesto.mes)}
-                  </div>
-                </div>
-                <form onSubmit={handleAporteSubmit} className="aporte-form">
-                  <div className="form-group">
-                    <label htmlFor="monto">Monto Aportado *</label>
-                    <div className="currency-input">
-                      <span className="currency-symbol">$</span>
-                      <input
-                        type="number"
-                        id="monto"
-                        name="monto"
-                        value={formAporte.monto}
-                        onChange={handleAporteChange}
-                        step="0.01"
-                        placeholder="150,000"
-                        required
-                      />
+            ) : (
+              <>
+                {/* Tarjetas de resumen */}
+                <div className="resumen-cards">
+                  <div className="resumen-card total-asignado">
+                    <div className="card-icon">💰</div>
+                    <div className="card-content">
+                      <div className="card-title">Presupuesto Total</div>
+                      <div className="card-value">{formatMonto(resumenPresupuesto.totalAsignado)}</div>
                     </div>
                   </div>
                   
+                  <div className="resumen-card total-gastado">
+                    <div className="card-icon">💸</div>
+                    <div className="card-content">
+                      <div className="card-title">Gasto Total</div>
+                      <div className="card-value">{formatMonto(resumenPresupuesto.totalGastado)}</div>
+                    </div>
+                  </div>
+                  
+                  <div className="resumen-card porcentaje">
+                    <div className="card-icon">📊</div>
+                    <div className="card-content">
+                      <div className="card-title">% Utilizado</div>
+                      <div className="card-value">{resumenPresupuesto.porcentajeGastado}%</div>
+                    </div>
+                    <div 
+                      className={`progress-bar ${resumenPresupuesto.porcentajeGastado > 90 ? 'peligro' : resumenPresupuesto.porcentajeGastado > 75 ? 'advertencia' : 'normal'}`}
+                    >
+                      <div 
+                        className="progress" 
+                        style={{ width: `${Math.min(resumenPresupuesto.porcentajeGastado, 100)}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Gráficos */}
+                <div className="graficos-container">
+                  <div className="grafico-card">
+                    <h3>Distribución de Gastos</h3>
+                    <div className="grafico-wrapper">
+                      <Pie data={getPieChartData()} options={chartOptions} />
+                    </div>
+                  </div>
+                  
+                  <div className="grafico-card">
+                    <h3>Presupuesto vs Gasto Real</h3>
+                    <div className="grafico-wrapper">
+                      <Bar data={getBarChartData()} options={chartOptions} />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Tabla de presupuestos */}
+                <div className="presupuestos-container">
+                  <h3>Presupuestos del Período</h3>
+                  
+                  {presupuestos.filter(p => {
+                    const fecha = new Date(p.fechaCreacion);
+                    return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+                  }).length === 0 ? (
+                    <div className="empty-table">
+                      <p>No hay presupuestos para este período</p>
+                      <button 
+                        className="action-button"
+                        onClick={handleCrearPresupuesto}
+                      >
+                        Crear presupuesto
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="tabla-responsive">
+                      <table className="presupuestos-table">
+                        <thead>
+                          <tr>
+                            <th>Categoría</th>
+                            <th>Monto Asignado</th>
+                            <th>Monto Utilizado</th>
+                            <th>% Utilizado</th>
+                            <th>Acciones</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {presupuestos
+                            .filter(p => {
+                              const fecha = new Date(p.fechaCreacion);
+                              return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+                            })
+                            .map(presupuesto => {
+                              // Encontrar gasto real de esta categoría
+                              const gastoCategoria = resumenPresupuesto.categoriasMasGastadas
+                                .find(c => c.categoria === presupuesto.categoria);
+                              const gastoReal = gastoCategoria ? gastoCategoria.monto : 0;
+                              const porcentajeUtilizado = presupuesto.montoAsignado > 0
+                                ? Math.round((gastoReal / presupuesto.montoAsignado) * 100)
+                                : 0;
+                                
+                              return (
+                                <tr key={presupuesto.id}>
+                                  <td>{presupuesto.categoria}</td>
+                                  <td>{formatMonto(presupuesto.montoAsignado)}</td>
+                                  <td>{formatMonto(gastoReal)}</td>
+                                  <td>
+                                    <div className="porcentaje-container">
+                                      <span className={
+                                        porcentajeUtilizado > 100 ? 'excedido' :
+                                        porcentajeUtilizado > 90 ? 'peligro' :
+                                        porcentajeUtilizado > 75 ? 'advertencia' : ''
+                                      }>
+                                        {porcentajeUtilizado}%
+                                      </span>
+                                      <div className="mini-progress-bar">
+                                        <div 
+                                          className={`mini-progress ${
+                                            porcentajeUtilizado > 100 ? 'excedido' :
+                                            porcentajeUtilizado > 90 ? 'peligro' :
+                                            porcentajeUtilizado > 75 ? 'advertencia' : 'normal'
+                                          }`}
+                                          style={{ width: `${Math.min(porcentajeUtilizado, 100)}%` }}
+                                        ></div>
+                                      </div>
+                                    </div>
+                                  </td>
+                                  <td>
+                                    <div className="table-actions">
+                                      <button 
+                                        className="edit-button"
+                                        onClick={() => handleEditarPresupuesto(presupuesto)}
+                                      >
+                                        <i className="edit-icon">✏️</i>
+                                      </button>
+                                      <button 
+                                        className="delete-button"
+                                        onClick={() => handleEliminarPresupuesto(presupuesto.id)}
+                                      >
+                                        <i className="delete-icon">🗑️</i>
+                                      </button>
+                                    </div>
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
+          </div>
+          
+          {/* Formulario lateral */}
+          {showForm && (
+            <div className={`side-panel form-panel ${mobileView ? 'mobile' : ''}`}>
+              <div className="panel-header">
+                <h3>{editingPresupuesto ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}</h3>
+                <button 
+                  className="close-panel"
+                  onClick={() => setShowForm(false)}
+                  aria-label="Cerrar panel"
+                >
+                  ×
+                </button>
+              </div>
+              <div className="panel-content">
+                <form onSubmit={(e) => {
+                  e.preventDefault();
+                  const formData = new FormData(e.target);
+                  const presupuestoData = {
+                    categoria: formData.get('categoria'),
+                    montoAsignado: parseFloat(formData.get('monto')),
+                    descripcion: formData.get('descripcion') || '',
+                  };
+                  
+                  if (editingPresupuesto) {
+                    presupuestoData.id = editingPresupuesto.id;
+                    presupuestoData.fechaCreacion = editingPresupuesto.fechaCreacion;
+                    presupuestoData.userId = editingPresupuesto.userId;
+                  }
+                  
+                  handleGuardarPresupuesto(presupuestoData);
+                }}>
                   <div className="form-group">
-                    <label htmlFor="fechaAporte">Fecha de Aporte *</label>
-                    <input
-                      type="date"
-                      id="fechaAporte"
-                      name="fechaAporte"
-                      value={formAporte.fechaAporte}
-                      onChange={handleAporteChange}
+                    <label htmlFor="categoria">Categoría</label>
+                    <select
+                      id="categoria"
+                      name="categoria"
                       required
+                      defaultValue={editingPresupuesto?.categoria || ''}
+                    >
+                      <option value="" disabled>Selecciona una categoría</option>
+                      {categorias.map(categoria => (
+                        <option key={categoria.id} value={categoria.nombre}>
+                          {categoria.nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="form-group">
+                    <label htmlFor="monto">Monto Asignado</label>
+                    <input
+                      type="number"
+                      id="monto"
+                      name="monto"
+                      min="0"
+                      step="1000"
+                      required
+                      defaultValue={editingPresupuesto?.montoAsignado || ''}
                     />
                   </div>
                   
                   <div className="form-group">
-                    <label htmlFor="comprobante">Comprobante (opcional)</label>
-                    <div className="file-input-container">
-                      <input
-                        type="file"
-                        id="comprobante"
-                        accept=".pdf,.jpg,.jpeg,.png"
-                        onChange={handleFileChange}
-                        className="custom-file-input"
-                      />
-                      <label htmlFor="comprobante" className="file-input-label">
-                        {comprobante ? comprobante.name : 'Seleccionar archivo'}
-                      </label>
-                    </div>
-                    {comprobante && (
-                      <div className="file-selected">
-                        <span className="file-icon">📄</span>
-                        <span className="file-name">{comprobante.name}</span>
-                      </div>
-                    )}
+                    <label htmlFor="descripcion">Descripción (opcional)</label>
+                    <textarea
+                      id="descripcion"
+                      name="descripcion"
+                      rows="4"
+                      defaultValue={editingPresupuesto?.descripcion || ''}
+                    ></textarea>
                   </div>
                   
-                  <div className="form-buttons">
-                    <button 
-                      type="button" 
-                      className="cancel-button"
-                      onClick={() => setMostrarFormularioAporte(false)}
-                    >
+                  <div className="form-actions">
+                    <button type="button" className="cancel-button" onClick={() => setShowForm(false)}>
                       Cancelar
                     </button>
-                    <button type="submit" className="submit-button">
-                      Registrar Aporte
+                    <button type="submit" className="save-button">
+                      {editingPresupuesto ? 'Actualizar' : 'Guardar'}
                     </button>
                   </div>
                 </form>
               </div>
-            ) : (
-              <div className="aportes-section animate-in">
-                <div className="aportes-header">
-                  <h3>Aportes Registrados</h3>
-                  <button 
-                    className="aporte-button"
-                    onClick={() => setMostrarFormularioAporte(true)}
-                  >
-                    <span className="button-icon">+</span> Registrar Aporte
-                  </button>
-                </div>
-                
-                {aportes.length === 0 ? (
-                  <div className="empty-message">
-                    <div className="empty-icon">💰</div>
-                    <h4>No hay aportes registrados aún</h4>
-                    <p>Registra tu primer aporte para este mes usando el botón de arriba.</p>
-                  </div>
-                ) : (
-                  <div className="aportes-list">
-                    {aportes.map(aporte => (
-                      <AporteItem
-                        key={aporte.id}
-                        aporte={aporte}
-                        getNombreUsuario={getNombreUsuario}
-                        mostrarComprobante={mostrarComprobante}
-                        toggleComprobante={toggleComprobante}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        ) : loading ? (
-          <div className="loading-container">
-            <div className="loading-spinner"></div>
-            <p>Cargando presupuestos...</p>
-          </div>
-        ) : Object.keys(presupuestosFiltrados).length === 0 ? (
-          busqueda ? (
-            <div className="empty-container">
-              <div className="empty-icon">🔎</div>
-              <h3>No se encontraron resultados</h3>
-              <p>No hay presupuestos que coincidan con "{busqueda}"</p>
-              <button 
-                className="reset-search-button"
-                onClick={() => setBusqueda('')}
-              >
-                Limpiar búsqueda
-              </button>
             </div>
-          ) : (
-            <div className="empty-container">
-              <div className="empty-icon">💼</div>
-              <h3>No hay presupuestos creados</h3>
-              <p>¡Comienza a organizar tus finanzas familiares creando tu primer presupuesto!</p>
-              <button 
-                className="crear-first-button"
-                onClick={() => setMostrarFormulario(true)}
-              >
-                <span className="button-icon">+</span> Crear mi primer presupuesto
-              </button>
-            </div>
-          )
-        ) : (
-          <div className="presupuestos-container animate-in">
-            {Object.keys(presupuestosFiltrados).map(userId => {
-              // Obtener el nombre del usuario o mostrar "Usuario desconocido"
-              const usuario = usuarios.find(u => u.uid === userId) || 
-                             { displayName: 'Usuario desconocido' };
-              
-              // Agrupar presupuestos por año
-              const presupuestosPorAño = {};
-              presupuestosFiltrados[userId].forEach(presupuesto => {
-                const [año, mes] = presupuesto.mes.split('-');
-                if (!presupuestosPorAño[año]) {
-                  presupuestosPorAño[año] = [];
-                }
-                presupuestosPorAño[año].push(presupuesto);
-              });
-              
-              return (
-                <div key={userId} className="presupuestos-usuario-grupo">
-                  <h3 className="usuario-titulo">
-                    {userId === currentUser.uid ? 'Mis presupuestos' : `Presupuestos de ${usuario.displayName}`}
-                  </h3>
-                  
-                  {Object.keys(presupuestosPorAño)
-                    .sort((a, b) => b.localeCompare(a)) // Ordenar años descendente
-                    .map(año => (
-                      <div key={año} className="presupuestos-año-grupo">
-                        <h4 className="año-titulo">{año}</h4>
-                        <div className="presupuestos-list">
-                          {presupuestosPorAño[año].map(presupuesto => (
-                            <PresupuestoCard
-                              key={presupuesto.id}
-                              presupuesto={presupuesto}
-                              onClick={handleSelectPresupuesto}
-                              formatoMes={formatoMes}
-                            />
-                          ))}
-                        </div>
-                      </div>
-                    ))}
-                </div>
-              );
-            })}
+          )}
+        </div>
+        
+        {/* Notificaciones */}
+        {notification && (
+          <div className={`notification ${notification.type}`}>
+            {notification.message}
           </div>
+        )}
+        
+        {/* Botón flotante para volver en móvil */}
+        {mobileView && showForm && (
+          <button 
+            className="floating-back-button"
+            onClick={() => setShowForm(false)}
+          >
+            ← Volver
+          </button>
         )}
       </div>
     </div>

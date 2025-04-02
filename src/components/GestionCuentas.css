@@ -1,4 +1,6 @@
-/* Base styles */
+/* ===================
+   Estilos Base
+   =================== */
 .gestion-page {
   min-height: 100vh;
   background-color: #f5f5f5;
@@ -11,7 +13,9 @@
   position: relative;
 }
 
-/* Header section */
+/* ===================
+   Header y Navegación
+   =================== */
 .gestion-header {
   display: flex;
   justify-content: space-between;
@@ -31,7 +35,7 @@
   font-weight: 600;
 }
 
-.crear-cuenta-button {
+.crear-cuenta-button, .crear-cuenta-button-empty {
   background-color: #4CAF50;
   color: white;
   border: none;
@@ -47,7 +51,7 @@
   box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
 }
 
-.crear-cuenta-button:hover {
+.crear-cuenta-button:hover, .crear-cuenta-button-empty:hover {
   background-color: #3b9c3f;
   transform: translateY(-2px);
   box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
@@ -58,7 +62,9 @@
   font-weight: bold;
 }
 
-/* Filter bar container */
+/* ===================
+   Filtros y búsqueda
+   =================== */
 .filter-bar-container {
   margin-bottom: 20px;
   background-color: white;
@@ -68,7 +74,6 @@
   transition: all 0.3s ease;
 }
 
-/* Filter bar */
 .filter-bar {
   padding: 15px 20px;
   display: flex;
@@ -127,6 +132,7 @@
   background-color: #e0e0e0;
 }
 
+/* Caja de búsqueda */
 .search-box {
   position: relative;
   width: 100%;
@@ -183,6 +189,7 @@
   background-color: #f1f1f1;
 }
 
+/* Tabs de categorías */
 .category-tabs {
   display: flex;
   flex-wrap: wrap;
@@ -216,7 +223,9 @@
   box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
 }
 
-/* Main content area */
+/* ===================
+   Layout principal
+   =================== */
 .gestion-content {
   display: flex;
   gap: 20px;
@@ -228,7 +237,7 @@
   width: 60%;
 }
 
-/* Rediseño del grid de cuentas para evitar superposición */
+/* Grid de cuentas */
 .cuentas-grid {
   width: 100%;
   display: flex;
@@ -243,23 +252,23 @@
   display: none;
 }
 
-/* Estilos de tarjeta base */
+/* ===================
+   Tarjetas de Cuenta
+   =================== */
 .cuenta-card {
   flex: 1 0 300px;
   max-width: calc(33.333% - 20px);
-  margin-bottom: 5px;
   background-color: white;
   border-radius: 10px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
   overflow: hidden;
-  transition: all 0.3s ease;
   cursor: pointer;
   position: relative;
   height: auto;
   display: flex;
   flex-direction: column;
   border-top: 4px solid #4CAF50;
-  border-left: 3px solid transparent;
+  transition: all 0.3s ease, box-shadow 0.3s ease, border-color 0.3s ease;
 }
 
 .cuenta-card:hover {
@@ -267,7 +276,7 @@
   box-shadow: 0 8px 20px rgba(0,0,0,0.1);
 }
 
-/* Diferentes estados de las tarjetas */
+/* Estados de las tarjetas */
 .cuenta-card.proxima-vencer {
   border-top-color: #ff5722;
   box-shadow: 0 3px 15px rgba(255, 87, 34, 0.15);
@@ -290,7 +299,7 @@
 .cuenta-card.category-educacion { border-top-color: #f1c40f; }
 .cuenta-card.category-otros { border-top-color: #95a5a6; }
 
-/* Contenido de la tarjeta */
+/* Contenido de tarjeta */
 .cuenta-content {
   height: 100%;
   display: flex;
@@ -300,7 +309,6 @@
   background-color: white;
 }
 
-/* Encabezado de la tarjeta */
 .cuenta-header {
   border-bottom: 1px solid #f0f0f0;
   padding-bottom: 12px;
@@ -362,7 +370,7 @@
 .badge.category-educacion { background-color: #f1c40f; color: #333; }
 .badge.category-otros { background-color: #95a5a6; }
 
-/* Información en tarjetas */
+/* Cuerpo de tarjeta */
 .cuenta-body {
   flex-grow: 1;
 }
@@ -403,7 +411,7 @@
   font-size: 1.1rem;
 }
 
-/* Botones de acción en tarjetas */
+/* Acciones de tarjeta */
 .cuenta-actions {
   display: flex;
   justify-content: flex-end;
@@ -487,7 +495,7 @@
   pointer-events: none;
 }
 
-/* Avisos para vencimientos próximos */
+/* Avisos de vencimiento */
 .aviso-proxima {
   color: #ff5722;
   font-weight: 600;
@@ -510,154 +518,9 @@
   100% { opacity: 0.6; }
 }
 
-/* Empty state */
-.empty-state {
-  grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 50px 20px;
-  background-color: white;
-  border-radius: 10px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  text-align: center;
-}
-
-.empty-icon {
-  font-size: 50px;
-  margin-bottom: 20px;
-  color: #bbb;
-}
-
-.empty-state h3 {
-  margin: 0 0 10px 0;
-  color: #333;
-}
-
-.empty-state p {
-  margin: 0 0 20px 0;
-  color: #777;
-  max-width: 350px;
-}
-
-.empty-state-actions {
-  display: flex;
-  gap: 10px;
-  flex-wrap: wrap;
-  justify-content: center;
-}
-
-.action-button {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 10px 20px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.action-button:hover {
-  background-color: #3b9c3f;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-.action-button.secondary {
-  background-color: #f1f1f1;
-  color: #333;
-}
-
-.action-button.secondary:hover {
-  background-color: #e0e0e0;
-}
-
-.action-button.edit {
-  background-color: #3498db;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.action-button.edit:hover {
-  background-color: #2980b9;
-}
-
-.action-button.delete {
-  background-color: #e74c3c;
-  color: white;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 10px;
-}
-
-.action-button.delete:hover {
-  background-color: #c0392b;
-}
-
-.action-icon {
-  font-size: 18px;
-}
-
-.crear-cuenta-button-empty {
-  background-color: #4CAF50;
-  color: white;
-  border: none;
-  border-radius: 30px;
-  padding: 10px 20px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.crear-cuenta-button-empty:hover {
-  background-color: #3b9c3f;
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
-}
-
-/* Loading indicator */
-.loading-indicator {
-  grid-column: 1 / -1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  height: 200px;
-}
-
-.loading-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
-  padding: 30px;
-}
-
-.spinner {
-  width: 40px;
-  height: 40px;
-  border: 3px solid rgba(33, 150, 243, 0.3);
-  border-top: 3px solid #2196f3;
-  border-radius: 50%;
-  margin-bottom: 15px;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
-}
-
-/* Side panel */
+/* ===================
+   Paneles laterales
+   =================== */
 .side-panel {
   width: 40%;
   background-color: white;
@@ -713,12 +576,12 @@
   flex-grow: 1;
 }
 
-/* Panel específico para el visor de archivos */
+/* Panel visor de archivos */
 .file-viewer-panel {
   width: 50%;
 }
 
-/* Botón para ver factura */
+/* Sección de facturas */
 .ver-factura-button {
   background-color: #2196f3;
   color: white;
@@ -760,7 +623,7 @@
   font-size: 20px;
 }
 
-/* Detail panel styles */
+/* Panel de detalles */
 .details-section {
   margin-bottom: 25px;
   padding-bottom: 20px;
@@ -833,7 +696,227 @@
   margin-top: 20px;
 }
 
-/* Notification styles */
+/* ===================
+   Estados vacíos
+   =================== */
+.empty-state {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 50px 20px;
+  background-color: white;
+  border-radius: 10px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  text-align: center;
+}
+
+.empty-icon {
+  font-size: 50px;
+  margin-bottom: 20px;
+  color: #bbb;
+}
+
+.empty-state h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.empty-state p {
+  margin: 0 0 20px 0;
+  color: #777;
+  max-width: 350px;
+}
+
+.empty-state-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+/* ===================
+   Estados de carga
+   =================== */
+.loading-indicator {
+  grid-column: 1 / -1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 200px;
+}
+
+.loading-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 15px rgba(0,0,0,0.1);
+  padding: 30px;
+}
+
+.spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(33, 150, 243, 0.3);
+  border-top: 3px solid #2196f3;
+  border-radius: 50%;
+  margin-bottom: 15px;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* ===================
+   Tarjetas de estadísticas
+   =================== */
+.stats-container {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 15px;
+  margin-bottom: 20px;
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.stats-container.visible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.stat-card {
+  background-color: white;
+  border-radius: 12px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+  padding: 18px;
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  transition: transform 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+}
+
+.stat-icon {
+  font-size: 24px;
+  width: 50px;
+  height: 50px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.total-cuentas .stat-icon {
+  background-color: #e3f2fd;
+  color: #1976d2;
+}
+
+.pendientes .stat-icon {
+  background-color: #fff8e1;
+  color: #f57f17;
+}
+
+.monto-total .stat-icon {
+  background-color: #e8f5e9;
+  color: #388e3c;
+}
+
+.proximas-vencer .stat-icon {
+  background-color: #ffebee;
+  color: #d32f2f;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-value {
+  font-size: 22px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 13px;
+  color: #666;
+  margin-top: 3px;
+}
+
+/* ===================
+   Botones de acción
+   =================== */
+.action-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.action-button:hover {
+  background-color: #3b9c3f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.action-button.secondary {
+  background-color: #f1f1f1;
+  color: #333;
+}
+
+.action-button.secondary:hover {
+  background-color: #e0e0e0;
+}
+
+.action-button.edit {
+  background-color: #3498db;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.action-button.edit:hover {
+  background-color: #2980b9;
+}
+
+.action-button.delete {
+  background-color: #e74c3c;
+  color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.action-button.delete:hover {
+  background-color: #c0392b;
+}
+
+.action-icon {
+  font-size: 18px;
+}
+
+/* ===================
+   Notificaciones
+   =================== */
 .notification {
   position: fixed;
   bottom: 20px;
@@ -871,7 +954,9 @@
   }
 }
 
-/* Confirmation modal */
+/* ===================
+   Diálogos de confirmación
+   =================== */
 .confirmation-modal {
   position: fixed;
   top: 0;
@@ -957,7 +1042,9 @@
   }
 }
 
-/* Mobile styles */
+/* ===================
+   Elementos móviles
+   =================== */
 .floating-back-button {
   position: fixed;
   bottom: 20px;
@@ -981,87 +1068,9 @@
   box-shadow: 0 5px 15px rgba(0,0,0,0.3);
 }
 
-/* Stats cards */
-.stats-container {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-  opacity: 0;
-  transform: translateY(10px);
-  transition: opacity 0.5s ease, transform 0.5s ease;
-}
-
-.stats-container.visible {
-  opacity: 1;
-  transform: translateY(0);
-}
-
-.stat-card {
-  background-color: white;
-  border-radius: 12px;
-  box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-  padding: 18px;
-  display: flex;
-  align-items: center;
-  gap: 15px;
-  transition: transform 0.3s ease;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-}
-
-.stat-icon {
-  font-size: 24px;
-  width: 50px;
-  height: 50px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  flex-shrink: 0;
-}
-
-.total-cuentas .stat-icon {
-  background-color: #e3f2fd;
-  color: #1976d2;
-}
-
-.pendientes .stat-icon {
-  background-color: #fff8e1;
-  color: #f57f17;
-}
-
-.monto-total .stat-icon {
-  background-color: #e8f5e9;
-  color: #388e3c;
-}
-
-.proximas-vencer .stat-icon {
-  background-color: #ffebee;
-  color: #d32f2f;
-}
-
-.stat-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 22px;
-  font-weight: 600;
-  color: #333;
-  line-height: 1.2;
-}
-
-.stat-label {
-  font-size: 13px;
-  color: #666;
-  margin-top: 3px;
-}
-
-/* Media queries */
+/* ===================
+   Estilos responsivos
+   =================== */
 @media (max-width: 1400px) {
   .cuentas-grid {
     display: flex;
@@ -1214,10 +1223,6 @@
     grid-template-columns: 1fr;
   }
   
-  .cuenta-card {
-    margin-bottom: 0;
-  }
-  
   .notification {
     padding: 12px;
     font-size: 14px;
@@ -1233,7 +1238,9 @@
   }
 }
 
-/* Scrollbar styles */
+/* ===================
+   Personalización de scrollbar
+   =================== */
 .panel-content::-webkit-scrollbar,
 .category-tabs::-webkit-scrollbar {
   width: 8px;
@@ -1257,7 +1264,9 @@
   background: #aaa;
 }
 
-/* Reducir animaciones si el usuario prefiere movimiento reducido */
+/* ===================
+   Mejoras de accesibilidad
+   =================== */
 @media (prefers-reduced-motion: reduce) {
   .cuenta-card:hover,
   .crear-cuenta-button:hover,
@@ -1269,4 +1278,64 @@
     transition: none;
     transform: none;
   }
+  
+  .spinner {
+    animation: none;
+  }
+  
+  .badge.urgente {
+    animation: none;
+  }
+}
+
+/* ===================
+   Nuevas mejoras visuales
+   =================== */
+.cuenta-card {
+  box-shadow: 0 2px 15px rgba(0,0,0,0.06);
+  border-left: 1px solid rgba(0,0,0,0.05);
+  border-right: 1px solid rgba(0,0,0,0.05);
+  border-bottom: 1px solid rgba(0,0,0,0.07);
+}
+
+.cuenta-card:hover .cuenta-titulo {
+  color: #4CAF50;
+}
+
+.cuenta-card.selected {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+}
+
+/* Efecto de ripple en botones */
+.action-button, .crear-cuenta-button, .crear-cuenta-button-empty {
+  position: relative;
+  overflow: hidden;
+}
+
+.action-button::after, 
+.crear-cuenta-button::after, 
+.crear-cuenta-button-empty::after {
+  content: '';
+  display: block;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  background-image: radial-gradient(circle, #fff 10%, transparent 10.01%);
+  background-repeat: no-repeat;
+  background-position: 50%;
+  transform: scale(10, 10);
+  opacity: 0;
+  transition: transform .3s, opacity .5s;
+}
+
+.action-button:active::after, 
+.crear-cuenta-button:active::after, 
+.crear-cuenta-button-empty:active::after {
+  transform: scale(0, 0);
+  opacity: .3;
+  transition: 0s;
 }
