@@ -48,6 +48,25 @@ button {
   transition: background-color 0.3s ease;
 }
 
+/* Estilo global para inputs pero permitiendo sobrescritura */
+input, select, textarea {
+  color: inherit; /* Hereda el color del padre */
+  background-color: transparent; /* Fondo transparente por defecto */
+  font-family: inherit; /* Hereda la fuente del padre */
+}
+
+/* Evitar estilos excesivamente específicos para permitir sobrescrituras */
+input[type="text"], 
+input[type="email"], 
+input[type="password"],
+input[type="number"],
+input[type="date"],
+select, 
+textarea {
+  background-color: transparent; /* Permite que los componentes definan su propio fondo */
+  color: inherit; /* Permite que los componentes definan su propio color */
+}
+
 /* Estilos de utilidad reutilizables */
 .text-center {
   text-align: center;

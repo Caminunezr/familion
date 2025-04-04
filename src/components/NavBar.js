@@ -56,6 +56,13 @@ const NavBar = () => {
         >
           Presupuesto
         </NavLink>
+        <NavLink 
+          to="/historial" 
+          className={({ isActive }) => isActive ? 'active' : ''}
+          onClick={closeMenu}
+        >
+          Historial
+        </NavLink>
       </div>
       
       <div className="navbar-user">

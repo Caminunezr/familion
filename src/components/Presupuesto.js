@@ -197,9 +197,9 @@ const Presupuesto = () => {
   
   // Formatear montos
   const formatMonto = (monto) => {
-    return new Intl.NumberFormat('es-ES', {
+    return new Intl.NumberFormat('es-CL', {
       style: 'currency',
-      currency: 'COP',
+      currency: 'CLP',
       minimumFractionDigits: 0,
       maximumFractionDigits: 0
     }).format(monto);
