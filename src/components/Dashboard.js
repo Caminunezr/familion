@@ -20,7 +20,7 @@ const Dashboard = () => {
   const [selectedCuenta, setSelectedCuenta] = useState(null);
   const [showPagoForm, setShowPagoForm] = useState(false);
   const [showDetalle, setShowDetalle] = useState(false);
-  const [refreshData, setRefreshData] = useState(0);
+  const [refreshData, setRefreshData] = useState(0); // Refrescar datos al cambiar estado
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [activeTab, setActiveTab] = useState('resumen');
@@ -101,6 +101,24 @@ const Dashboard = () => {
     
     fetchAllData();
   }, [mesActual, mesAnterior, refreshData]);
+
+  // Cargar cuentas y categorizarlas en pendientes y pagadas
+  useEffect(() => {
+    const fetchCuentas = async () => {
+      try {
+        const cuentas = await db.cuentas.toArray();
+        const pendientes = cuentas.filter((cuenta) => !cuenta.estaPagada);
+        const pagadas = cuentas.filter((cuenta) => cuenta.estaPagada);
+
+        setCuentasPendientes(pendientes);
+        setCuentasPagadas(pagadas);
+      } catch (error) {
+        console.error('Error al cargar cuentas:', error);
+      }
+    };
+
+    fetchCuentas();
+  }, [refreshData]); // Refrescar datos cuando cambie `refreshData`
 
   // Función para cargar presupuestos y aportes
   const cargarPresupuestosYAportes = async () => {
@@ -424,7 +442,7 @@ const Dashboard = () => {
     setShowPagoForm(false);
     setSelectedCuenta(null);
     setShowDetalle(false);
-    setRefreshData(prev => prev + 1);
+    setRefreshData((prev) => prev + 1); // Incrementar para forzar recarga
   }, []);
 
   const irAPresupuesto = useCallback(() => {

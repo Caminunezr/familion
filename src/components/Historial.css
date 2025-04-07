@@ -1,3 +1,4 @@
+/* Estilos base */
 .historial-page {
   min-height: 100vh;
   background-color: #f5f5f5;
@@ -36,6 +37,7 @@
   padding: 20px;
   margin-bottom: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  position: relative;
 }
 
 .filtros-container h3 {
@@ -123,6 +125,37 @@
   box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
 }
 
+/* Botón de exportación */
+.export-button {
+  background-color: #4CAF50;
+  color: white;
+  border: none;
+  border-radius: 30px;
+  padding: 8px 15px;
+  font-size: 14px;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 5px rgba(76, 175, 80, 0.3);
+  position: absolute;
+  top: 20px;
+  right: 20px;
+}
+
+.export-button:hover {
+  background-color: #3b9c3f;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(76, 175, 80, 0.4);
+}
+
+.export-button::before {
+  content: "📊";
+  margin-right: 5px;
+  font-size: 16px;
+}
+
 /* Contenido principal */
 .historial-content {
   margin-bottom: 30px;
@@ -138,6 +171,7 @@
   border-radius: 10px;
   padding: 40px 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  min-height: 300px;
 }
 
 .spinner {
@@ -160,6 +194,76 @@
   font-size: 16px;
 }
 
+/* Estado vacío */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background-color: white;
+  border-radius: 10px;
+  padding: 40px 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  text-align: center;
+  min-height: 300px;
+}
+
+.empty-icon {
+  font-size: 48px;
+  margin-bottom: 20px;
+  color: #ccc;
+}
+
+.empty-state h3 {
+  margin: 0 0 10px 0;
+  color: #555;
+}
+
+.empty-state p {
+  margin: 0 0 10px 0;
+  color: #777;
+  max-width: 400px;
+}
+
+/* Pestañas móviles */
+.tabs-container {
+  margin-bottom: 15px;
+}
+
+.tabs {
+  display: flex;
+  border-radius: 8px;
+  overflow-x: auto;
+  background-color: white;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+}
+
+.tab {
+  flex: 1;
+  padding: 12px 8px;
+  text-align: center;
+  background-color: transparent;
+  border: none;
+  color: #666;
+  font-weight: 500;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.2s;
+  min-width: 80px;
+}
+
+.tab.active {
+  background-color: #4CAF50;
+  color: white;
+}
+
+.tab-content {
+  background-color: white;
+  border-radius: 10px;
+  padding: 20px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+}
+
 /* Resumen estadístico */
 .resumen-estadistico {
   background-color: white;
@@ -180,6 +284,7 @@
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 15px;
+  margin-bottom: 20px;
 }
 
 .resumen-card {
@@ -217,6 +322,37 @@
   color: #666;
 }
 
+/* Donut chart */
+.donut-chart-container {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  margin-bottom: 20px;
+}
+
+.donut-chart-container h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #333;
+}
+
+.chart-wrapper {
+  height: 250px;
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.chart-wrapper.donut {
+  height: 200px;
+}
+
+/* Tabla de recientes */
+.tabla-recientes {
+  overflow-x: auto;
+  margin-bottom: 10px;
+}
+
 /* Gráficos */
 .graficos-container {
   display: grid;
@@ -230,6 +366,7 @@
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+  margin-bottom: 20px;
 }
 
 .grafico-card h3 {
@@ -239,12 +376,92 @@
   font-size: 1.2rem;
 }
 
-.grafico-wrapper {
-  height: 300px;
-  position: relative;
+/* Interpretación de gráficos */
+.interpretacion {
+  background-color: #f9f9f9;
+  border-radius: 8px;
+  padding: 15px;
+  margin-top: 20px;
 }
 
-/* Periodos - Rediseñado para evitar efectos estroboscópicos */
+.interpretacion h4 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 16px;
+  color: #333;
+}
+
+.interpretacion p {
+  margin-bottom: 10px;
+  color: #555;
+}
+
+.interpretacion ul {
+  margin: 0;
+  padding-left: 20px;
+  color: #555;
+}
+
+.interpretacion li {
+  margin-bottom: 5px;
+  display: flex;
+  align-items: center;
+}
+
+.dot {
+  display: inline-block;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 8px;
+}
+
+.dot.blue { background-color: rgb(53, 162, 235); }
+.dot.green { background-color: rgb(75, 192, 192); }
+.dot.red { background-color: rgb(255, 99, 132); }
+
+/* Tabla categorías */
+.tabla-categorias {
+  margin-top: 20px;
+}
+
+.tabla-categorias h4 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 16px;
+  color: #333;
+}
+
+.porcentaje-container {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.porcentaje-container span {
+  font-weight: 500;
+}
+
+.porcentaje-container span.bueno { color: #4CAF50; }
+.porcentaje-container span.medio { color: #FFC107; }
+.porcentaje-container span.bajo { color: #F44336; }
+
+.mini-barra-progreso {
+  width: 100%;
+  height: 5px;
+  background-color: #eee;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.mini-barra-progreso .progreso {
+  height: 100%;
+}
+.mini-barra-progreso .progreso.bueno { background-color: #4CAF50; }
+.mini-barra-progreso .progreso.medio { background-color: #FFC107; }
+.mini-barra-progreso .progreso.bajo { background-color: #F44336; }
+
+/* Periodos */
 .periodos-container {
   background-color: white;
   border-radius: 10px;
@@ -332,7 +549,7 @@
   color: #F44336;
 }
 
-/* Reemplazamos la barra de progreso con un diseño más simple sin animaciones */
+/* Barra de progreso */
 .periodo-progress {
   height: 6px;
   background-color: #eee;
@@ -367,7 +584,7 @@
   border-radius: 10px;
   padding: 20px;
   box-shadow: 0 2px 10px rgba(0,0,0,0.05);
-  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .detalle-periodo h3 {
@@ -377,7 +594,7 @@
   font-size: 1.2rem;
 }
 
-/* Estilos para la tabla de cuentas */
+/* Estilos para las tablas */
 .tabla-container {
   overflow-x: auto;
 }
@@ -421,7 +638,7 @@
   background-color: rgba(244, 67, 54, 0.05);
 }
 
-/* Badge de estado sin animación */
+/* Badge de estado */
 .estado-badge {
   display: inline-block;
   padding: 4px 8px;
@@ -448,16 +665,29 @@
   font-style: italic;
 }
 
-/* Responsive media queries */
+/* Responsive - Ajustes específicos */
 @media (max-width: 768px) {
   .historial-container {
     padding: 10px;
   }
   
   .historial-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
+    padding: 12px 15px;
+  }
+  
+  .historial-header h2 {
+    font-size: 1.5rem;
+  }
+  
+  .filtros-container {
+    padding: 15px;
+  }
+  
+  .export-button {
+    position: static;
+    margin-top: 15px;
+    width: 100%;
+    justify-content: center;
   }
   
   .filtros-grid {
@@ -477,26 +707,77 @@
   .agrupacion-buttons button {
     flex: 1;
     text-align: center;
+    padding: 10px 5px;
   }
   
-  .graficos-container {
+  .resumen-cards {
     grid-template-columns: 1fr;
   }
   
-  .grafico-wrapper {
-    height: 250px;
+  .tab-content {
+    padding: 15px;
+  }
+  
+  .chart-wrapper {
+    height: 200px;
+  }
+  
+  .chart-wrapper.donut {
+    height: 180px;
+  }
+  
+  .tabla-recientes {
+    margin: 0 -15px;
+    width: calc(100% + 30px);
+  }
+  
+  .tabla-cuentas th, 
+  .tabla-cuentas td {
+    padding: 10px 8px;
+    font-size: 12px;
+  }
+  
+  .periodos-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .periodo-card {
+    margin-bottom: 10px;
+  }
+  
+  .periodo-header h4 {
+    font-size: 14px;
+  }
+  
+  .periodo-total {
+    font-size: 14px;
+  }
+  
+  .stat-value {
+    font-size: 13px;
   }
   
   .detalle-periodo {
-    overflow-x: auto;
-  }
-  
-  .tabla-cuentas {
-    min-width: 650px;
+    padding: 15px;
+    margin: 15px -15px -15px -15px;
+    border-radius: 0 0 10px 10px;
   }
 }
 
-/* Accesibilidad - Reducir movimiento */
+/* Responsivo para pantallas extra pequeñas */
+@media (max-width: 375px) {
+  .historial-header h2 {
+    font-size: 1.3rem;
+  }
+  
+  .tab {
+    padding: 10px 5px;
+    font-size: 13px;
+    min-width: 70px;
+  }
+}
+
+/* Accesibilidad - Soporte para movimiento reducido */
 @media (prefers-reduced-motion: reduce) {
   * {
     animation: none !important;
@@ -506,5 +787,10 @@
   .spinner {
     border: 3px solid rgba(76, 175, 80, 0.3);
     border-top: 3px solid #4CAF50;
+  }
+  
+  .resumen-card:hover,
+  .periodo-card:hover {
+    transform: none;
   }
 }

@@ -333,6 +333,28 @@ const GestionCuentas = () => {
     }
   };
   
+  // Gestionar pago de cuenta
+  const handlePago = async (cuentaId) => {
+    try {
+      // Actualizar el estado de la cuenta en la base de datos
+      await db.cuentas.update(cuentaId, { estaPagada: true });
+
+      // Actualizar el estado local
+      setCuentas((prevCuentas) =>
+        prevCuentas.map((cuenta) =>
+          cuenta.id === cuentaId ? { ...cuenta, estaPagada: true } : cuenta
+        )
+      );
+
+      // Refrescar datos y estadísticas
+      fetchData();
+      showNotification('Cuenta marcada como pagada correctamente');
+    } catch (error) {
+      console.error('Error al marcar la cuenta como pagada:', error);
+      showNotification('Error al marcar la cuenta como pagada', 'error');
+    }
+  };
+  
   // Formatear fecha
   const formatFecha = (fechaString) => {
     if (!fechaString) return 'Sin fecha';
@@ -417,9 +439,28 @@ const GestionCuentas = () => {
                   </span>
                 </div>
               )}
+              
+              <div className="info-item">
+                <span className="info-label">Estado:</span>
+                <span className={`info-value ${cuenta.estaPagada ? 'pagada' : 'pendiente'}`}>
+                  {cuenta.estaPagada ? 'Pagada' : 'Pendiente'}
+                </span>
+              </div>
             </div>
             
             <div className="cuenta-actions">
+              {!cuenta.estaPagada && (
+                <button 
+                  className="pagar-button" 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handlePago(cuenta.id);
+                  }}
+                  aria-label="Marcar como pagada"
+                >
+                  Marcar como Pagada
+                </button>
+              )}
               <button 
                 className="edit-button" 
                 onClick={(e) => handleEditCuenta(e, cuenta)}
@@ -515,6 +556,13 @@ const GestionCuentas = () => {
                 <div className="detail-row">
                   <span className="detail-label">Fecha de Creación</span>
                   <span className="detail-value">{formatFecha(selectedCuenta.fechaCreacion)}</span>
+                </div>
+                
+                <div className="detail-row">
+                  <span className="detail-label">Estado</span>
+                  <span className={`detail-value ${selectedCuenta.estaPagada ? 'pagada' : 'pendiente'}`}>
+                    {selectedCuenta.estaPagada ? 'Pagada' : 'Pendiente'}
+                  </span>
                 </div>
               </div>
               

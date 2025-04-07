@@ -3,28 +3,46 @@ import Dexie from 'dexie';
 // Crear y configurar la base de datos
 const db = new Dexie('familionDB');
 
-// Definir esquemas de tablas (versión 1)
+// Definir esquemas y versiones
 db.version(1).stores({
-  // Tabla de cuentas: almacena información de las cuentas a pagar
   cuentas: '++id, userId, nombre, categoria, fechaVencimiento, estaPagada, fechaCreacion',
-  
-  // Tabla de pagos: registra pagos realizados a las cuentas
   pagos: '++id, cuentaId, pagadoPor, fechaPago, montoPagado',
-  
-  // Tabla de categorías: almacena las categorías disponibles
   categorias: '++id, nombre, descripcion, color',
-  
-  // Tabla de presupuestos: almacena presupuestos mensuales
   presupuestos: '++id, userId, mes, categoria, montoAsignado, fechaCreacion',
-  
-  // Tabla de aportes: registra aportes a los presupuestos
-  aportes: '++id, presupuestoId, miembroId, monto, fechaAporte, cuentaId'
+  aportes: '++id, presupuestoId, miembroId, monto, fechaAporte, rutaComprobante, fechaCreacion'
+});
+
+// Versión 2: Añadir campos a presupuestos y aportes
+db.version(2).stores({
+  presupuestos: '++id, userId, mes, categoria, montoAsignado, fechaCreacion, montoAporte, montoObjetivo',
+  aportes: '++id, presupuestoId, miembroId, monto, fechaAporte, rutaComprobante, fechaCreacion, tipoPago, cuentaId, cuentaNombre, pagoId'
+}).upgrade(tx => {
+  // Esta función se ejecutará cuando se actualice de v1 a v2
+  return tx.presupuestos.toCollection().modify(presupuesto => {
+    // Asignar valores predeterminados a los nuevos campos
+    if (!presupuesto.montoAporte && presupuesto.montoObjetivo) {
+      presupuesto.montoAporte = presupuesto.montoObjetivo;
+    } else if (!presupuesto.montoAporte) {
+      presupuesto.montoAporte = 0;
+    }
+
+    if (!presupuesto.montoObjetivo) {
+      presupuesto.montoObjetivo = presupuesto.montoAsignado || 0;
+    }
+  });
+});
+
+// Añadir índices adicionales para mejorar el rendimiento de consultas frecuentes
+db.version(3).stores({
+  cuentas: '++id, userId, nombre, categoria, fechaVencimiento, estaPagada, fechaCreacion, [userId+estaPagada], [userId+categoria]',
+  pagos: '++id, cuentaId, pagadoPor, fechaPago, montoPagado, [cuentaId+pagadoPor]',
+  presupuestos: '++id, userId, mes, categoria, montoAsignado, fechaCreacion, montoAporte, montoObjetivo, [userId+mes]'
 });
 
 // Inicializar categorías por defecto si la tabla está vacía
 db.on('ready', async () => {
   const categoriaCount = await db.categorias.count();
-  
+
   if (categoriaCount === 0) {
     // Si no hay categorías, crear las categorías por defecto
     const categoriasDefault = [
@@ -34,18 +52,10 @@ db.on('ready', async () => {
       { nombre: 'entretenimiento', descripcion: 'Ocio y entretenimiento', color: '#9b59b6' },
       { nombre: 'salud', descripcion: 'Gastos médicos y de salud', color: '#e74c3c' },
       { nombre: 'educacion', descripcion: 'Gastos educativos', color: '#f1c40f' },
-      { nombre: 'otros', descripcion: 'Otros gastos no categorizados', color: '#95a5a6' }
+      { nombre: 'otros', descripcion: 'Otros gastos', color: '#34495e' }
     ];
-    
-    // Agregar las categorías a la base de datos
     await db.categorias.bulkAdd(categoriasDefault);
-    console.log('Categorías por defecto inicializadas');
   }
-});
-
-// Manejo de errores
-db.open().catch(err => {
-  console.error('Error al abrir la base de datos:', err);
 });
 
 export default db;

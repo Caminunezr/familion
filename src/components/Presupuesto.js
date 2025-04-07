@@ -30,24 +30,21 @@ const Presupuesto = () => {
   
   const contentRef = useRef(null);
   
-  // Función para obtener datos desde la base de datos
+  const nombresCreadores = ['Camilo', 'Chave', 'Daniela', 'Mia']; // Lista de nombres
+  
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       
-      // Obtener presupuestos
       const presupuestosArray = await db.presupuestos.toArray();
       setPresupuestos(presupuestosArray);
       
-      // Obtener categorías para uso en formularios y filtros
       const categoriasArray = await db.categorias.toArray();
       setCategorias(categoriasArray);
       
-      // Obtener cuentas para referencia
       const cuentasArray = await db.cuentas.toArray();
       setCuentas(cuentasArray);
       
-      // Calcular resumen del presupuesto
       await calcularResumenPresupuesto(presupuestosArray, cuentasArray);
       
       return { presupuestosArray, categoriasArray, cuentasArray };
@@ -60,18 +57,14 @@ const Presupuesto = () => {
     }
   }, []);
   
-  // Calcular estadísticas de presupuesto
   const calcularResumenPresupuesto = useCallback(async (presupuestosArr = presupuestos, cuentasArr = cuentas) => {
-    // Filtrar presupuestos por mes y año seleccionados
     const presupuestosFiltrados = presupuestosArr.filter(p => {
       const fecha = new Date(p.fechaCreacion);
       return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
     });
     
-    // Calcular totales
     const totalAsignado = presupuestosFiltrados.reduce((sum, p) => sum + p.montoAsignado, 0);
     
-    // Calcular gastos por categoría
     const gastosPorCategoria = {};
     for (const cuenta of cuentasArr) {
       const fechaCuenta = new Date(cuenta.fechaCreacion);
@@ -82,13 +75,10 @@ const Presupuesto = () => {
       }
     }
     
-    // Obtener total gastado
     const totalGastado = Object.values(gastosPorCategoria).reduce((sum, monto) => sum + monto, 0);
     
-    // Calcular porcentaje gastado
     const porcentajeGastado = totalAsignado > 0 ? Math.round((totalGastado / totalAsignado) * 100) : 0;
     
-    // Categorías más gastadas (ordenadas)
     const categoriasMasGastadas = Object.entries(gastosPorCategoria)
       .sort((a, b) => b[1] - a[1])
       .map(([categoria, monto]) => ({ 
@@ -105,11 +95,9 @@ const Presupuesto = () => {
     });
   }, [filtroMes, filtroAno, presupuestos, cuentas]);
   
-  // Efecto para cargar datos iniciales
   useEffect(() => {
     fetchData();
     
-    // Listener para responsive
     const handleResize = () => {
       setMobileView(window.innerWidth <= 768);
     };
@@ -118,12 +106,10 @@ const Presupuesto = () => {
     return () => window.removeEventListener('resize', handleResize);
   }, [fetchData]);
   
-  // Efecto para recalcular al cambiar filtros
   useEffect(() => {
     calcularResumenPresupuesto();
   }, [filtroMes, filtroAno, calcularResumenPresupuesto]);
   
-  // Función para mostrar notificaciones de manera centralizada
   const showNotification = (message, type = 'success', duration = 3000) => {
     setNotification({ message, type });
     if (duration) {
@@ -131,39 +117,32 @@ const Presupuesto = () => {
     }
   };
   
-  // Handler para crear nuevo presupuesto
   const handleCrearPresupuesto = () => {
     setEditingPresupuesto(null);
     setShowForm(true);
     
-    // En móvil, scroll al principio
     if (mobileView && contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
-  // Handler para editar presupuesto
   const handleEditarPresupuesto = (presupuesto) => {
     setEditingPresupuesto(presupuesto);
     setShowForm(true);
     
-    // En móvil, scroll al principio
     if (mobileView && contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
   };
   
-  // Handler para guardar presupuesto
   const handleGuardarPresupuesto = async (presupuestoData) => {
     try {
       const isEditing = !!presupuestoData.id;
       
       if (isEditing) {
-        // Actualizar presupuesto existente
         await db.presupuestos.update(presupuestoData.id, presupuestoData);
         showNotification(`Presupuesto actualizado correctamente`);
       } else {
-        // Crear nuevo presupuesto
         const id = await db.presupuestos.add({
           ...presupuestoData,
           fechaCreacion: new Date().toISOString(),
@@ -172,7 +151,6 @@ const Presupuesto = () => {
         showNotification(`Presupuesto creado correctamente`);
       }
       
-      // Actualizar lista y cerrar formulario
       fetchData();
       setShowForm(false);
       setEditingPresupuesto(null);
@@ -183,7 +161,6 @@ const Presupuesto = () => {
     }
   };
   
-  // Handler para eliminar presupuesto
   const handleEliminarPresupuesto = async (id) => {
     try {
       await db.presupuestos.delete(id);
@@ -195,7 +172,6 @@ const Presupuesto = () => {
     }
   };
   
-  // Formatear montos
   const formatMonto = (monto) => {
     return new Intl.NumberFormat('es-CL', {
       style: 'currency',
@@ -205,7 +181,6 @@ const Presupuesto = () => {
     }).format(monto);
   };
   
-  // Generar datos para el gráfico de pastel
   const getPieChartData = () => {
     const colors = [
       '#4CAF50', '#2196F3', '#FFC107', '#FF5722', '#9C27B0',
@@ -231,9 +206,7 @@ const Presupuesto = () => {
     };
   };
   
-  // Generar datos para el gráfico de barras (Presupuesto vs Gasto)
   const getBarChartData = () => {
-    // Obtener presupuestos por categoría
     const presupuestoPorCategoria = {};
     presupuestos.forEach(p => {
       const fecha = new Date(p.fechaCreacion);
@@ -245,7 +218,6 @@ const Presupuesto = () => {
       }
     });
     
-    // Preparar datos para el gráfico
     const categorias = [...new Set([
       ...Object.keys(presupuestoPorCategoria),
       ...resumenPresupuesto.categoriasMasGastadas.map(c => c.categoria)
@@ -283,7 +255,6 @@ const Presupuesto = () => {
     };
   };
   
-  // Opciones para los gráficos
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: false,
@@ -309,13 +280,11 @@ const Presupuesto = () => {
     }
   };
   
-  // Nombres de los meses para el selector
   const meses = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
   ];
   
-  // Generar array de años para el selector (5 años atrás hasta 5 años adelante)
   const getYearsArray = () => {
     const currentYear = new Date().getFullYear();
     const years = [];
@@ -341,7 +310,6 @@ const Presupuesto = () => {
           </button>
         </div>
         
-        {/* Filtros de período */}
         <div className="periodo-filter">
           <div className="filter-title">Período seleccionado:</div>
           <div className="filter-controls">
@@ -371,7 +339,6 @@ const Presupuesto = () => {
           ref={contentRef} 
           className={`presupuesto-content ${showForm ? 'with-side-panel' : ''} ${mobileView ? 'mobile-view' : ''}`}
         >
-          {/* Panel principal de presupuesto */}
           <div className="panel-principal">
             {loading ? (
               <div className="loading-indicator">
@@ -382,7 +349,6 @@ const Presupuesto = () => {
               </div>
             ) : (
               <>
-                {/* Tarjetas de resumen */}
                 <div className="resumen-cards">
                   <div className="resumen-card total-asignado">
                     <div className="card-icon">💰</div>
@@ -417,7 +383,6 @@ const Presupuesto = () => {
                   </div>
                 </div>
                 
-                {/* Gráficos */}
                 <div className="graficos-container">
                   <div className="grafico-card">
                     <h3>Distribución de Gastos</h3>
@@ -434,7 +399,6 @@ const Presupuesto = () => {
                   </div>
                 </div>
                 
-                {/* Tabla de presupuestos */}
                 <div className="presupuestos-container">
                   <h3>Presupuestos del Período</h3>
                   
@@ -460,6 +424,7 @@ const Presupuesto = () => {
                             <th>Monto Asignado</th>
                             <th>Monto Utilizado</th>
                             <th>% Utilizado</th>
+                            <th>Creador</th>
                             <th>Acciones</th>
                           </tr>
                         </thead>
@@ -470,7 +435,6 @@ const Presupuesto = () => {
                               return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
                             })
                             .map(presupuesto => {
-                              // Encontrar gasto real de esta categoría
                               const gastoCategoria = resumenPresupuesto.categoriasMasGastadas
                                 .find(c => c.categoria === presupuesto.categoria);
                               const gastoReal = gastoCategoria ? gastoCategoria.monto : 0;
@@ -504,6 +468,7 @@ const Presupuesto = () => {
                                       </div>
                                     </div>
                                   </td>
+                                  <td>{presupuesto.creadorNombre || 'Desconocido'}</td>
                                   <td>
                                     <div className="table-actions">
                                       <button 
@@ -532,7 +497,6 @@ const Presupuesto = () => {
             )}
           </div>
           
-          {/* Formulario lateral */}
           {showForm && (
             <div className={`side-panel form-panel ${mobileView ? 'mobile' : ''}`}>
               <div className="panel-header">
@@ -553,6 +517,7 @@ const Presupuesto = () => {
                     categoria: formData.get('categoria'),
                     montoAsignado: parseFloat(formData.get('monto')),
                     descripcion: formData.get('descripcion') || '',
+                    creadorNombre: formData.get('creadorNombre') // Nuevo campo para el nombre del creador
                   };
                   
                   if (editingPresupuesto) {
@@ -603,6 +568,23 @@ const Presupuesto = () => {
                     ></textarea>
                   </div>
                   
+                  <div className="form-group">
+                    <label htmlFor="creadorNombre">Creador *</label>
+                    <select
+                      id="creadorNombre"
+                      name="creadorNombre"
+                      required
+                      defaultValue={editingPresupuesto?.creadorNombre || ''}
+                    >
+                      <option value="" disabled>Selecciona un creador</option>
+                      {nombresCreadores.map(nombre => (
+                        <option key={nombre} value={nombre}>
+                          {nombre}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
                   <div className="form-actions">
                     <button type="button" className="cancel-button" onClick={() => setShowForm(false)}>
                       Cancelar
@@ -617,14 +599,12 @@ const Presupuesto = () => {
           )}
         </div>
         
-        {/* Notificaciones */}
         {notification && (
           <div className={`notification ${notification.type}`}>
             {notification.message}
           </div>
         )}
         
-        {/* Botón flotante para volver en móvil */}
         {mobileView && showForm && (
           <button 
             className="floating-back-button"
