@@ -332,34 +332,44 @@ const Dashboard = () => {
       // 1. Datos por categoría (para gráfico circular)
       const categorias = {};
       
+      // Lista de categorías válidas
+      const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros', 'sin_categoria'];
+      
+      // Procesar cada cuenta
       cuentasMesActual.forEach(cuenta => {
-        const categoria = cuenta.categoria || 'sin_categoria';
+        let categoria = cuenta.categoria || 'sin_categoria';
+        
+        // Si la categoría no es válida, usar "Otros"
+        if (!categoriasValidas.includes(categoria)) {
+          categoria = 'Otros';
+        }
+        
+        // Actualizar el total para esta categoría
         if (!categorias[categoria]) {
           categorias[categoria] = 0;
         }
         categorias[categoria] += cuenta.monto || 0;
       });
       
+      // Continuar con el código original para etiquetas y colores
       const etiquetas = {
-        'servicios': 'Servicios',
-        'alimentos': 'Alimentos',
-        'transporte': 'Transporte',
-        'entretenimiento': 'Entretenimiento',
-        'salud': 'Salud',
-        'educacion': 'Educación',
-        'sin_categoria': 'Sin categoría',
-        'otros': 'Otros'
+        'Luz': 'Luz',
+        'Agua': 'Agua',
+        'Gas': 'Gas', 
+        'Internet': 'Internet',
+        'Utiles de Aseo': 'Útiles de Aseo',
+        'Otros': 'Otros',
+        'sin_categoria': 'Sin categoría'
       };
-      
+
       const colores = {
-        'servicios': '#3498db',
-        'alimentos': '#e67e22',
-        'transporte': '#2ecc71',
-        'entretenimiento': '#9b59b6',
-        'salud': '#e74c3c',
-        'educacion': '#f1c40f',
-        'sin_categoria': '#95a5a6',
-        'otros': '#34495e'
+        'Luz': '#f39c12', // Amarillo
+        'Agua': '#3498db', // Azul
+        'Gas': '#e74c3c', // Rojo
+        'Internet': '#9b59b6', // Morado
+        'Utiles de Aseo': '#2ecc71', // Verde
+        'Otros': '#95a5a6', // Gris
+        'sin_categoria': '#7f8c8d' // Gris oscuro
       };
       
       // Verificar si hay datos para evitar gráficos vacíos

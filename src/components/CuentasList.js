@@ -13,12 +13,12 @@ const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel }) => {
   
   const getCategoriaClass = (categoria) => {
     const categorias = {
-      'servicios': 'categoria-servicios',
-      'alimentos': 'categoria-alimentos',
-      'transporte': 'categoria-transporte',
-      'entretenimiento': 'categoria-entretenimiento',
-      'salud': 'categoria-salud',
-      'educacion': 'categoria-educacion'
+      'Luz': 'categoria-luz',
+      'Agua': 'categoria-agua',
+      'Gas': 'categoria-gas',
+      'Internet': 'categoria-internet',
+      'Utiles de Aseo': 'categoria-utiles-de-aseo',
+      'Otros': 'categoria-otros'
     };
     
     return categorias[categoria] || 'categoria-otros';

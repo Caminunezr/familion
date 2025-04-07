@@ -6,13 +6,15 @@ import './CuentaForm.css';
 const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
   const { currentUser } = useAuth();
   const [formData, setFormData] = useState({
-    nombre: '',
+    nombre: '', // Ahora será para el nombre específico cuando es "Otros"
     monto: '',
     proveedor: '',
     fechaVencimiento: '',
     categoria: '',
-    descripcion: ''
+    descripcion: '',
+    categoriaEspecifica: '' // Para el nombre específico cuando la categoría es "Otros"
   });
+  const [mostrarCampoOtros, setMostrarCampoOtros] = useState(false);
   const [factura, setFactura] = useState(null);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
@@ -20,14 +22,36 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
   // Cargar datos de la cuenta si existe
   useEffect(() => {
     if (cuenta) {
+      // Lista de categorías válidas
+      const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
+      
+      // Si la categoría no es válida, mapearla o usar "Otros"
+      let categoria = cuenta.categoria || '';
+      if (!categoriasValidas.includes(categoria)) {
+        // Mapeo para categorías antiguas
+        const categoriasMapping = {
+          'servicios': 'Luz',
+          'alimentos': 'Agua',
+          'transporte': 'Gas',
+          'entretenimiento': 'Internet',
+          'salud': 'Utiles de Aseo',
+          'educacion': 'Otros'
+        };
+        
+        categoria = categoriasMapping[categoria.toLowerCase()] || 'Otros';
+      }
+      
       setFormData({
         nombre: cuenta.nombre || '',
         monto: cuenta.monto || '',
         proveedor: cuenta.proveedor || '',
         fechaVencimiento: cuenta.fechaVencimiento ? cuenta.fechaVencimiento.split('T')[0] : '',
-        categoria: cuenta.categoria || '',
-        descripcion: cuenta.descripcion || ''
+        categoria: categoria,
+        descripcion: cuenta.descripcion || '',
+        categoriaEspecifica: categoria === 'Otros' ? cuenta.nombre : cuenta.categoriaEspecifica || ''
       });
+      
+      setMostrarCampoOtros(categoria === 'Otros');
     }
   }, [cuenta]);
   
@@ -37,6 +61,11 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
       ...formData,
       [name]: value
     });
+
+    // Mostrar el campo adicional si se selecciona "Otros"
+    if (name === 'categoria') {
+      setMostrarCampoOtros(value === 'Otros');
+    }
   };
   
   const handleFileChange = (e) => {
@@ -53,8 +82,8 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
       setError('');
       
       // Validaciones básicas
-      if (!formData.nombre.trim()) {
-        throw new Error('El nombre de la cuenta es obligatorio');
+      if (formData.categoria === 'Otros' && !formData.categoriaEspecifica.trim()) {
+        throw new Error('Debes especificar un nombre para la categoría "Otros"');
       }
       
       if (!formData.monto || isNaN(formData.monto) || parseFloat(formData.monto) <= 0) {
@@ -63,12 +92,14 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
       
       // Construir objeto de cuenta
       const cuentaData = {
-        nombre: formData.nombre.trim(),
+        // Usar la categoría como nombre, excepto cuando es "Otros"
+        nombre: formData.categoria === 'Otros' ? formData.categoriaEspecifica.trim() : formData.categoria,
         monto: parseFloat(formData.monto),
         proveedor: formData.proveedor.trim(),
         categoria: formData.categoria,
         descripcion: formData.descripcion.trim(),
-        fechaVencimiento: formData.fechaVencimiento ? new Date(formData.fechaVencimiento).toISOString() : null
+        fechaVencimiento: formData.fechaVencimiento ? new Date(formData.fechaVencimiento).toISOString() : null,
+        categoriaEspecifica: formData.categoria === 'Otros' ? formData.categoriaEspecifica.trim() : null
       };
       
       // Si hay una factura nueva, guardarla
@@ -100,16 +131,38 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
       {error && <div className="error-message">{error}</div>}
       
       <div className="form-group">
-        <label htmlFor="nombre">Nombre de la cuenta*</label>
-        <input
-          type="text"
-          id="nombre"
-          name="nombre"
-          value={formData.nombre}
+        <label htmlFor="categoria">Tipo de Cuenta/Servicio*</label>
+        <select
+          id="categoria"
+          name="categoria"
+          value={formData.categoria}
           onChange={handleChange}
           required
-        />
+        >
+          <option value="">Seleccionar tipo</option>
+          {/* Filtrar categorías para asegurar que no haya duplicados */}
+          {Array.from(new Set(categorias.map(cat => cat.nombre))).map(nombreCategoria => (
+            <option key={nombreCategoria} value={nombreCategoria}>
+              {nombreCategoria}
+            </option>
+          ))}
+        </select>
       </div>
+
+      {mostrarCampoOtros && (
+        <div className="form-group">
+          <label htmlFor="categoriaEspecifica">Especificar Nombre*</label>
+          <input
+            type="text"
+            id="categoriaEspecifica"
+            name="categoriaEspecifica"
+            value={formData.categoriaEspecifica}
+            onChange={handleChange}
+            placeholder="Ej: Reparación, Mantenimiento, etc."
+            required
+          />
+        </div>
+      )}
       
       <div className="form-group">
         <label htmlFor="monto">Monto*</label>
@@ -145,23 +198,6 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
           value={formData.fechaVencimiento}
           onChange={handleChange}
         />
-      </div>
-      
-      <div className="form-group">
-        <label htmlFor="categoria">Categoría</label>
-        <select
-          id="categoria"
-          name="categoria"
-          value={formData.categoria}
-          onChange={handleChange}
-        >
-          <option value="">Seleccionar categoría</option>
-          {categorias.map(cat => (
-            <option key={cat.id} value={cat.nombre}>
-              {cat.nombre.charAt(0).toUpperCase() + cat.nombre.slice(1)}
-            </option>
-          ))}
-        </select>
       </div>
       
       <div className="form-group">

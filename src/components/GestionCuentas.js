@@ -49,6 +49,13 @@ const GestionCuentas = () => {
   const contentRef = useRef(null);
   const searchInputRef = useRef(null);
   
+  // Función que genera clases CSS para categorías
+  const getCategoryClass = (categoria) => {
+    // Convertir a slug para CSS (minúsculas, guiones en lugar de espacios)
+    const slug = categoria ? categoria.toLowerCase().replace(/\s+/g, '-') : 'otros';
+    return `category-${slug}`;
+  };
+
   // Cargar datos iniciales
   const fetchData = useCallback(async () => {
     try {
@@ -82,9 +89,16 @@ const GestionCuentas = () => {
     }
   }, [currentUser.uid, categoriaSeleccionada, searchTerm, sortBy, sortDirection]);
   
+  // Cargar cuentas desde la base de datos
+  const cargarCuentas = async () => {
+    const cuentasData = await db.cuentas.toArray();
+    setCuentas(cuentasData);
+  };
+
   // Cargar datos cuando se monta el componente
   useEffect(() => {
     fetchData();
+    cargarCuentas();
     
     // Listener para responsive
     const handleResize = () => {
@@ -94,7 +108,53 @@ const GestionCuentas = () => {
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
   }, [fetchData]);
-  
+
+  // Cargar categorías desde la base de datos
+  useEffect(() => {
+    const fetchCategorias = async () => {
+      try {
+        setLoading(true);
+        let categoriasDB = await db.categorias.toArray();
+        
+        // Filtrar para incluir solo las categorías válidas
+        const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
+        
+        categoriasDB = categoriasDB.filter(cat => 
+          categoriasValidas.includes(cat.nombre)
+        );
+        
+        // Si faltara alguna categoría, añadirla con valores predeterminados
+        for (const catValida of categoriasValidas) {
+          if (!categoriasDB.some(cat => cat.nombre === catValida)) {
+            const colores = {
+              'Luz': '#f39c12',
+              'Agua': '#3498db',
+              'Gas': '#e74c3c',
+              'Internet': '#9b59b6',
+              'Utiles de Aseo': '#2ecc71',
+              'Otros': '#95a5a6'
+            };
+            
+            categoriasDB.push({
+              nombre: catValida,
+              descripcion: `Gastos de ${catValida.toLowerCase()}`,
+              color: colores[catValida] || '#95a5a6'
+            });
+          }
+        }
+        
+        setCategorias(categoriasDB);
+      } catch (error) {
+        console.error('Error al cargar categorías:', error);
+        setError('Error al cargar categorías');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchCategorias();
+  }, []);
+
   // Aplicar filtros y ordenamiento a las cuentas
   const aplicarFiltros = useCallback((cuentasArray, categoria, busqueda, ordenarPor, direccion) => {
     let result = [...cuentasArray];
@@ -236,6 +296,7 @@ const GestionCuentas = () => {
       
       setShowForm(false);
       setEditingCuenta(null);
+      await cargarCuentas(); // Recargar la lista de cuentas
       fetchData();
     } catch (error) {
       console.error('Error al guardar la cuenta:', error);
@@ -308,6 +369,7 @@ const GestionCuentas = () => {
         setSelectedCuenta(null);
       }
       
+      await cargarCuentas(); // Recargar la lista de cuentas
       fetchData();
     } catch (error) {
       console.error('Error al eliminar la cuenta:', error);
@@ -347,6 +409,7 @@ const GestionCuentas = () => {
       );
 
       // Refrescar datos y estadísticas
+      await cargarCuentas(); // Recargar la lista de cuentas
       fetchData();
       showNotification('Cuenta marcada como pagada correctamente');
     } catch (error) {
@@ -387,18 +450,16 @@ const GestionCuentas = () => {
   // Renderizar tarjeta de cuenta
   const renderCuentaCard = (cuenta) => {
     const esProxima = isProximaVencer(cuenta);
-    const categoriaClass = cuenta.categoria ? `category-${cuenta.categoria.toLowerCase()}` : '';
+    const categoriaClass = cuenta.categoria ? getCategoryClass(cuenta.categoria) : '';
     const cardClasses = [
       'cuenta-card',
       categoriaClass,
-      esProxima ? 'proxima-vencer' : '',
-      selectedCuenta && selectedCuenta.id === cuenta.id ? 'selected' : ''
-    ].filter(Boolean).join(' ');
+    ];
     
     return (
       <div 
         key={cuenta.id} 
-        className={cardClasses}
+        className={cardClasses.join(' ')} 
         onClick={() => handleSelectCuenta(cuenta)}
       >
         <div className="cuenta-content">
@@ -406,7 +467,7 @@ const GestionCuentas = () => {
             <h3 className="cuenta-titulo">{cuenta.nombre}</h3>
             <div className="badge-container">
               {cuenta.categoria && (
-                <span className={`badge category-${cuenta.categoria.toLowerCase()}`}>
+                <span className={`badge ${getCategoryClass(cuenta.categoria)}`}>
                   {cuenta.categoria}
                 </span>
               )}
@@ -483,7 +544,6 @@ const GestionCuentas = () => {
           <div 
             className="cuenta-has-factura" 
             onClick={(e) => handleViewFactura(e, cuenta)}
-            aria-label="Ver factura"
           >
             <span className="factura-indicator">📄</span>
             <span className="factura-tooltip">Ver factura</span>
@@ -519,7 +579,7 @@ const GestionCuentas = () => {
                 <div className="detail-header">
                   <h2>{selectedCuenta.nombre}</h2>
                   {selectedCuenta.categoria && (
-                    <span className={`badge large category-${selectedCuenta.categoria.toLowerCase()}`}>
+                    <span className={`badge large ${getCategoryClass(selectedCuenta.categoria)}`}>
                       {selectedCuenta.categoria}
                     </span>
                   )}
@@ -722,13 +782,13 @@ const GestionCuentas = () => {
                 >
                   Todas
                 </button>
-                {categorias.map(categoria => (
+                {categorias.map(cat => (
                   <button
-                    key={categoria.id}
-                    className={`category-tab ${categoriaSeleccionada === categoria.nombre ? 'active' : ''}`}
-                    onClick={() => handleCategoriaChange(categoria.nombre)}
+                    key={cat.id}
+                    className={`category-tab ${categoriaSeleccionada === cat.nombre ? 'active' : ''}`}
+                    onClick={() => handleCategoriaChange(cat.nombre)}
                   >
-                    {categoria.nombre}
+                    {cat.nombre}
                   </button>
                 ))}
               </div>

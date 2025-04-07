@@ -290,13 +290,12 @@
   border-top-color: #3498db;
 }
 
-/* Colores por categoría */
-.cuenta-card.category-servicios { border-top-color: #3498db; }
-.cuenta-card.category-alimentos { border-top-color: #e67e22; }
-.cuenta-card.category-transporte { border-top-color: #2ecc71; }
-.cuenta-card.category-entretenimiento { border-top-color: #9b59b6; }
-.cuenta-card.category-salud { border-top-color: #e74c3c; }
-.cuenta-card.category-educacion { border-top-color: #f1c40f; }
+/* Colores por categoría - MANTENER SOLO LAS NUEVAS CATEGORÍAS */
+.cuenta-card.category-luz { border-top-color: #f39c12; }
+.cuenta-card.category-agua { border-top-color: #3498db; }
+.cuenta-card.category-gas { border-top-color: #e74c3c; }
+.cuenta-card.category-internet { border-top-color: #9b59b6; }
+.cuenta-card.category-utiles-de-aseo { border-top-color: #2ecc71; }
 .cuenta-card.category-otros { border-top-color: #95a5a6; }
 
 /* Contenido de tarjeta */
@@ -332,7 +331,7 @@
   max-height: 2.8em;
 }
 
-/* Badges y etiquetas */
+/* Badges y etiquetas - MANTENER SOLO LAS NUEVAS CATEGORÍAS */
 .badge-container {
   display: flex;
   flex-wrap: wrap;
@@ -362,12 +361,11 @@
   animation: pulse 2s infinite;
 }
 
-.badge.category-servicios { background-color: #3498db; }
-.badge.category-alimentos { background-color: #e67e22; }
-.badge.category-transporte { background-color: #2ecc71; }
-.badge.category-entretenimiento { background-color: #9b59b6; }
-.badge.category-salud { background-color: #e74c3c; }
-.badge.category-educacion { background-color: #f1c40f; color: #333; }
+.badge.category-luz { background-color: #f39c12; }
+.badge.category-agua { background-color: #3498db; }
+.badge.category-gas { background-color: #e74c3c; }
+.badge.category-internet { background-color: #9b59b6; }
+.badge.category-utiles-de-aseo { background-color: #2ecc71; }
 .badge.category-otros { background-color: #95a5a6; }
 
 /* Cuerpo de tarjeta */

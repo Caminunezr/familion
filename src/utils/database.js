@@ -44,15 +44,14 @@ db.on('ready', async () => {
   const categoriaCount = await db.categorias.count();
 
   if (categoriaCount === 0) {
-    // Si no hay categorías, crear las categorías por defecto
+    // Nuevas categorías predeterminadas
     const categoriasDefault = [
-      { nombre: 'servicios', descripcion: 'Servicios públicos y suscripciones', color: '#3498db' },
-      { nombre: 'alimentos', descripcion: 'Compras de comida y supermercado', color: '#e67e22' },
-      { nombre: 'transporte', descripcion: 'Gastos relacionados con transporte', color: '#2ecc71' },
-      { nombre: 'entretenimiento', descripcion: 'Ocio y entretenimiento', color: '#9b59b6' },
-      { nombre: 'salud', descripcion: 'Gastos médicos y de salud', color: '#e74c3c' },
-      { nombre: 'educacion', descripcion: 'Gastos educativos', color: '#f1c40f' },
-      { nombre: 'otros', descripcion: 'Otros gastos', color: '#34495e' }
+      { nombre: 'Luz', descripcion: 'Gastos de electricidad', color: '#f39c12' },
+      { nombre: 'Agua', descripcion: 'Gastos de agua potable', color: '#3498db' },
+      { nombre: 'Gas', descripcion: 'Gastos de gas doméstico', color: '#e74c3c' },
+      { nombre: 'Internet', descripcion: 'Gastos de conexión a internet', color: '#9b59b6' },
+      { nombre: 'Utiles de Aseo', descripcion: 'Gastos en productos de limpieza', color: '#2ecc71' },
+      { nombre: 'Otros', descripcion: 'Otros gastos no categorizados', color: '#95a5a6' }
     ];
     await db.categorias.bulkAdd(categoriasDefault);
   }

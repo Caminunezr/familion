@@ -64,12 +64,12 @@
   background-color: #2ecc71;
 }
 
-.categoria-servicios { background-color: #3498db; }
-.categoria-alimentos { background-color: #e67e22; }
-.categoria-transporte { background-color: #2ecc71; }
-.categoria-entretenimiento { background-color: #9b59b6; }
-.categoria-salud { background-color: #e74c3c; }
-.categoria-educacion { background-color: #f1c40f; }
+/* Categorías actualizadas */
+.categoria-luz { background-color: #f39c12; }
+.categoria-agua { background-color: #3498db; }
+.categoria-gas { background-color: #e74c3c; }
+.categoria-internet { background-color: #9b59b6; }
+.categoria-utiles-de-aseo { background-color: #2ecc71; }
 .categoria-otros { background-color: #95a5a6; }
 
 .cuenta-details {
