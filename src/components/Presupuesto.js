@@ -303,6 +303,16 @@ const Presupuesto = () => {
 
   const handleCategoriaChange = (e) => {
     const categoriaSeleccionada = e.target.value;
+    console.log('Categoría seleccionada:', categoriaSeleccionada);
+    
+    // Si estamos editando un presupuesto, actualizar su categoría
+    if (editingPresupuesto) {
+      setEditingPresupuesto({
+        ...editingPresupuesto,
+        categoria: categoriaSeleccionada
+      });
+    }
+    
     setMostrarCampoOtros(categoriaSeleccionada === 'Otros');
   };
 
@@ -540,10 +550,13 @@ const Presupuesto = () => {
                   <div className="form-group">
                     <label htmlFor="categoria">Categoría</label>
                     <select
+                      id="categoria"
                       name="categoria"
                       value={editingPresupuesto?.categoria || ''}
                       onChange={handleCategoriaChange}
+                      onClick={(e) => e.stopPropagation()} // Evitar que eventos de contenedores interfieran
                       required
+                      style={{zIndex: 10, position: 'relative'}} // Asegurar que el selector esté sobre otros elementos
                     >
                       <option value="">Seleccionar categoría</option>
                       {/* Filtrar categorías para asegurar que no haya duplicados */}

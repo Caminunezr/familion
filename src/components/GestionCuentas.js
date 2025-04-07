@@ -116,6 +116,9 @@ const GestionCuentas = () => {
         setLoading(true);
         let categoriasDB = await db.categorias.toArray();
         
+        // Verificar datos para depuración
+        console.log("Categorías cargadas:", categoriasDB);
+        
         // Filtrar para incluir solo las categorías válidas
         const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
         
@@ -123,25 +126,13 @@ const GestionCuentas = () => {
           categoriasValidas.includes(cat.nombre)
         );
         
-        // Si faltara alguna categoría, añadirla con valores predeterminados
-        for (const catValida of categoriasValidas) {
-          if (!categoriasDB.some(cat => cat.nombre === catValida)) {
-            const colores = {
-              'Luz': '#f39c12',
-              'Agua': '#3498db',
-              'Gas': '#e74c3c',
-              'Internet': '#9b59b6',
-              'Utiles de Aseo': '#2ecc71',
-              'Otros': '#95a5a6'
-            };
-            
-            categoriasDB.push({
-              nombre: catValida,
-              descripcion: `Gastos de ${catValida.toLowerCase()}`,
-              color: colores[catValida] || '#95a5a6'
-            });
-          }
-        }
+        // Verificar que no haya duplicados
+        const nombresUnicos = new Set();
+        categoriasDB = categoriasDB.filter(cat => {
+          if (nombresUnicos.has(cat.nombre)) return false;
+          nombresUnicos.add(cat.nombre);
+          return true;
+        });
         
         setCategorias(categoriasDB);
       } catch (error) {

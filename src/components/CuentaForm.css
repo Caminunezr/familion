@@ -18,6 +18,35 @@
   font-size: 16px;
 }
 
+.cuenta-form select {
+  position: relative;
+  z-index: 5; /* Asegurar que el selector esté por encima de otros elementos */
+  cursor: pointer;
+  appearance: auto; /* Forzar la apariencia nativa del select */
+  background-color: white;
+  padding-right: 25px; /* Espacio para la flecha de desplegable */
+}
+
+/* Mejorar accesibilidad y visibilidad de opciones */
+.cuenta-form select option {
+  padding: 10px;
+  background-color: white;
+  color: #333;
+}
+
+/* Estado hover para enfatizar interactividad */
+.cuenta-form select:hover {
+  border-color: #aaa;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* Estado focus para mejor accesibilidad */
+.cuenta-form select:focus {
+  border-color: #4CAF50;
+  box-shadow: 0 0 5px rgba(76, 175, 80, 0.3);
+  outline: none;
+}
+
 .cuenta-form textarea {
   min-height: 100px;
   resize: vertical;

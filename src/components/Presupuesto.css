@@ -518,6 +518,35 @@
   box-shadow: 0 0 0 2px rgba(76, 175, 80, 0.2);
 }
 
+/* Añadir estilos específicos para el selector de categorías */
+.form-group select {
+  position: relative;
+  z-index: 5; /* Asegurar que el selector esté por encima de otros elementos */
+  cursor: pointer;
+  appearance: auto; /* Forzar la apariencia nativa del select */
+  background-color: white;
+  padding-right: 25px; /* Espacio para la flecha de desplegable */
+}
+
+/* Mejorar accesibilidad y visibilidad de opciones */
+.form-group select option {
+  padding: 10px;
+  background-color: white; 
+  color: #333;
+}
+
+/* Estado hover para enfatizar interactividad */
+.form-group select:hover {
+  border-color: #aaa;
+  box-shadow: 0 0 5px rgba(0,0,0,0.1);
+}
+
+/* Estilo específico para el elemento seleccionado */
+.form-group select:focus option:checked {
+  background-color: #4CAF50;
+  color: white;
+}
+
 .form-actions {
   display: flex;
   justify-content: flex-end;

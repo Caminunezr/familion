@@ -57,10 +57,15 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
   
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData({
-      ...formData,
+    
+    // Registrar el evento para depuración
+    console.log(`Cambiando ${name} a: ${value}`);
+    
+    // Usar callback para asegurar que el estado se actualice correctamente
+    setFormData(prevData => ({
+      ...prevData,
       [name]: value
-    });
+    }));
 
     // Mostrar el campo adicional si se selecciona "Otros"
     if (name === 'categoria') {
@@ -137,6 +142,7 @@ const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
           name="categoria"
           value={formData.categoria}
           onChange={handleChange}
+          onClick={(e) => e.stopPropagation()} // Prevenir que eventos de contenedores interfieran
           required
         >
           <option value="">Seleccionar tipo</option>
