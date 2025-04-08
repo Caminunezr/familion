@@ -1,425 +1,529 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import NavBar from './NavBar';
+import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
+import { Doughnut, Bar } from 'react-chartjs-2';
 import db from '../utils/database';
-import { Chart as ChartJS, CategoryScale, LinearScale, PointElement, LineElement, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Line, Bar, Doughnut } from 'react-chartjs-2';
 import './Historial.css';
 
-// Registrar los componentes de Chart.js
-ChartJS.register(
-  CategoryScale, 
-  LinearScale, 
-  PointElement, 
-  LineElement, 
-  BarElement, 
-  ArcElement,
-  Title, 
-  Tooltip, 
-  Legend
-);
+// Registrar componentes de Chart.js
+ChartJS.register(ArcElement, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const Historial = () => {
   const { currentUser } = useAuth();
+  
+  // Estados de carga y datos
   const [loading, setLoading] = useState(true);
-  const [historialCuentas, setHistorialCuentas] = useState([]);
-  const [filtroFechaInicio, setFiltroFechaInicio] = useState(() => {
-    // Por defecto, 6 meses atrás
-    const fechaInicio = new Date();
-    fechaInicio.setMonth(fechaInicio.getMonth() - 6);
-    return fechaInicio.toISOString().split('T')[0];
-  });
-  const [filtroFechaFin, setFiltroFechaFin] = useState(() => {
-    // Por defecto, hoy
-    return new Date().toISOString().split('T')[0];
-  });
+  const [error, setError] = useState(null);
+  const [cuentas, setCuentas] = useState([]);
+  const [pagos, setPagos] = useState([]);
+  const [categorias, setCategorias] = useState([]);
+  const [refreshCounter, setRefreshCounter] = useState(0);
+  
+  // Estados de filtrado
+  const [filtroFechaInicio, setFiltroFechaInicio] = useState('');
+  const [filtroFechaFin, setFiltroFechaFin] = useState('');
   const [filtroCategoria, setFiltroCategoria] = useState('todas');
   const [filtroEstado, setFiltroEstado] = useState('todos');
-  const [agrupacion, setAgrupacion] = useState('mes'); // mes, trimestre, año
-  const [categorias, setCategorias] = useState([]);
+  const [agrupacion, setAgrupacion] = useState('mes');
+  
+  // Estados de visualización
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState(null);
   const [datosAgrupados, setDatosAgrupados] = useState({
-    porPeriodo: [],
-    porCategoria: []
+    porMes: [],
+    porCategoria: [],
+    porPeriodo: []
   });
-  const [mostrarDetalle, setMostrarDetalle] = useState(null);
-  const [dispositivo, setDispositivo] = useState(window.innerWidth <= 768 ? 'movil' : 'escritorio');
-  const [activeTab, setActiveTab] = useState('resumen'); // resumen, tendencias, categorias, periodos
-
-  // Detectar cambios de tamaño de ventana
+  
+  // Inicializar fechas de filtro por defecto
   useEffect(() => {
-    const handleResize = () => {
-      setDispositivo(window.innerWidth <= 768 ? 'movil' : 'escritorio');
+    // Fecha fin: hoy
+    const fechaFin = new Date();
+    
+    // Fecha inicio: 6 meses atrás
+    const fechaInicio = new Date();
+    fechaInicio.setMonth(fechaInicio.getMonth() - 6);
+    
+    // Formatear fechas para los inputs de tipo date
+    setFiltroFechaInicio(fechaInicio.toISOString().split('T')[0]);
+    setFiltroFechaFin(fechaFin.toISOString().split('T')[0]);
+  }, []);
+  
+  // Cargar datos cuando cambian los filtros
+  useEffect(() => {
+    const cargarDatos = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        
+        console.log("Iniciando carga de datos del historial...");
+        
+        // Cargar categorías para filtro
+        const categoriasDB = await db.categorias.toArray();
+        console.log("Categorías cargadas:", categoriasDB);
+        
+        // Filtrar para incluir solo las categorías válidas
+        const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
+        const categoriasUnicas = [];
+        const nombresVistos = new Set();
+        
+        // Asegurar que tenemos todas las categorías válidas
+        for (const nombreCategoria of categoriasValidas) {
+          // Buscar primero en la base de datos
+          const categoriaExistente = categoriasDB.find(
+            cat => cat.nombre.toLowerCase() === nombreCategoria.toLowerCase()
+          );
+          
+          if (categoriaExistente && !nombresVistos.has(nombreCategoria)) {
+            categoriasUnicas.push(categoriaExistente);
+            nombresVistos.add(nombreCategoria);
+          } else if (!nombresVistos.has(nombreCategoria)) {
+            // Si no existe, crear una versión por defecto
+            categoriasUnicas.push({
+              nombre: nombreCategoria,
+              descripcion: `Gastos de ${nombreCategoria.toLowerCase()}`,
+              color: getColorForCategoria(nombreCategoria)
+            });
+            nombresVistos.add(nombreCategoria);
+          }
+        }
+        
+        setCategorias(categoriasUnicas);
+        console.log("Categorías procesadas:", categoriasUnicas);
+        
+        // Cargar cuentas y pagos en paralelo
+        console.log("Cargando cuentas y pagos...");
+        const [cuentasArray, pagosArray] = await Promise.all([
+          db.cuentas.toArray(),
+          db.pagos.toArray()
+        ]);
+        
+        console.log("Cuentas cargadas:", cuentasArray.length);
+        console.log("Pagos cargados:", pagosArray.length);
+        
+        // Procesar cuentas con sus pagos
+        const cuentasProcesadas = procesarCuentasYPagos(cuentasArray, pagosArray);
+        console.log("Cuentas procesadas:", cuentasProcesadas.length);
+        
+        // Aplicar filtros
+        const cuentasFiltradas = filtrarCuentas(cuentasProcesadas);
+        console.log("Cuentas filtradas:", cuentasFiltradas.length);
+        setCuentas(cuentasFiltradas);
+        
+        // Guardar pagos para análisis
+        setPagos(pagosArray);
+        
+        // Agrupar datos según selección
+        const datosAgrupados = agruparDatos(cuentasFiltradas, agrupacion);
+        setDatosAgrupados(datosAgrupados);
+        
+        console.log("Carga de datos completada con éxito");
+      } catch (error) {
+        console.error('Error al cargar datos del historial:', error);
+        setError('No se pudieron cargar los datos. Por favor, intenta de nuevo más tarde.');
+      } finally {
+        setLoading(false);
+      }
     };
     
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
-
-  // Formatear números como moneda (CLP)
-  const formatMonto = useCallback((monto) => {
-    return new Intl.NumberFormat('es-CL', {
-      style: 'currency',
-      currency: 'CLP',
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(monto);
-  }, []);
-
-  // Formatear fecha
-  const formatFecha = useCallback((fechaString) => {
-    const fecha = new Date(fechaString);
-    return fecha.toLocaleDateString('es-CL', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  }, []);
-
-  // Formatear período según la agrupación seleccionada
-  const formatPeriodo = useCallback((periodo) => {
-    if (agrupacion === 'mes') {
-      const [año, mes] = periodo.split('-');
-      const nombresMeses = [
-        'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-        'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-      ];
-      return `${nombresMeses[parseInt(mes) - 1]} ${año}`;
-    } else if (agrupacion === 'trimestre') {
-      const [año, trimestre] = periodo.split('-T');
-      return `Trimestre ${trimestre}, ${año}`;
-    } else {
-      return `Año ${periodo}`;
-    }
-  }, [agrupacion]);
-
-  // Agrupar datos para visualización en gráficos
-  const agruparDatos = useCallback((cuentas) => {
-    // Para agrupar por período (mes, trimestre, año)
-    const porPeriodo = {};
-    // Para agrupar por categoría
-    const porCategoria = {};
-
-    cuentas.forEach(cuenta => {
-      const fecha = new Date(cuenta.fechaCreacion);
-
-      // Agrupar por período seleccionado
-      let periodoKey;
-      if (agrupacion === 'mes') {
-        periodoKey = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}`;
-      } else if (agrupacion === 'trimestre') {
-        const trimestre = Math.floor(fecha.getMonth() / 3) + 1;
-        periodoKey = `${fecha.getFullYear()}-T${trimestre}`;
-      } else { // año
-        periodoKey = fecha.getFullYear().toString();
+    cargarDatos();
+  }, [filtroFechaInicio, filtroFechaFin, filtroCategoria, filtroEstado, agrupacion, refreshCounter]);
+  
+  // Función para obtener color predeterminado por categoría
+  const getColorForCategoria = (categoria) => {
+    const colores = {
+      'Luz': '#f39c12',
+      'Agua': '#3498db',
+      'Gas': '#e74c3c',
+      'Internet': '#9b59b6',
+      'Utiles de Aseo': '#2ecc71',
+      'Otros': '#95a5a6'
+    };
+    return colores[categoria] || '#95a5a6';
+  };
+  
+  // Procesar cuentas y sus pagos
+  const procesarCuentasYPagos = (cuentasArray, pagosArray) => {
+    console.log("Procesando cuentas y pagos:", cuentasArray.length, pagosArray.length);
+    
+    // Crear índice de pagos por cuentaId para acceso rápido
+    const pagosPorCuenta = pagosArray.reduce((acc, pago) => {
+      if (!acc[pago.cuentaId]) {
+        acc[pago.cuentaId] = [];
       }
-
-      // Inicializar si no existe
-      if (!porPeriodo[periodoKey]) {
-        porPeriodo[periodoKey] = {
-          total: 0,
-          pagadas: 0,
-          pendientes: 0,
-          cantidad: 0
-        };
-      }
-
-      // Sumar al período
-      porPeriodo[periodoKey].total += cuenta.monto;
-      porPeriodo[periodoKey].cantidad += 1;
-      if (cuenta.estaPagada) {
-        porPeriodo[periodoKey].pagadas += cuenta.monto;
+      acc[pago.cuentaId].push(pago);
+      return acc;
+    }, {});
+    
+    // Lista de categorías válidas
+    const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
+    
+    // Procesar cada cuenta
+    return cuentasArray.map(cuenta => {
+      // Encontrar pagos asociados a esta cuenta
+      const pagosCuenta = pagosPorCuenta[cuenta.id] || [];
+      
+      // Calcular total pagado
+      const totalPagado = pagosCuenta.reduce((sum, pago) => {
+        const montoPago = parseFloat(pago.montoPagado) || 0;
+        return sum + montoPago;
+      }, 0);
+      
+      // Determinar si está pagada (el total pagado es mayor o igual al monto)
+      const montoCuenta = parseFloat(cuenta.monto) || 0;
+      const estaPagada = totalPagado >= montoCuenta;
+      
+      // Obtener fecha del último pago
+      const fechaUltimoPago = pagosCuenta.length > 0 
+        ? new Date(Math.max(...pagosCuenta.map(p => new Date(p.fechaPago).getTime())))
+        : null;
+        
+      // Normalizar categoría
+      let categoria = cuenta.categoria || 'Otros';
+      
+      // Asegurar que la categoría sea una de las válidas
+      // Primero, buscar coincidencia exacta (case-insensitive)
+      const categoriaExacta = categoriasValidas.find(
+        cat => cat.toLowerCase() === categoria.toLowerCase()
+      );
+      
+      if (categoriaExacta) {
+        // Usar la versión "oficial" del nombre (con mayúsculas correctas)
+        categoria = categoriaExacta;
       } else {
-        porPeriodo[periodoKey].pendientes += cuenta.monto;
+        // Si no hay coincidencia, mapear antiguas o usar "Otros"
+        const mapeoCategoriasAntiguas = {
+          'servicios': 'Luz',
+          'alimentos': 'Agua',
+          'transporte': 'Gas',
+          'entretenimiento': 'Internet',
+          'salud': 'Utiles de Aseo',
+          'educacion': 'Otros',
+          'otros': 'Otros'
+        };
+        
+        categoria = mapeoCategoriasAntiguas[categoria.toLowerCase()] || 'Otros';
       }
-
-      // Agrupar por categoría
-      const categoriaKey = cuenta.categoria || 'Sin categoría';
-      if (!porCategoria[categoriaKey]) {
-        porCategoria[categoriaKey] = {
-          total: 0,
-          pagadas: 0,
-          pendientes: 0,
-          cantidad: 0
+      
+      // Datos para depuración
+      if (categoria === 'Internet') {
+        console.log("Procesando cuenta de Internet:", cuenta);
+        console.log("Pagos encontrados:", pagosCuenta.length);
+        console.log("Total pagado:", totalPagado, "de", montoCuenta);
+        console.log("¿Está pagada?", estaPagada);
+      }
+      
+      return {
+        ...cuenta,
+        totalPagado,
+        estaPagada,
+        porcentajePagado: montoCuenta > 0 ? Math.min(100, Math.round((totalPagado / montoCuenta) * 100)) : 0,
+        fechaUltimoPago: fechaUltimoPago ? fechaUltimoPago.toISOString() : null,
+        pagosCuenta,
+        categoria
+      };
+    });
+  };
+  
+  // Filtrar cuentas según criterios seleccionados
+  const filtrarCuentas = (cuentasProcesadas) => {
+    console.log("Filtrando cuentas:", cuentasProcesadas.length);
+    
+    return cuentasProcesadas.filter(cuenta => {
+      // Verificar si la cuenta tiene categoría para depuración
+      const categoriaLowerCase = cuenta.categoria.toLowerCase();
+      const filtroLowerCase = filtroCategoria.toLowerCase();
+      
+      if (categoriaLowerCase === 'internet') {
+        console.log("Filtrando cuenta Internet:", cuenta);
+        console.log("Filtro aplicado - Categoría:", filtroCategoria === 'todas' || categoriaLowerCase === filtroLowerCase);
+        console.log("Filtro aplicado - Estado:", filtroEstado === 'todos' || 
+          (filtroEstado === 'pagadas' && cuenta.estaPagada) || 
+          (filtroEstado === 'pendientes' && !cuenta.estaPagada));
+      }
+      
+      // Filtro por fechas (convertir a objetos Date para comparación consistente)
+      if (filtroFechaInicio && cuenta.fechaVencimiento) {
+        const fechaInicio = new Date(filtroFechaInicio);
+        const fechaVencimiento = new Date(cuenta.fechaVencimiento);
+        
+        // Normalizar fechas quitando componente de tiempo
+        fechaInicio.setHours(0,0,0,0);
+        fechaVencimiento.setHours(0,0,0,0);
+        
+        if (fechaVencimiento < fechaInicio) return false;
+      }
+      
+      if (filtroFechaFin && cuenta.fechaVencimiento) {
+        const fechaFin = new Date(filtroFechaFin);
+        const fechaVencimiento = new Date(cuenta.fechaVencimiento);
+        
+        // Normalizar fechas quitando componente de tiempo
+        fechaFin.setHours(23,59,59,999);
+        fechaVencimiento.setHours(23,59,59,999);
+        
+        if (fechaVencimiento > fechaFin) return false;
+      }
+      
+      // Filtro por categoría (normalizar mayúsculas/minúsculas)
+      if (filtroCategoria !== 'todas' && categoriaLowerCase !== filtroLowerCase) {
+        return false;
+      }
+      
+      // Filtro por estado (mejorar detección de cuenta pagada)
+      if (filtroEstado === 'pagadas' && !cuenta.estaPagada) {
+        return false;
+      }
+      
+      if (filtroEstado === 'pendientes' && cuenta.estaPagada) {
+        return false;
+      }
+      
+      return true;
+    });
+  };
+  
+  // Agrupar datos según modo de visualización
+  const agruparDatos = (cuentasFiltradas, modo) => {
+    console.log("Agrupando datos por:", modo);
+    
+    // Resultados de agrupación
+    const porMes = [];
+    const porCategoria = [];
+    const porPeriodo = [];
+    
+    // 1. Agrupación por mes
+    const mesesMap = cuentasFiltradas.reduce((acc, cuenta) => {
+      if (!cuenta.fechaVencimiento) return acc;
+      
+      const fecha = new Date(cuenta.fechaVencimiento);
+      const periodoKey = `${fecha.getFullYear()}-${String(fecha.getMonth() + 1).padStart(2, '0')}`;
+      
+      if (!acc[periodoKey]) {
+        acc[periodoKey] = {
+          periodo: periodoKey,
+          etiqueta: formatoMes(periodoKey),
+          totalCuentas: 0,
+          totalMonto: 0,
+          cuentasPagadas: 0,
+          montoPagado: 0,
+          porcentajePagado: 0,
+          cuentas: []
         };
       }
       
-      porCategoria[categoriaKey].total += cuenta.monto;
-      porCategoria[categoriaKey].cantidad += 1;
+      acc[periodoKey].totalCuentas++;
+      acc[periodoKey].totalMonto += parseFloat(cuenta.monto) || 0;
+      
       if (cuenta.estaPagada) {
-        porCategoria[categoriaKey].pagadas += cuenta.monto;
-      } else {
-        porCategoria[categoriaKey].pendientes += cuenta.monto;
+        acc[periodoKey].cuentasPagadas++;
       }
+      
+      acc[periodoKey].montoPagado += parseFloat(cuenta.totalPagado) || 0;
+      acc[periodoKey].cuentas.push(cuenta);
+      
+      return acc;
+    }, {});
+    
+    // Calcular porcentajes y ordenar
+    Object.values(mesesMap).forEach(mes => {
+      mes.porcentajePagado = mes.totalMonto > 0 
+        ? Math.round((mes.montoPagado / mes.totalMonto) * 100) 
+        : 0;
+      porMes.push(mes);
     });
-
-    // Convertir a arrays para los gráficos
-    const periodosArray = Object.entries(porPeriodo)
-      .map(([periodo, datos]) => ({
-        periodo,
-        ...datos
-      }))
-      .sort((a, b) => a.periodo.localeCompare(b.periodo));
-
-    const categoriasArray = Object.entries(porCategoria)
-      .map(([categoria, datos]) => ({
-        categoria,
-        ...datos
-      }))
-      .sort((a, b) => b.total - a.total);
-
-    setDatosAgrupados({
-      porPeriodo: periodosArray,
-      porCategoria: categoriasArray
+    
+    // Ordenar por fecha (más reciente primero)
+    porMes.sort((a, b) => b.periodo.localeCompare(a.periodo));
+    
+    // 2. Agrupación por categoría
+    const categoriasMap = cuentasFiltradas.reduce((acc, cuenta) => {
+      const categoriaKey = cuenta.categoria || 'Sin categoría';
+      
+      if (!acc[categoriaKey]) {
+        acc[categoriaKey] = {
+          categoria: categoriaKey,
+          totalCuentas: 0,
+          totalMonto: 0,
+          cuentasPagadas: 0,
+          montoPagado: 0,
+          porcentajePagado: 0,
+          cuentas: []
+        };
+      }
+      
+      acc[categoriaKey].totalCuentas++;
+      acc[categoriaKey].totalMonto += parseFloat(cuenta.monto) || 0;
+      
+      if (cuenta.estaPagada) {
+        acc[categoriaKey].cuentasPagadas++;
+      }
+      
+      acc[categoriaKey].montoPagado += parseFloat(cuenta.totalPagado) || 0;
+      acc[categoriaKey].cuentas.push(cuenta);
+      
+      return acc;
+    }, {});
+    
+    // Calcular porcentajes y ordenar
+    Object.values(categoriasMap).forEach(cat => {
+      cat.porcentajePagado = cat.totalMonto > 0 
+        ? Math.round((cat.montoPagado / cat.totalMonto) * 100) 
+        : 0;
+      porCategoria.push(cat);
     });
-  }, [agrupacion]);
-
-  // Cargar datos iniciales
-  const cargarDatos = useCallback(async () => {
-    try {
-      setLoading(true);
-
-      // Obtener todas las categorías
-      const categoriasData = await db.categorias.toArray();
-      setCategorias(categoriasData);
-
-      // Obtener historial de cuentas
-      let cuentasHistoricas = await db.cuentas
-        .where('userId')
-        .equals(currentUser.uid)
-        .toArray();
-
-      // Filtrar por fecha
-      cuentasHistoricas = cuentasHistoricas.filter(cuenta => {
-        const fechaCuenta = new Date(cuenta.fechaCreacion);
-        const inicio = new Date(filtroFechaInicio);
-        const fin = new Date(filtroFechaFin);
-        fin.setHours(23, 59, 59);
-        return fechaCuenta >= inicio && fechaCuenta <= fin;
-      });
-
-      // Filtrar por categoría
-      if (filtroCategoria !== 'todas') {
-        cuentasHistoricas = cuentasHistoricas.filter(cuenta => 
-          cuenta.categoria === filtroCategoria
-        );
-      }
-
-      // Filtrar por estado
-      if (filtroEstado !== 'todos') {
-        const estaPagada = filtroEstado === 'pagadas';
-        cuentasHistoricas = cuentasHistoricas.filter(cuenta => 
-          cuenta.estaPagada === estaPagada
-        );
-      }
-
-      // Ordenar por fecha (más recientes primero)
-      cuentasHistoricas.sort((a, b) => 
-        new Date(b.fechaCreacion) - new Date(a.fechaCreacion)
-      );
-
-      setHistorialCuentas(cuentasHistoricas);
-
-      // Agrupar datos para gráficos
-      agruparDatos(cuentasHistoricas);
-    } catch (error) {
-      console.error('Error al cargar historial:', error);
-    } finally {
-      setLoading(false);
+    
+    // Ordenar por monto (mayor primero)
+    porCategoria.sort((a, b) => b.totalMonto - a.totalMonto);
+    
+    // 3. Vista por períodos según modo seleccionado
+    // Usar los resultados ya calculados
+    if (modo === 'mes') {
+      porPeriodo.push(...porMes);
+    } else if (modo === 'categoria') {
+      porPeriodo.push(...porCategoria);
     }
-  }, [currentUser.uid, filtroFechaInicio, filtroFechaFin, filtroCategoria, filtroEstado, agruparDatos]);
-
-  // Efecto para cargar datos iniciales y cuando cambian los filtros
-  useEffect(() => {
-    cargarDatos();
-  }, [cargarDatos]);
-
-  // Exportar datos a CSV
-  const exportarCSV = useCallback(() => {
-    if (!historialCuentas.length) return;
     
-    // Convertir datos a formato CSV
-    const headers = ['Nombre,Categoría,Monto,Estado,FechaCreación,FechaVencimiento'];
-    const rows = historialCuentas.map(cuenta => [
-      `"${cuenta.nombre}"`,
-      `"${cuenta.categoria || 'Sin categoría'}"`,
+    return { porMes, porCategoria, porPeriodo };
+  };
+  
+  // Generar datos para gráficos
+  const datosPorCategoria = useMemo(() => {
+    if (!datosAgrupados.porCategoria || datosAgrupados.porCategoria.length === 0) {
+      return {};
+    }
+    
+    // Colores para las categorías
+    const colores = {
+      'Luz': '#f39c12', // Amarillo
+      'Agua': '#3498db', // Azul
+      'Gas': '#e74c3c', // Rojo
+      'Internet': '#9b59b6', // Morado
+      'Utiles de Aseo': '#2ecc71', // Verde
+      'Otros': '#95a5a6', // Gris
+      'Sin categoría': '#7f8c8d' // Gris oscuro
+    };
+    
+    // Preparar datos para gráfico de dona
+    return {
+      labels: datosAgrupados.porCategoria.map(cat => cat.categoria),
+      datasets: [{
+        data: datosAgrupados.porCategoria.map(cat => cat.totalMonto),
+        backgroundColor: datosAgrupados.porCategoria.map(cat => colores[cat.categoria] || '#999'),
+        borderWidth: 1
+      }]
+    };
+  }, [datosAgrupados.porCategoria]);
+  
+  // Generar datos de tendencias por mes
+  const datosTendencias = useMemo(() => {
+    if (!datosAgrupados.porMes || datosAgrupados.porMes.length < 2) {
+      return {};
+    }
+    
+    // Tomar los últimos 6 meses o menos si no hay suficientes datos
+    const mesesRecientes = [...datosAgrupados.porMes].reverse().slice(0, 6).reverse();
+    
+    return {
+      labels: mesesRecientes.map(mes => mes.etiqueta),
+      datasets: [{
+        label: 'Monto Total',
+        data: mesesRecientes.map(mes => mes.totalMonto),
+        backgroundColor: 'rgba(52, 152, 219, 0.7)',
+        borderColor: 'rgba(52, 152, 219, 1)',
+        borderWidth: 1
+      }, {
+        label: 'Monto Pagado',
+        data: mesesRecientes.map(mes => mes.montoPagado),
+        backgroundColor: 'rgba(46, 204, 113, 0.7)',
+        borderColor: 'rgba(46, 204, 113, 1)',
+        borderWidth: 1
+      }]
+    };
+  }, [datosAgrupados.porMes]);
+  
+  // Calcular resumen general
+  const resumenGeneral = useMemo(() => {
+    const totalCuentas = cuentas.length;
+    const totalMonto = cuentas.reduce((sum, cuenta) => sum + (parseFloat(cuenta.monto) || 0), 0);
+    const totalPagado = cuentas.reduce((sum, cuenta) => sum + (parseFloat(cuenta.totalPagado) || 0), 0);
+    const cuentasPagadas = cuentas.filter(cuenta => cuenta.estaPagada).length;
+    
+    return {
+      totalCuentas,
+      totalMonto,
+      totalPagado,
+      cuentasPagadas,
+      porcentajePagado: totalMonto > 0 ? Math.round((totalPagado / totalMonto) * 100) : 0
+    };
+  }, [cuentas]);
+  
+  // Seleccionar un período para ver detalles
+  const seleccionarPeriodo = (periodo) => {
+    if (periodoSeleccionado === periodo) {
+      setPeriodoSeleccionado(null); // Colapsar si ya está seleccionado
+    } else {
+      setPeriodoSeleccionado(periodo);
+    }
+  };
+  
+  // Formatear fechas y montos
+  const formatoFecha = (fechaStr) => {
+    if (!fechaStr) return 'Sin fecha';
+    const fecha = new Date(fechaStr);
+    return fecha.toLocaleDateString('es-ES');
+  };
+  
+  const formatoMes = (periodoStr) => {
+    if (!periodoStr) return '';
+    
+    const [año, mes] = periodoStr.split('-');
+    const meses = [
+      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+    ];
+    
+    return `${meses[parseInt(mes) - 1]} ${año}`;
+  };
+  
+  const formatMonto = (monto) => {
+    return monto ? `$${monto.toLocaleString('es-CL')}` : '$0';
+  };
+  
+  // Exportar a CSV
+  const exportarCSV = () => {
+    // Crear cabeceras
+    const cabeceras = ['Nombre', 'Categoría', 'Monto', 'Pagado', '% Pagado', 'Vencimiento', 'Estado'];
+    
+    // Preparar filas de datos
+    const filas = cuentas.map(cuenta => [
+      cuenta.nombre,
+      cuenta.categoria,
       cuenta.monto,
-      cuenta.estaPagada ? 'Pagada' : 'Pendiente',
-      `"${formatFecha(cuenta.fechaCreacion)}"`,
-      cuenta.fechaVencimiento ? `"${formatFecha(cuenta.fechaVencimiento)}"` : 'N/A'
-    ].join(','));
+      cuenta.totalPagado || 0,
+      `${cuenta.porcentajePagado}%`,
+      cuenta.fechaVencimiento ? formatoFecha(cuenta.fechaVencimiento) : 'Sin fecha',
+      cuenta.estaPagada ? 'Pagada' : 'Pendiente'
+    ]);
     
-    const csvContent = `${headers}\n${rows.join('\n')}`;
+    // Unir todo en formato CSV
+    const contenidoCSV = [
+      cabeceras.join(','),
+      ...filas.map(fila => fila.join(','))
+    ].join('\n');
     
-    // Crear el blob y descargarlo
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    // Crear blob y descargar
+    const blob = new Blob([contenidoCSV], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
-    const fecha = new Date().toISOString().slice(0,10);
-    
     link.setAttribute('href', url);
-    link.setAttribute('download', `historial-cuentas-${fecha}.csv`);
+    link.setAttribute('download', `historial_cuentas_${new Date().toISOString().slice(0, 10)}.csv`);
     link.style.visibility = 'hidden';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  }, [historialCuentas, formatFecha]);
-
-  // Datos para el gráfico de línea (tendencia por período)
-  const lineChartData = useMemo(() => {
-    return {
-      labels: datosAgrupados.porPeriodo.map(p => formatPeriodo(p.periodo)),
-      datasets: [
-        {
-          label: 'Total',
-          data: datosAgrupados.porPeriodo.map(p => p.total),
-          borderColor: 'rgb(53, 162, 235)',
-          backgroundColor: 'rgba(53, 162, 235, 0.5)',
-          tension: 0.3
-        },
-        {
-          label: 'Pagadas',
-          data: datosAgrupados.porPeriodo.map(p => p.pagadas),
-          borderColor: 'rgb(75, 192, 192)',
-          backgroundColor: 'rgba(75, 192, 192, 0.5)',
-          tension: 0.3
-        },
-        {
-          label: 'Pendientes',
-          data: datosAgrupados.porPeriodo.map(p => p.pendientes),
-          borderColor: 'rgb(255, 99, 132)',
-          backgroundColor: 'rgba(255, 99, 132, 0.5)',
-          tension: 0.3
-        }
-      ]
-    };
-  }, [datosAgrupados.porPeriodo, formatPeriodo]);
-
-  // Datos para el gráfico de barras (distribución por categoría)
-  const barChartData = useMemo(() => {
-    return {
-      labels: datosAgrupados.porCategoria.map(c => c.categoria),
-      datasets: [
-        {
-          label: 'Monto por Categoría',
-          data: datosAgrupados.porCategoria.map(c => c.total),
-          backgroundColor: [
-            'rgba(255, 99, 132, 0.6)',
-            'rgba(54, 162, 235, 0.6)',
-            'rgba(255, 206, 86, 0.6)',
-            'rgba(75, 192, 192, 0.6)',
-            'rgba(153, 102, 255, 0.6)',
-            'rgba(255, 159, 64, 0.6)',
-            'rgba(199, 199, 199, 0.6)'
-          ],
-          borderColor: [
-            'rgba(255, 99, 132, 1)',
-            'rgba(54, 162, 235, 1)',
-            'rgba(255, 206, 86, 1)',
-            'rgba(75, 192, 192, 1)',
-            'rgba(153, 102, 255, 1)',
-            'rgba(255, 159, 64, 1)',
-            'rgba(199, 199, 199, 1)'
-          ],
-          borderWidth: 1,
-        }
-      ]
-    };
-  }, [datosAgrupados.porCategoria]);
-
-  // Datos para gráfico de donut (pagado vs pendiente)
-  const doughnutData = useMemo(() => {
-    const totalPagado = historialCuentas.reduce((sum, cuenta) => cuenta.estaPagada ? sum + cuenta.monto : sum, 0);
-    const totalPendiente = historialCuentas.reduce((sum, cuenta) => !cuenta.estaPagada ? sum + cuenta.monto : sum, 0);
-    
-    return {
-      labels: ['Pagado', 'Pendiente'],
-      datasets: [{
-        data: [totalPagado, totalPendiente],
-        backgroundColor: [
-          'rgba(75, 192, 192, 0.6)',
-          'rgba(255, 99, 132, 0.6)',
-        ],
-        borderColor: [
-          'rgba(75, 192, 192, 1)',
-          'rgba(255, 99, 132, 1)',
-        ],
-        borderWidth: 1,
-      }]
-    };
-  }, [historialCuentas]);
-
-  // Opciones para los gráficos
-  const chartOptions = useMemo(() => {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            boxWidth: dispositivo === 'movil' ? 12 : 15,
-            padding: dispositivo === 'movil' ? 8 : 15,
-            font: {
-              size: dispositivo === 'movil' ? 10 : 12
-            }
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              let label = context.dataset.label || '';
-              if (label) {
-                label += ': ';
-              }
-              if (context.raw !== undefined) {
-                label += formatMonto(context.raw);
-              }
-              return label;
-            }
-          }
-        }
-      },
-      scales: dispositivo === 'movil' ? undefined : {
-        y: {
-          ticks: {
-            callback: (value) => formatMonto(value)
-          }
-        }
-      }
-    };
-  }, [dispositivo, formatMonto]);
+  };
   
-  // Opciones específicas para gráficos de pastel/dona
-  const pieChartOptions = useMemo(() => {
-    return {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: {
-          position: 'bottom',
-          labels: {
-            boxWidth: dispositivo === 'movil' ? 12 : 15,
-            padding: dispositivo === 'movil' ? 8 : 15,
-            font: {
-              size: dispositivo === 'movil' ? 10 : 12
-            }
-          }
-        },
-        tooltip: {
-          callbacks: {
-            label: (context) => {
-              const value = context.raw;
-              const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return `${context.label}: ${formatMonto(value)} (${percentage}%)`;
-            }
-          }
-        }
-      }
-    };
-  }, [dispositivo, formatMonto]);
-
   // Renderizar filtros
   const renderFiltros = () => (
     <div className="filtros-container">
@@ -454,7 +558,7 @@ const Historial = () => {
           >
             <option value="todas">Todas las categorías</option>
             {categorias.map(cat => (
-              <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+              <option key={cat.id || cat.nombre} value={cat.nombre}>{cat.nombre}</option>
             ))}
           </select>
         </div>
@@ -485,399 +589,331 @@ const Historial = () => {
           </button>
           <button
             type="button"
-            className={agrupacion === 'trimestre' ? 'active' : ''}
-            onClick={() => setAgrupacion('trimestre')}
+            className={agrupacion === 'categoria' ? 'active' : ''}
+            onClick={() => setAgrupacion('categoria')}
           >
-            Trimestre
-          </button>
-          <button
-            type="button"
-            className={agrupacion === 'año' ? 'active' : ''}
-            onClick={() => setAgrupacion('año')}
-          >
-            Año
+            Categoría
           </button>
         </div>
       </div>
       
-      {historialCuentas.length > 0 && (
-        <button 
-          type="button"
-          className="export-button"
-          onClick={exportarCSV}
-        >
-          Exportar Datos
-        </button>
+      <a 
+        href="#" 
+        className="export-button" 
+        onClick={(e) => { e.preventDefault(); exportarCSV(); }}
+      >
+        Exportar a CSV
+      </a>
+    </div>
+  );
+  
+  // Renderizar resumen
+  const renderResumen = () => (
+    <div className="resumen-container">
+      <h3>Resumen General</h3>
+      <div className="resumen-cards">
+        <div className="resumen-card">
+          <div className="card-icon total-icon">📊</div>
+          <div className="card-content">
+            <div className="card-title">Total de Cuentas</div>
+            <div className="card-value">{resumenGeneral.totalCuentas}</div>
+          </div>
+        </div>
+        
+        <div className="resumen-card">
+          <div className="card-icon monto-icon">💰</div>
+          <div className="card-content">
+            <div className="card-title">Monto Total</div>
+            <div className="card-value">{formatMonto(resumenGeneral.totalMonto)}</div>
+          </div>
+        </div>
+        
+        <div className="resumen-card">
+          <div className="card-icon pagado-icon">✅</div>
+          <div className="card-content">
+            <div className="card-title">Total Pagado</div>
+            <div className="card-value">{formatMonto(resumenGeneral.totalPagado)}</div>
+          </div>
+        </div>
+        
+        <div className="resumen-card">
+          <div className="card-icon progreso-icon">📈</div>
+          <div className="card-content">
+            <div className="card-title">Porcentaje Pagado</div>
+            <div className="card-value">{resumenGeneral.porcentajePagado}%</div>
+            <div className="progress-bar">
+              <div 
+                className="progress" 
+                style={{width: `${resumenGeneral.porcentajePagado}%`}}
+              ></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+  
+  // Renderizar gráficos
+  const renderGraficos = () => (
+    <div className="graficos-container">
+      <div className="grafico-card">
+        <h3>Distribución por Categoría</h3>
+        {datosPorCategoria.labels?.length > 0 ? (
+          <div className="grafico-dona">
+            <Doughnut 
+              data={datosPorCategoria}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'right',
+                    labels: {
+                      boxWidth: 15,
+                      padding: 15
+                    }
+                  }
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div className="no-data">No hay suficientes datos para mostrar el gráfico</div>
+        )}
+      </div>
+      
+      <div className="grafico-card">
+        <h3>Tendencia por Mes</h3>
+        {datosTendencias.labels?.length > 0 ? (
+          <div className="grafico-barras">
+            <Bar 
+              data={datosTendencias}
+              options={{
+                responsive: true,
+                plugins: {
+                  legend: {
+                    position: 'top'
+                  },
+                  title: {
+                    display: true,
+                    text: 'Evolución de pagos por mes'
+                  }
+                },
+                scales: {
+                  y: {
+                    beginAtZero: true
+                  }
+                }
+              }}
+            />
+          </div>
+        ) : (
+          <div className="no-data">No hay suficientes datos para mostrar el gráfico</div>
+        )}
+      </div>
+    </div>
+  );
+  
+  // Renderizar interpretación
+  const renderInterpretacion = () => (
+    <div className="interpretacion">
+      <h3>Interpretación</h3>
+      
+      <p>A continuación se presenta un análisis de tus gastos:</p>
+      
+      <ul>
+        <li>
+          <span className="dot blue"></span>
+          <strong>Monto total en el período seleccionado:</strong> {formatMonto(resumenGeneral.totalMonto)}
+        </li>
+        <li>
+          <span className="dot green"></span>
+          <strong>Has pagado:</strong> {formatMonto(resumenGeneral.totalPagado)} ({resumenGeneral.porcentajePagado}% del total)
+        </li>
+        <li>
+          <span className="dot red"></span>
+          <strong>Categoría con más gasto:</strong> {datosAgrupados.porCategoria.length > 0 
+            ? `${datosAgrupados.porCategoria[0].categoria} (${formatMonto(datosAgrupados.porCategoria[0].totalMonto)})` 
+            : 'Sin datos'}
+        </li>
+      </ul>
+      
+      {datosAgrupados.porMes.length > 1 && (
+        <div className="tabla-categorias">
+          <h4>Categorías con mayor gasto</h4>
+          <table>
+            <thead>
+              <tr>
+                <th>Categoría</th>
+                <th>Monto</th>
+                <th>% del Total</th>
+              </tr>
+            </thead>
+            <tbody>
+              {datosAgrupados.porCategoria.slice(0, 5).map(cat => (
+                <tr key={cat.categoria}>
+                  <td>{cat.categoria}</td>
+                  <td>{formatMonto(cat.totalMonto)}</td>
+                  <td>{Math.round((cat.totalMonto / resumenGeneral.totalMonto) * 100)}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   );
-
-  // Renderizar resumen
-  const renderResumen = () => (
-    <div className="resumen-estadistico">
-      <h3>Resumen</h3>
-      <div className="resumen-cards">
-        <div className="resumen-card">
-          <div className="resumen-icon">📊</div>
-          <div className="resumen-content">
-            <div className="resumen-valor">{historialCuentas.length}</div>
-            <div className="resumen-label">Cuentas totales</div>
-          </div>
-        </div>
-        
-        <div className="resumen-card">
-          <div className="resumen-icon">💰</div>
-          <div className="resumen-content">
-            <div className="resumen-valor">
-              {formatMonto(historialCuentas.reduce((sum, cuenta) => sum + cuenta.monto, 0))}
-            </div>
-            <div className="resumen-label">Valor total</div>
-          </div>
-        </div>
-        
-        <div className="resumen-card">
-          <div className="resumen-icon">✅</div>
-          <div className="resumen-content">
-            <div className="resumen-valor">
-              {historialCuentas.filter(c => c.estaPagada).length}
-            </div>
-            <div className="resumen-label">Cuentas pagadas</div>
-          </div>
-        </div>
-        
-        <div className="resumen-card">
-          <div className="resumen-icon">⏳</div>
-          <div className="resumen-content">
-            <div className="resumen-valor">
-              {historialCuentas.filter(c => !c.estaPagada).length}
-            </div>
-            <div className="resumen-label">Cuentas pendientes</div>
-          </div>
-        </div>
-      </div>
-      
-      <div className="donut-chart-container">
-        <h3>Estado general de pagos</h3>
-        <div className="chart-wrapper donut">
-          <Doughnut data={doughnutData} options={pieChartOptions} />
-        </div>
-      </div>
-      
-      <h3>Últimas cuentas</h3>
-      <div className="tabla-recientes">
-        <table className="tabla-cuentas">
-          <thead>
-            <tr>
-              <th>Fecha</th>
-              <th>Cuenta</th>
-              <th>Monto</th>
-              <th>Estado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {historialCuentas.slice(0, 5).map(cuenta => (
-              <tr key={cuenta.id} className={cuenta.estaPagada ? 'pagada' : 'pendiente'}>
-                <td>{formatFecha(cuenta.fechaCreacion)}</td>
-                <td>{cuenta.nombre}</td>
-                <td className="monto">{formatMonto(cuenta.monto)}</td>
-                <td>
-                  <span className={`estado-badge ${cuenta.estaPagada ? 'pagada' : 'pendiente'}`}>
-                    {cuenta.estaPagada ? 'Pagada' : 'Pendiente'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
-  // Renderizar tendencias
-  const renderTendencias = () => (
-    <div className="grafico-card tendencia">
-      <h3>Tendencia por Período</h3>
-      <div className="chart-wrapper">
-        <Line data={lineChartData} options={chartOptions} />
-      </div>
-      
-      <div className="interpretacion">
-        <h4>Interpretación</h4>
-        <p>Este gráfico muestra la evolución de tus cuentas a lo largo del tiempo, permitiéndote visualizar tendencias de gastos y pagos.</p>
-        <ul>
-          <li><span className="dot blue"></span> <strong>Total:</strong> Valor total de las cuentas en cada período</li>
-          <li><span className="dot green"></span> <strong>Pagadas:</strong> Monto de cuentas pagadas en cada período</li>
-          <li><span className="dot red"></span> <strong>Pendientes:</strong> Monto de cuentas pendientes en cada período</li>
-        </ul>
-      </div>
-    </div>
-  );
-
-  // Renderizar categorías
-  const renderCategorias = () => (
-    <div className="grafico-card distribucion">
-      <h3>Distribución por Categoría</h3>
-      <div className="chart-wrapper">
-        <Bar data={barChartData} options={chartOptions} />
-      </div>
-      
-      <div className="tabla-categorias">
-        <h4>Detalle por categoría</h4>
-        <table className="tabla-cuentas">
-          <thead>
-            <tr>
-              <th>Categoría</th>
-              <th>Total</th>
-              <th>Pagado</th>
-              <th>Pendiente</th>
-              <th>% Pagado</th>
-            </tr>
-          </thead>
-          <tbody>
-            {datosAgrupados.porCategoria.map((categoria, index) => {
-              const porcentajePagado = categoria.total > 0 
-                ? Math.round((categoria.pagadas / categoria.total) * 100) 
-                : 0;
-              
-              return (
-                <tr key={index}>
-                  <td>{categoria.categoria}</td>
-                  <td>{formatMonto(categoria.total)}</td>
-                  <td>{formatMonto(categoria.pagadas)}</td>
-                  <td>{formatMonto(categoria.pendientes)}</td>
-                  <td>
-                    <div className="porcentaje-container">
-                      <span className={porcentajePagado > 75 ? 'bueno' : porcentajePagado > 50 ? 'medio' : 'bajo'}>
-                        {porcentajePagado}%
-                      </span>
-                      <div className="mini-barra-progreso">
-                        <div 
-                          className={`progreso ${porcentajePagado > 75 ? 'bueno' : porcentajePagado > 50 ? 'medio' : 'bajo'}`}
-                          style={{ width: `${porcentajePagado}%` }}
-                        ></div>
-                      </div>
-                    </div>
-                  </td>
-                </tr>
-              );
-            })}
-          </tbody>
-        </table>
-      </div>
-    </div>
-  );
-
+  
   // Renderizar períodos
   const renderPeriodos = () => (
     <div className="periodos-container">
-      <h3>Períodos</h3>
+      <h3>Períodos {datosAgrupados.porPeriodo.length > 0 ? `(${datosAgrupados.porPeriodo.length})` : ''}</h3>
       {datosAgrupados.porPeriodo.length === 0 ? (
         <div className="empty-periodos">
           <p>No hay datos para los filtros seleccionados</p>
+          <button 
+            className="retry-button"
+            onClick={() => {
+              // Restablecer filtros a valores por defecto
+              const fechaFin = new Date();
+              const fechaInicio = new Date();
+              fechaInicio.setMonth(fechaInicio.getMonth() - 6);
+              
+              setFiltroFechaInicio(fechaInicio.toISOString().split('T')[0]);
+              setFiltroFechaFin(fechaFin.toISOString().split('T')[0]);
+              setFiltroCategoria('todas');
+              setFiltroEstado('todos');
+            }}
+          >
+            Restablecer filtros
+          </button>
         </div>
       ) : (
-        <div className="periodos-grid">
-          {datosAgrupados.porPeriodo.map((periodo, index) => {
-            // Calcular porcentajes para estilos
-            const porcentajePagado = periodo.total > 0 ? (periodo.pagadas / periodo.total) * 100 : 0;
-            const porcentajePendiente = periodo.total > 0 ? (periodo.pendientes / periodo.total) * 100 : 0;
-            
-            return (
-              <div 
-                key={index} 
-                className="periodo-card"
-                style={{
-                  borderLeftColor: periodo.pendientes > periodo.pagadas ? '#F44336' : '#4CAF50'
-                }}
-                onClick={() => setMostrarDetalle(periodo.periodo === mostrarDetalle ? null : periodo.periodo)}
-              >
-                <div className="periodo-header">
-                  <h4>{formatPeriodo(periodo.periodo)}</h4>
-                  <span className="periodo-total">{formatMonto(periodo.total)}</span>
+        <div className="periodos-lista">
+          {datosAgrupados.porPeriodo.map((periodo, index) => (
+            <div key={index} className="periodo-card">
+              <div className="periodo-header" onClick={() => seleccionarPeriodo(periodo)}>
+                <div className="periodo-info">
+                  <h4>
+                    {agrupacion === 'mes' ? periodo.etiqueta : periodo.categoria}
+                  </h4>
+                  <span className="periodo-stats">
+                    {periodo.totalCuentas} cuenta{periodo.totalCuentas !== 1 ? 's' : ''} · {formatMonto(periodo.totalMonto)}
+                  </span>
                 </div>
-                
-                <div className="periodo-stats">
-                  <div className="stat-item">
-                    <span className="stat-label">Cuentas:</span>
-                    <span className="stat-value">{periodo.cantidad}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Pagadas:</span>
-                    <span className="stat-value pagadas">{formatMonto(periodo.pagadas)}</span>
-                  </div>
-                  <div className="stat-item">
-                    <span className="stat-label">Pendientes:</span>
-                    <span className="stat-value pendientes">{formatMonto(periodo.pendientes)}</span>
+                <div className="periodo-progreso">
+                  <span className={periodo.porcentajePagado > 75 ? 'bueno' : periodo.porcentajePagado > 50 ? 'medio' : 'bajo'}>
+                    {periodo.porcentajePagado}%
+                  </span>
+                  <div className="progreso-bar">
+                    <div 
+                      className={`progreso ${periodo.porcentajePagado > 75 ? 'bueno' : periodo.porcentajePagado > 50 ? 'medio' : 'bajo'}`}
+                      style={{ width: `${periodo.porcentajePagado}%` }}
+                    ></div>
                   </div>
                 </div>
-                
-                <div className="periodo-progress">
-                  <div 
-                    className="progress-bar pagadas"
-                    style={{ width: `${porcentajePagado}%` }}
-                  ></div>
-                  <div 
-                    className="progress-bar pendientes"
-                    style={{ width: `${porcentajePendiente}%` }}
-                  ></div>
-                </div>
-                
-                <div className="periodo-detalle-toggle">
-                  {mostrarDetalle === periodo.periodo ? 'Ocultar detalles ▲' : 'Ver detalles ▼'}
+                <div className="periodo-toggle">
+                  {periodoSeleccionado === periodo ? '▼' : '▶'}
                 </div>
               </div>
-            );
-          })}
-        </div>
-      )}
-      
-      {/* Tabla detallada de cuentas */}
-      {mostrarDetalle && (
-        <div className="detalle-periodo">
-          <h3>Detalle: {formatPeriodo(mostrarDetalle)}</h3>
-          <div className="tabla-container">
-            <table className="tabla-cuentas">
-              <thead>
-                <tr>
-                  <th>Fecha</th>
-                  <th>Cuenta</th>
-                  <th>Categoría</th>
-                  <th>Monto</th>
-                  <th>Estado</th>
-                </tr>
-              </thead>
-              <tbody>
-                {historialCuentas
-                  .filter(cuenta => {
-                    const fecha = new Date(cuenta.fechaCreacion);
-                    let periodoKey;
-                    
-                    if (agrupacion === 'mes') {
-                      periodoKey = `${fecha.getFullYear()}-${(fecha.getMonth() + 1).toString().padStart(2, '0')}`;
-                    } else if (agrupacion === 'trimestre') {
-                      const trimestre = Math.floor(fecha.getMonth() / 3) + 1;
-                      periodoKey = `${fecha.getFullYear()}-T${trimestre}`;
-                    } else { // año
-                      periodoKey = fecha.getFullYear().toString();
-                    }
-                    
-                    return periodoKey === mostrarDetalle;
-                  })
-                  .map(cuenta => (
-                    <tr key={cuenta.id} className={cuenta.estaPagada ? 'pagada' : 'pendiente'}>
-                      <td>{formatFecha(cuenta.fechaCreacion)}</td>
-                      <td>{cuenta.nombre}</td>
-                      <td>{cuenta.categoria || 'Sin categoría'}</td>
-                      <td className="monto">{formatMonto(cuenta.monto)}</td>
-                      <td>
-                        <span className={`estado-badge ${cuenta.estaPagada ? 'pagada' : 'pendiente'}`}>
-                          {cuenta.estaPagada ? 'Pagada' : 'Pendiente'}
-                        </span>
-                      </td>
-                    </tr>
-                  ))
-                }
-              </tbody>
-            </table>
-          </div>
+              
+              {periodoSeleccionado === periodo && (
+                <div className="detalle-periodo">
+                  <h3>Detalle de Cuentas</h3>
+                  
+                  <div className="periodo-resumen">
+                    <div className="resumen-item">
+                      <span className="label">Total:</span>
+                      <span className="value">{formatMonto(periodo.totalMonto)}</span>
+                    </div>
+                    <div className="resumen-item">
+                      <span className="label">Pagado:</span>
+                      <span className="value">{formatMonto(periodo.montoPagado)}</span>
+                    </div>
+                    <div className="resumen-item">
+                      <span className="label">Pendiente:</span>
+                      <span className="value">{formatMonto(periodo.totalMonto - periodo.montoPagado)}</span>
+                    </div>
+                  </div>
+                  
+                  <div className="tabla-container">
+                    <table className="tabla-cuentas">
+                      <thead>
+                        <tr>
+                          <th>Nombre</th>
+                          <th>Categoría</th>
+                          <th>Monto</th>
+                          <th>Pagado</th>
+                          <th>Vencimiento</th>
+                          <th>Estado</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {periodo.cuentas.map(cuenta => (
+                          <tr key={cuenta.id} className={cuenta.estaPagada ? 'pagada' : 'pendiente'}>
+                            <td>{cuenta.nombre}</td>
+                            <td>{cuenta.categoria}</td>
+                            <td className="monto">{formatMonto(cuenta.monto)}</td>
+                            <td className="monto">{formatMonto(cuenta.totalPagado)}</td>
+                            <td>{formatoFecha(cuenta.fechaVencimiento)}</td>
+                            <td>
+                              <span className={`estado-badge ${cuenta.estaPagada ? 'pagado' : 'pendiente'}`}>
+                                {cuenta.estaPagada ? 'Pagado' : 'Pendiente'}
+                              </span>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       )}
     </div>
   );
-
-  // Renderizar pestañas para móvil
-  const renderTabs = () => (
-    <div className="tabs-container">
-      <div className="tabs">
-        <button 
-          type="button"
-          className={`tab ${activeTab === 'resumen' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('resumen')}
-        >
-          Resumen
-        </button>
-        <button 
-          type="button"
-          className={`tab ${activeTab === 'tendencias' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('tendencias')}
-        >
-          Tendencias
-        </button>
-        <button 
-          type="button"
-          className={`tab ${activeTab === 'categorias' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('categorias')}
-        >
-          Categorías
-        </button>
-        <button 
-          type="button"
-          className={`tab ${activeTab === 'periodos' ? 'active' : ''}`} 
-          onClick={() => setActiveTab('periodos')}
-        >
-          Períodos
-        </button>
-      </div>
-    </div>
-  );
-
+  
   return (
     <div className="historial-page">
       <NavBar />
-      
       <div className="historial-container">
         <div className="historial-header">
           <h2>Historial de Cuentas</h2>
+          <button 
+            className="refresh-button"
+            onClick={() => setRefreshCounter(prev => prev + 1)}
+            disabled={loading}
+          >
+            {loading ? 'Actualizando...' : 'Actualizar datos'}
+          </button>
         </div>
         
-        {/* Mostrar filtros */}
-        {renderFiltros()}
-        
-        {/* Contenido principal del historial */}
-        <div className="historial-content">
-          {loading ? (
-            <div className="loading-state">
-              <div className="spinner"></div>
-              <p>Cargando historial...</p>
-            </div>
-          ) : historialCuentas.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-icon">📊</div>
-              <h3>No hay datos disponibles</h3>
-              <p>No se encontraron cuentas que coincidan con los filtros seleccionados.</p>
-              <p>Prueba a cambiar los filtros o a crear nuevas cuentas.</p>
-            </div>
-          ) : (
-            <>
-              {/* Móvil: mostrar pestañas */}
-              {dispositivo === 'movil' && renderTabs()}
-              
-              {/* Móvil: mostrar contenido según pestaña activa */}
-              {dispositivo === 'movil' && (
-                <div className="tab-content">
-                  {activeTab === 'resumen' && renderResumen()}
-                  {activeTab === 'tendencias' && renderTendencias()}
-                  {activeTab === 'categorias' && renderCategorias()}
-                  {activeTab === 'periodos' && renderPeriodos()}
-                </div>
-              )}
-              
-              {/* Escritorio: mostrar todo el contenido */}
-              {dispositivo === 'escritorio' && (
-                <>
-                  {renderResumen()}
-                  
-                  <div className="graficos-container">
-                    {renderTendencias()}
-                    {renderCategorias()}
-                  </div>
-                  
-                  {renderPeriodos()}
-                </>
-              )}
-            </>
-          )}
-        </div>
+        {loading ? (
+          <div className="loading-container">
+            <div className="spinner"></div>
+            <p>Cargando datos...</p>
+          </div>
+        ) : error ? (
+          <div className="error-container">
+            <div className="error-icon">⚠️</div>
+            <p>{error}</p>
+            <button 
+              className="retry-button"
+              onClick={() => setRefreshCounter(prev => prev + 1)}
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <div className="historial-content">
+            {renderFiltros()}
+            {renderResumen()}
+            {renderGraficos()}
+            {renderInterpretacion()}
+            {renderPeriodos()}
+          </div>
+        )}
       </div>
     </div>
   );

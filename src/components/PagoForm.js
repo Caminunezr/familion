@@ -111,10 +111,16 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
         rutaComprobante = await saveFile(comprobante, 'comprobantes');
       }
       
+      // Validar que el monto sea numérico
+      const montoPagado = parseFloat(formData.montoPagado);
+      if (isNaN(montoPagado) || montoPagado <= 0) {
+        throw new Error('El monto debe ser un número mayor que cero');
+      }
+      
       // Guardar el pago
       const pagoData = {
         cuentaId: cuenta.id,
-        montoPagado: parseFloat(formData.montoPagado),
+        montoPagado: montoPagado,
         fechaPago: formData.fechaPago,
         metodoPago: formData.metodoPago,
         pagadoPor: currentUser.uid,
@@ -122,7 +128,22 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
         fechaCreacion: new Date().toISOString()
       };
       
+      console.log('Guardando pago:', pagoData);
       const pagoId = await db.pagos.add(pagoData);
+      console.log('Pago guardado con ID:', pagoId);
+      
+      // Actualizar estado de la cuenta si está pagada completamente
+      const pagosAnteriores = await db.pagos.where('cuentaId').equals(cuenta.id).toArray();
+      const totalPagado = pagosAnteriores.reduce((sum, p) => sum + (parseFloat(p.montoPagado) || 0), 0) + montoPagado;
+      
+      if (totalPagado >= cuenta.monto) {
+        // Marcar cuenta como pagada
+        console.log('Actualizando cuenta como pagada:', cuenta.id);
+        await db.cuentas.update(cuenta.id, { 
+          estaPagada: true,
+          fechaActualizacion: new Date().toISOString()
+        });
+      }
       
       // Si se seleccionó registrar como aporte y hay un presupuesto seleccionado
       if (registrarComoAporte && presupuestoSeleccionado) {
@@ -132,7 +153,7 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
         await db.aportes.add({
           presupuestoId,
           miembroId: currentUser.uid,
-          monto: parseFloat(formData.montoPagado),
+          monto: montoPagado,
           fechaAporte: formData.fechaPago,
           rutaComprobante,
           fechaCreacion: new Date().toISOString(),
@@ -143,10 +164,14 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
         });
       }
       
-      if (onSuccess) onSuccess();
+      // Añadir un pequeño retraso para asegurar que la BD se actualice
+      setTimeout(() => {
+        if (onSuccess) onSuccess();
+      }, 500);
+      
     } catch (error) {
       console.error('Error al guardar pago:', error);
-      setError('Error al guardar el pago');
+      setError('Error al guardar el pago: ' + error.message);
     } finally {
       setLoading(false);
     }
