@@ -119,29 +119,28 @@ export const getFile = async (id) => {
 
         // Ordenar fragmentos por índice
         fragments.sort((a, b) => a.chunkIndex - b.chunkIndex);
-
-        // Calcular tamaño total
-        const totalSize = fragments.reduce((sum, fragment) => sum + fragment.data.byteLength, 0);
-
-        // Crear buffer combinado
-        const combinedArray = new Uint8Array(totalSize);
+        
+        // Concatenar todos los fragmentos en un solo ArrayBuffer
+        const totalSize = fragments.reduce((size, chunk) => size + chunk.data.byteLength, 0);
+        const combined = new Uint8Array(totalSize);
+        
         let offset = 0;
-
         for (const fragment of fragments) {
-          const tempArray = new Uint8Array(fragment.data);
-          combinedArray.set(tempArray, offset);
-          offset += tempArray.byteLength;
+          const chunkData = new Uint8Array(fragment.data);
+          combined.set(chunkData, offset);
+          offset += fragment.data.byteLength;
         }
-
-        // Devolver datos completos
-        const reconstructedData = combinedArray.buffer;
+        
+        // Devolver un objeto similar al original pero con datos combinados
         return {
           ...fileData,
-          data: reconstructedData
+          data: combined.buffer,
+          chunked: false
         };
       });
     }
-
+    
+    // Si no está en fragmentos, devolver tal cual
     return fileData;
   } catch (error) {
     console.error('Error al obtener archivo:', error);

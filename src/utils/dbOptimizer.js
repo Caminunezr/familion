@@ -66,17 +66,36 @@ export const cleanupOrphanedFiles = async () => {
 export const optimizeIndexes = async () => {
   try {
     // Mejorar rendimiento de los índices
-    await Promise.all([
-      db.cuentas.orderBy('id').toArray(),
-      db.cuentas.orderBy('userId').toArray(),
-      db.presupuestos.orderBy('id').toArray(),
-      db.pagos.orderBy('id').toArray(),
-      fileDB.files.orderBy('id').toArray()
-    ]);
+    console.log("Optimizando índices de base de datos...");
     
-    console.log('Índices optimizados');
+    // Para la base de datos principal
+    await db.cuentas.toCollection().modify(cuenta => {
+      // Asegurarse de que todos los registros tienen los campos necesarios
+      if (!cuenta.fechaCreacion) cuenta.fechaCreacion = new Date().toISOString();
+      if (cuenta.categoria === undefined) cuenta.categoria = 'Otros';
+      
+      // Normalizar categorías para mejorar búsqueda por índice
+      if (cuenta.categoria) {
+        const categoriasMapping = {
+          'servicios': 'Luz',
+          'alimentos': 'Agua',
+          'transporte': 'Gas',
+          'entretenimiento': 'Internet',
+          'salud': 'Utiles de Aseo',
+          'educacion': 'Otros',
+          'otros': 'Otros'
+        };
+        
+        const categoriaLower = cuenta.categoria.toLowerCase();
+        if (categoriasMapping[categoriaLower]) {
+          cuenta.categoria = categoriasMapping[categoriaLower];
+        }
+      }
+    });
+    
+    console.log("Índices optimizados correctamente");
   } catch (error) {
-    console.error('Error al optimizar índices:', error);
+    console.error("Error al optimizar índices:", error);
     throw error;
   }
 };

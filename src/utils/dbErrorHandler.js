@@ -9,7 +9,8 @@ export const DB_ERROR_TYPES = {
   QUOTA: 'QUOTA_ERROR',
   UNKNOWN: 'UNKNOWN_ERROR',
   NOT_FOUND: 'NOT_FOUND_ERROR',
-  VALIDATION: 'VALIDATION_ERROR'
+  VALIDATION: 'VALIDATION_ERROR',
+  STORAGE_FULL: 'STORAGE_FULL_ERROR'
 };
 
 /**
@@ -19,30 +20,25 @@ export const DB_ERROR_TYPES = {
  * @returns {Object} Error procesado con tipo y mensaje user-friendly
  */
 export const handleDbError = (error, context = {}) => {
-  console.error('Error de base de datos:', error, context);
-  
-  // Determinar tipo de error
+  const errorMsg = error.message || '';
   let errorType = DB_ERROR_TYPES.UNKNOWN;
-  let userMessage = 'Ha ocurrido un error en la base de datos.';
-  
-  // Clasificar error por mensaje
-  const errorMsg = error.message.toLowerCase();
+  let userMessage = 'Ocurrió un error en la base de datos.';
   
   if (errorMsg.includes('quota') || errorMsg.includes('storage') || errorMsg.includes('full')) {
-    errorType = DB_ERROR_TYPES.QUOTA;
-    userMessage = 'Se ha excedido el límite de almacenamiento. Intenta liberar espacio eliminando datos innecesarios.';
+    errorType = DB_ERROR_TYPES.STORAGE_FULL;
+    userMessage = 'El almacenamiento está lleno. Por favor, libera espacio eliminando datos innecesarios.';
   } 
   else if (errorMsg.includes('constraint') || errorMsg.includes('duplicate')) {
     errorType = DB_ERROR_TYPES.CONSTRAINT;
-    userMessage = 'No se puede realizar la operación debido a restricciones de datos.';
+    userMessage = 'Ya existe un registro con esos datos.';
   }
   else if (errorMsg.includes('not found') || errorMsg.includes('no existe') || error.name === 'NotFoundError') {
     errorType = DB_ERROR_TYPES.NOT_FOUND;
-    userMessage = 'No se encontró el elemento solicitado.';
+    userMessage = 'El registro solicitado no fue encontrado.';
   }
   else if (errorMsg.includes('connection') || errorMsg.includes('network') || errorMsg.includes('conexión')) {
     errorType = DB_ERROR_TYPES.CONNECTION;
-    userMessage = 'Problema de conexión con la base de datos. Verifica tu conexión.';
+    userMessage = 'Problema de conexión. Verifica tu red.';
   }
   else if (errorMsg.includes('validation') || errorMsg.includes('invalid')) {
     errorType = DB_ERROR_TYPES.VALIDATION;
@@ -73,26 +69,31 @@ export const handleDbError = (error, context = {}) => {
  */
 export const logDbError = (processedError) => {
   // En producción, esto podría enviar el error a un servicio de monitoreo
-  console.error('DB Error:', processedError);
+  console.error("Error de base de datos:", processedError.message, {
+    tipo: processedError.type,
+    timestamp: processedError.timestamp,
+    contexto: processedError.context,
+    errorOriginal: processedError.originalError
+  });
   
-  // Almacenar en localStorage para referencia
+  // Guardar en localStorage para diagnostico
   try {
-    const errorLogs = JSON.parse(localStorage.getItem('dbErrorLogs') || '[]');
-    errorLogs.push({
-      type: processedError.type,
+    const erroresAnteriores = JSON.parse(localStorage.getItem('familion_db_errors') || '[]');
+    erroresAnteriores.push({
       message: processedError.message,
+      type: processedError.type,
       timestamp: processedError.timestamp,
-      details: processedError.originalError.message
+      context: processedError.context
     });
     
-    // Mantener solo los últimos 50 errores
-    if (errorLogs.length > 50) {
-      errorLogs.shift();
+    // Mantener solo los últimos 10 errores
+    if (erroresAnteriores.length > 10) {
+      erroresAnteriores.shift();
     }
     
-    localStorage.setItem('dbErrorLogs', JSON.stringify(errorLogs));
+    localStorage.setItem('familion_db_errors', JSON.stringify(erroresAnteriores));
   } catch (e) {
-    console.error('Error guardando log de errores:', e);
+    console.error("Error al guardar log de errores:", e);
   }
 };
 
