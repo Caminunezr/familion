@@ -1,13 +1,16 @@
 import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Login from './components/Login';
 import Signup from './components/Signup';
-import Dashboard from './components/Dashboard';
-import GestionCuentas from './components/GestionCuentas';
-import Presupuesto from './components/Presupuesto';
-import Historial from './components/Historial';
+// Actualizar la ruta de importación para Dashboard
+import Dashboard from './components/dashboard/Dashboard';
+// Actualizar la ruta de importación para GestionCuentas
+import GestionCuentas from './components/gestion-cuentas/GestionCuentas';
+// Cambiar la importación de Presupuesto
+import Presupuesto from './components/presupuesto/Presupuesto';
+import Historial from './components/historial/Historial';
 import { migrarCategoriasAntiguas } from './utils/dataMigration';
 import { limpiarCategorias } from './utils/cleanCategories';
 import './App.css';
@@ -41,7 +44,6 @@ function App() {
             <Route path="/gestion-cuentas" element={<ProtectedRoute><GestionCuentas /></ProtectedRoute>} />
             <Route path="/presupuesto" element={<ProtectedRoute><Presupuesto /></ProtectedRoute>} />
             
-            {/* Nueva ruta para historial */}
             <Route path="/historial" element={<ProtectedRoute><Historial /></ProtectedRoute>} />
           </Routes>
         </Router>

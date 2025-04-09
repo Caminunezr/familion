@@ -1,11 +1,11 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import db from '../utils/database';
-import { getFile } from '../utils/fileStorage';
-import FileViewer from './FileViewer';
-import CuentaForm from './CuentaForm';
-import NavBar from './NavBar';
+import { useAuth } from '../../contexts/AuthContext';
+import db from '../../utils/database';
+import { getFile } from '../../utils/fileStorage';
+import FileViewer from '../FileViewer';
+import CuentaForm from '../CuentaForm';
+import NavBar from '../NavBar';
 import './GestionCuentas.css';
 
 const GestionCuentas = () => {

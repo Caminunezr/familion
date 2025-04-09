@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import NavBar from './NavBar';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
-import db from '../utils/database';
-import { useAuth } from '../contexts/AuthContext';
+import db from '../../utils/database';
+import { useAuth } from '../../contexts/AuthContext';
+import NavBar from '../NavBar'; // Corregir la importación de NavBar
 import './Presupuesto.css';
 
 // Registrar componentes de Chart.js
@@ -49,7 +49,7 @@ const Presupuesto = () => {
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [calcularResumenPresupuesto]);
 
   const calcularResumenPresupuesto = useCallback(async (presupuestosArr = presupuestos, cuentasArr = cuentas) => {
     const presupuestosFiltrados = presupuestosArr.filter(p => {
@@ -158,7 +158,7 @@ const Presupuesto = () => {
         await db.presupuestos.update(presupuestoData.id, presupuestoData);
         showNotification(`Presupuesto actualizado correctamente`);
       } else {
-        const id = await db.presupuestos.add({
+        await db.presupuestos.add({
           ...presupuestoData,
           fechaCreacion: new Date().toISOString(),
           userId: currentUser.uid
