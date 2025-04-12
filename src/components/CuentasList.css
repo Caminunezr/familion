@@ -9,10 +9,56 @@
   background-color: white;
   border-radius: 8px;
   box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  position: relative; /* Necesario para posicionar el botón absoluto */
+  display: flex; /* Cambiar a flex para alinear contenido y botón */
+  justify-content: space-between; /* Separar contenido y botón */
+  align-items: center; /* Centrar verticalmente */
   padding: 15px;
+  padding-right: 40px; /* Ajustar espacio para el botón */
   cursor: pointer;
   transition: transform 0.2s, box-shadow 0.2s;
   border-left: 4px solid #ddd;
+}
+
+.cuenta-card-content {
+  flex-grow: 1; /* Permitir que el contenido ocupe el espacio */
+  cursor: pointer; /* Mantener cursor en el área clickeable */
+}
+
+.cuenta-delete-button {
+  position: absolute; /* Posición absoluta relativa a .cuenta-card */
+  top: 50%; /* Centrar verticalmente */
+  right: 8px; /* Más cerca del borde */
+  transform: translateY(-50%); /* Ajuste fino vertical */
+  background-color: transparent; /* Fondo transparente por defecto */
+  border: none;
+  color: #aaa; /* Color gris suave por defecto */
+  font-size: 16px; /* Tamaño ajustado */
+  cursor: pointer;
+  padding: 6px; /* Padding interno para área de clic */
+  border-radius: 50%; /* Círculo perfecto */
+  width: 28px; /* Ancho fijo */
+  height: 28px; /* Alto fijo */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6; /* Ligeramente transparente hasta hover */
+  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
+}
+
+.cuenta-card:hover .cuenta-delete-button {
+  opacity: 1; /* Totalmente visible al pasar sobre la tarjeta */
+}
+
+.cuenta-delete-button:hover {
+  background-color: rgba(231, 76, 60, 0.15); /* Fondo rojo muy suave */
+  color: #e74c3c; /* Color rojo vivo */
+  opacity: 1; /* Asegurar opacidad completa */
+}
+
+.cuenta-delete-button:active {
+  background-color: rgba(231, 76, 60, 0.25); /* Fondo un poco más oscuro al hacer clic */
+  transform: translateY(-50%) scale(0.95); /* Efecto de presión */
 }
 
 .cuenta-pendiente {
@@ -147,6 +193,14 @@
   
   .cuenta-card {
     padding: 12px;
+    padding-right: 35px; /* Ajustar espacio para el botón */
+  }
+  
+  .cuenta-delete-button {
+    right: 5px;
+    font-size: 15px;
+    width: 26px;
+    height: 26px;
   }
   
   .cuenta-categoria, .cuenta-estado {

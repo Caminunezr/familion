@@ -58,185 +58,6 @@ const Dashboard = () => {
     setMesAnterior(mesAnteriorStr);
   }, []);
 
-  useEffect(() => {
-    if (!mesActual || !mesAnterior) return;
-
-    const fetchAllData = async () => {
-      try {
-        setLoading(true);
-        setError(null);
-
-        const [cuentasArray, pagosArray] = await Promise.all([
-          db.cuentas.toArray(),
-          db.pagos.toArray()
-        ]);
-
-        await cargarPresupuestosYAportes();
-        procesarCuentasYPagos(cuentasArray, pagosArray);
-        generarResumenFinanciero();
-        prepararDatosGraficos();
-      } catch (error) {
-        console.error('Error al cargar datos:', error);
-        setError('Ocurrió un error al cargar los datos financieros. Por favor intenta de nuevo.');
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchAllData();
-  }, [mesActual, mesAnterior, refreshData, cargarPresupuestosYAportes, procesarCuentasYPagos, generarResumenFinanciero, prepararDatosGraficos]);
-
-  useEffect(() => {
-    const fetchCuentas = async () => {
-      try {
-        const cuentas = await db.cuentas.toArray();
-        const pendientes = cuentas.filter((cuenta) => !cuenta.estaPagada);
-        const pagadas = cuentas.filter((cuenta) => cuenta.estaPagada);
-
-        setCuentasPendientes(pendientes);
-        setCuentasPagadas(pagadas);
-      } catch (error) {
-        console.error('Error al cargar cuentas:', error);
-      }
-    };
-
-    fetchCuentas();
-  }, [refreshData]);
-
-  const cargarPresupuestosYAportes = async () => {
-    try {
-      const [presupuestoActual, presupuestoAnterior] = await Promise.all([
-        db.presupuestos.where('mes').equals(mesActual).toArray(),
-        db.presupuestos.where('mes').equals(mesAnterior).toArray()
-      ]);
-
-      const presupActual = presupuestoActual.length > 0 ? presupuestoActual[0] : null;
-      const presupAnterior = presupuestoAnterior.length > 0 ? presupuestoAnterior[0] : null;
-
-      setPresupuestoMesActual(presupActual);
-      setPresupuestoMesAnterior(presupAnterior);
-
-      const promesasAportes = [];
-
-      if (presupActual) {
-        promesasAportes.push(
-          db.aportes.where('presupuestoId').equals(presupActual.id).toArray()
-            .then(aportesActual => setAportesMesActual(aportesActual))
-        );
-      } else {
-        setAportesMesActual([]);
-      }
-
-      if (presupAnterior) {
-        promesasAportes.push(
-          db.aportes.where('presupuestoId').equals(presupAnterior.id).toArray()
-            .then(aportesAnterior => setAportesMesAnterior(aportesAnterior))
-        );
-      } else {
-        setAportesMesAnterior([]);
-      }
-
-      await Promise.all(promesasAportes);
-    } catch (error) {
-      console.error('Error al cargar presupuestos y aportes:', error);
-      throw error;
-    }
-  };
-
-  const procesarCuentasYPagos = useCallback((cuentasArray, pagosArray) => {
-    try {
-      const infosPorCuenta = pagosArray.reduce((mapa, pago) => {
-        if (!mapa[pago.cuentaId]) {
-          mapa[pago.cuentaId] = {
-            totalPagado: 0,
-            fechaUltimoPago: null
-          };
-        }
-
-        mapa[pago.cuentaId].totalPagado += pago.montoPagado;
-
-        if (!mapa[pago.cuentaId].fechaUltimoPago || 
-            new Date(pago.fechaPago) > new Date(mapa[pago.cuentaId].fechaUltimoPago)) {
-          mapa[pago.cuentaId].fechaUltimoPago = pago.fechaPago;
-        }
-
-        return mapa;
-      }, {});
-
-      const hoy = new Date();
-      const enDiezDias = new Date(hoy);
-      enDiezDias.setDate(hoy.getDate() + 10);
-
-      const inicioMesActual = new Date(mesActual + '-01');
-      const finMesActual = new Date(inicioMesActual);
-      finMesActual.setMonth(finMesActual.getMonth() + 1);
-      finMesActual.setDate(0);
-
-      const inicioMesAnterior = new Date(mesAnterior + '-01');
-      const finMesAnterior = new Date(inicioMesAnterior);
-      finMesAnterior.setMonth(finMesAnterior.getMonth() + 1);
-      finMesAnterior.setDate(0);
-
-      const pendientes = [];
-      const pagadas = [];
-      const mesActualCuentas = [];
-      const mesAnteriorCuentas = [];
-      const proximasVencer = [];
-
-      cuentasArray.forEach(cuenta => {
-        const infoPagos = infosPorCuenta[cuenta.id] || { totalPagado: 0, fechaUltimoPago: null };
-        const totalPagado = infoPagos.totalPagado;
-        const estaPagada = totalPagado >= cuenta.monto;
-
-        const cuentaConPago = {
-          ...cuenta,
-          totalPagado,
-          estaPagada,
-          fechaUltimoPago: infoPagos.fechaUltimoPago
-        };
-
-        if (estaPagada) {
-          pagadas.push(cuentaConPago);
-        } else {
-          pendientes.push(cuentaConPago);
-        }
-
-        if (cuenta.fechaVencimiento) {
-          const fechaVencimiento = new Date(cuenta.fechaVencimiento);
-
-          if (fechaVencimiento >= inicioMesActual && fechaVencimiento <= finMesActual) {
-            mesActualCuentas.push(cuentaConPago);
-          }
-
-          if (fechaVencimiento >= inicioMesAnterior && fechaVencimiento <= finMesAnterior) {
-            mesAnteriorCuentas.push(cuentaConPago);
-          }
-
-          if (!estaPagada && fechaVencimiento >= hoy && fechaVencimiento <= enDiezDias) {
-            proximasVencer.push(cuentaConPago);
-          }
-        }
-      });
-
-      pendientes.sort((a, b) => {
-        if (!a.fechaVencimiento) return 1;
-        if (!b.fechaVencimiento) return -1;
-        return new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento);
-      });
-
-      proximasVencer.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
-
-      setCuentasPendientes(pendientes);
-      setCuentasPagadas(pagadas);
-      setCuentasMesActual(mesActualCuentas);
-      setCuentasMesAnterior(mesAnteriorCuentas);
-      setCuentasProximasVencer(proximasVencer);
-    } catch (error) {
-      console.error('Error al procesar cuentas y pagos:', error);
-      throw error;
-    }
-  }, [mesActual, mesAnterior]);
-
   const generarResumenFinanciero = useCallback(() => {
     try {
       const totalPendiente = cuentasMesActual
@@ -374,6 +195,185 @@ const Dashboard = () => {
     }
   }, [cuentasMesActual, cuentasMesAnterior]);
 
+  useEffect(() => {
+    if (!mesActual || !mesAnterior) return;
+
+    const cargarPresupuestosYAportesInterno = async () => {
+      try {
+        const [presupuestoActual, presupuestoAnterior] = await Promise.all([
+          db.presupuestos.where('mes').equals(mesActual).toArray(),
+          db.presupuestos.where('mes').equals(mesAnterior).toArray()
+        ]);
+        const presupActual = presupuestoActual.length > 0 ? presupuestoActual[0] : null;
+        const presupAnterior = presupuestoAnterior.length > 0 ? presupuestoAnterior[0] : null;
+        setPresupuestoMesActual(presupActual);
+        setPresupuestoMesAnterior(presupAnterior);
+
+        const promesasAportes = [];
+        if (presupActual) {
+          promesasAportes.push(
+            db.aportes.where('presupuestoId').equals(presupActual.id).toArray()
+              .then(aportesActual => setAportesMesActual(aportesActual))
+          );
+        } else {
+          setAportesMesActual([]);
+        }
+        if (presupAnterior) {
+          promesasAportes.push(
+            db.aportes.where('presupuestoId').equals(presupAnterior.id).toArray()
+              .then(aportesAnterior => setAportesMesAnterior(aportesAnterior))
+          );
+        } else {
+          setAportesMesAnterior([]);
+        }
+        await Promise.all(promesasAportes);
+      } catch (error) {
+        console.error('Error al cargar presupuestos y aportes:', error);
+        throw error;
+      }
+    };
+
+    const procesarCuentasYPagosInterno = (cuentasArray, pagosArray) => {
+      try {
+        const infosPorCuenta = pagosArray.reduce((mapa, pago) => {
+          if (!mapa[pago.cuentaId]) {
+            mapa[pago.cuentaId] = {
+              totalPagado: 0,
+              fechaUltimoPago: null
+            };
+          }
+
+          mapa[pago.cuentaId].totalPagado += pago.montoPagado;
+
+          if (!mapa[pago.cuentaId].fechaUltimoPago || 
+              new Date(pago.fechaPago) > new Date(mapa[pago.cuentaId].fechaUltimoPago)) {
+            mapa[pago.cuentaId].fechaUltimoPago = pago.fechaPago;
+          }
+
+          return mapa;
+        }, {});
+
+        const hoy = new Date();
+        const enDiezDias = new Date(hoy);
+        enDiezDias.setDate(hoy.getDate() + 10);
+
+        const inicioMesActual = new Date(mesActual + '-01');
+        const finMesActual = new Date(inicioMesActual);
+        finMesActual.setMonth(finMesActual.getMonth() + 1);
+        finMesActual.setDate(0);
+
+        const inicioMesAnterior = new Date(mesAnterior + '-01');
+        const finMesAnterior = new Date(inicioMesAnterior);
+        finMesAnterior.setMonth(finMesAnterior.getMonth() + 1);
+        finMesAnterior.setDate(0);
+
+        const pendientes = [];
+        const pagadas = [];
+        const mesActualCuentas = [];
+        const mesAnteriorCuentas = [];
+        const proximasVencer = [];
+
+        cuentasArray.forEach(cuenta => {
+          const infoPagos = infosPorCuenta[cuenta.id] || { totalPagado: 0, fechaUltimoPago: null };
+          const totalPagado = infoPagos.totalPagado;
+          const estaPagada = totalPagado >= cuenta.monto;
+
+          const cuentaConPago = {
+            ...cuenta,
+            totalPagado,
+            estaPagada,
+            fechaUltimoPago: infoPagos.fechaUltimoPago
+          };
+
+          if (estaPagada) {
+            pagadas.push(cuentaConPago);
+          } else {
+            pendientes.push(cuentaConPago);
+          }
+
+          if (cuenta.fechaVencimiento) {
+            const fechaVencimiento = new Date(cuenta.fechaVencimiento);
+
+            if (fechaVencimiento >= inicioMesActual && fechaVencimiento <= finMesActual) {
+              mesActualCuentas.push(cuentaConPago);
+            }
+
+            if (fechaVencimiento >= inicioMesAnterior && fechaVencimiento <= finMesAnterior) {
+              mesAnteriorCuentas.push(cuentaConPago);
+            }
+
+            if (!estaPagada && fechaVencimiento >= hoy && fechaVencimiento <= enDiezDias) {
+              proximasVencer.push(cuentaConPago);
+            }
+          }
+        });
+
+        pendientes.sort((a, b) => {
+          if (!a.fechaVencimiento) return 1;
+          if (!b.fechaVencimiento) return -1;
+          return new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento);
+        });
+
+        proximasVencer.sort((a, b) => new Date(a.fechaVencimiento) - new Date(b.fechaVencimiento));
+
+        setCuentasPendientes(pendientes);
+        setCuentasPagadas(pagadas);
+        setCuentasMesActual(mesActualCuentas);
+        setCuentasMesAnterior(mesAnteriorCuentas);
+        setCuentasProximasVencer(proximasVencer);
+      } catch (error) {
+        console.error('Error al procesar cuentas y pagos:', error);
+        throw error;
+      }
+    };
+
+    const fetchAllData = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+
+        const [cuentasArray, pagosArray] = await Promise.all([
+          db.cuentas.toArray(),
+          db.pagos.toArray()
+        ]);
+
+        await cargarPresupuestosYAportesInterno();
+        procesarCuentasYPagosInterno(cuentasArray, pagosArray);
+      } catch (error) {
+        console.error('Error al cargar datos:', error);
+        setError('Ocurrió un error al cargar los datos financieros. Por favor intenta de nuevo.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchAllData();
+  }, [mesActual, mesAnterior, refreshData]);
+
+  useEffect(() => {
+    if (cuentasMesActual.length > 0 || cuentasMesAnterior.length > 0 || presupuestoMesActual !== undefined || aportesMesActual.length > 0) {
+      generarResumenFinanciero();
+      prepararDatosGraficos();
+    }
+  }, [cuentasMesActual, cuentasMesAnterior, presupuestoMesActual, aportesMesActual, generarResumenFinanciero, prepararDatosGraficos]);
+
+  useEffect(() => {
+    const fetchCuentas = async () => {
+      try {
+        const cuentas = await db.cuentas.toArray();
+        const pendientes = cuentas.filter((cuenta) => !cuenta.estaPagada);
+        const pagadas = cuentas.filter((cuenta) => cuenta.estaPagada);
+
+        setCuentasPendientes(pendientes);
+        setCuentasPagadas(pagadas);
+      } catch (error) {
+        console.error('Error al cargar cuentas:', error);
+      }
+    };
+
+    fetchCuentas();
+  }, [refreshData]);
+
   const handleSelectCuenta = useCallback((cuenta) => {
     setSelectedCuenta(cuenta);
     setShowDetalle(true);
@@ -404,6 +404,20 @@ const Dashboard = () => {
   const irAGestionCuentas = useCallback(() => {
     navigate('/gestion-cuentas');
   }, [navigate]);
+
+  const handleEliminarCuenta = useCallback(async (cuentaId) => {
+    if (window.confirm('¿Estás seguro de que quieres eliminar esta cuenta y sus pagos asociados? Esta acción no se puede deshacer.')) {
+      try {
+        await db.pagos.where('cuentaId').equals(cuentaId).delete();
+        await db.cuentas.delete(cuentaId);
+        console.log(`Cuenta ${cuentaId} eliminada.`);
+        setRefreshData(prev => prev + 1);
+      } catch (error) {
+        console.error('Error al eliminar cuenta:', error);
+        setError('Error al eliminar la cuenta.');
+      }
+    }
+  }, []);
 
   const formatoMes = (mesString) => {
     const [año, mes] = mesString.split('-');
@@ -570,6 +584,7 @@ const Dashboard = () => {
                       cuentas={subTab === 'pendientes' ? cuentasPendientes : cuentasPagadas} 
                       onSelectCuenta={handleSelectCuenta}
                       estadoLabel={subTab === 'pendientes' ? 'Pendiente' : 'Pagada'}
+                      onDeleteCuenta={subTab === 'pagadas' ? handleEliminarCuenta : undefined}
                     />
                   )}
                 </div>

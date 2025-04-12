@@ -1,9 +1,9 @@
-import React, { useState, useEffect, useCallback, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Chart as ChartJS, ArcElement, Tooltip, Legend, CategoryScale, LinearScale, BarElement, Title } from 'chart.js';
 import { Pie, Bar } from 'react-chartjs-2';
 import db from '../../utils/database';
 import { useAuth } from '../../contexts/AuthContext';
-import NavBar from '../NavBar'; // Corregir la importación de NavBar
+import NavBar from '../NavBar';
 import './Presupuesto.css';
 
 // Registrar componentes de Chart.js
@@ -29,103 +29,110 @@ const Presupuesto = () => {
   const [mobileView, setMobileView] = useState(window.innerWidth <= 768);
   const [mostrarCampoOtros, setMostrarCampoOtros] = useState(false);
   const contentRef = useRef(null);
-  const nombresCreadores = ['Camilo', 'Chave', 'Daniela', 'Mia']; // Lista de nombres
-
-  const fetchData = useCallback(async () => {
-    try {
-      setLoading(true);
-      const presupuestosArray = await db.presupuestos.toArray();
-      setPresupuestos(presupuestosArray);
-      const categoriasArray = await db.categorias.toArray();
-      setCategorias(categoriasArray);
-      const cuentasArray = await db.cuentas.toArray();
-      setCuentas(cuentasArray);
-      await calcularResumenPresupuesto(presupuestosArray, cuentasArray);
-      return { presupuestosArray, categoriasArray, cuentasArray };
-    } catch (error) {
-      console.error('Error al cargar datos de presupuesto:', error);
-      showNotification('Error al cargar datos del presupuesto', 'error');
-      return {};
-    } finally {
-      setLoading(false);
-    }
-  }, [calcularResumenPresupuesto]);
-
-  const calcularResumenPresupuesto = useCallback(async (presupuestosArr = presupuestos, cuentasArr = cuentas) => {
-    const presupuestosFiltrados = presupuestosArr.filter(p => {
-      const fecha = new Date(p.fechaCreacion);
-      return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
-    });
-    const totalAsignado = presupuestosFiltrados.reduce((sum, p) => sum + p.montoAsignado, 0);
-    const gastosPorCategoria = {};
-    for (const cuenta of cuentasArr) {
-      const fechaCuenta = new Date(cuenta.fechaCreacion);
-      if (fechaCuenta.getMonth() === filtroMes && fechaCuenta.getFullYear() === filtroAno) {
-        const categoria = cuenta.categoria || 'sin_categoria';
-        if (!gastosPorCategoria[categoria]) gastosPorCategoria[categoria] = 0;
-        gastosPorCategoria[categoria] += cuenta.monto;
-      }
-    }
-    const totalGastado = Object.values(gastosPorCategoria).reduce((sum, monto) => sum + monto, 0);
-    const porcentajeGastado = totalAsignado > 0 ? Math.round((totalGastado / totalAsignado) * 100) : 0;
-    const categoriasMasGastadas = Object.entries(gastosPorCategoria)
-      .sort((a, b) => b[1] - a[1])
-      .map(([categoria, monto]) => ({
-        categoria,
-        monto,
-        porcentaje: totalGastado > 0 ? Math.round((monto / totalGastado) * 100) : 0
-      }));
-    setResumenPresupuesto({
-      totalAsignado,
-      totalGastado,
-      porcentajeGastado,
-      categoriasMasGastadas
-    });
-  }, [filtroMes, filtroAno, presupuestos, cuentas]);
+  const nombresCreadores = ['Camilo', 'Chave', 'Daniela', 'Mia'];
+  const [refreshTrigger, setRefreshTrigger] = useState(0);
 
   useEffect(() => {
-    fetchData();
+    const fetchDataInternal = async () => {
+      try {
+        setLoading(true);
+        const [presupuestosArray, categoriasArray, cuentasArray] = await Promise.all([
+          db.presupuestos.toArray(),
+          db.categorias.toArray(),
+          db.cuentas.toArray()
+        ]);
+        setPresupuestos(presupuestosArray);
+        setCategorias(categoriasArray);
+        setCuentas(cuentasArray);
+      } catch (error) {
+        console.error('Error al cargar datos de presupuesto:', error);
+        showNotification('Error al cargar datos del presupuesto', 'error');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchDataInternal();
+
     const handleResize = () => {
       setMobileView(window.innerWidth <= 768);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [fetchData]);
+  }, [refreshTrigger]);
 
   useEffect(() => {
-    calcularResumenPresupuesto();
-  }, [filtroMes, filtroAno, calcularResumenPresupuesto]);
+    const calcularResumen = () => {
+      const presupuestosFiltrados = presupuestos.filter(p => {
+        const fecha = p.fechaCreacion ? new Date(p.fechaCreacion) : null;
+        return fecha && fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+      });
+      const totalAsignado = presupuestosFiltrados.reduce((sum, p) => sum + (p.montoAsignado || 0), 0);
+
+      const gastosPorCategoria = {};
+      for (const cuenta of cuentas) {
+        if (cuenta.fechaCreacion) {
+          const fechaCuenta = new Date(cuenta.fechaCreacion);
+          if (fechaCuenta.getMonth() === filtroMes && fechaCuenta.getFullYear() === filtroAno) {
+            const categoria = cuenta.categoria || 'sin_categoria';
+            if (!gastosPorCategoria[categoria]) gastosPorCategoria[categoria] = 0;
+            gastosPorCategoria[categoria] += (cuenta.monto || 0);
+          }
+        }
+      }
+      const totalGastado = Object.values(gastosPorCategoria).reduce((sum, monto) => sum + monto, 0);
+      const porcentajeGastado = totalAsignado > 0 ? Math.round((totalGastado / totalAsignado) * 100) : 0;
+      const categoriasMasGastadas = Object.entries(gastosPorCategoria)
+        .sort((a, b) => b[1] - a[1])
+        .map(([categoria, monto]) => ({
+          categoria,
+          monto,
+          porcentaje: totalGastado > 0 ? Math.round((monto / totalGastado) * 100) : 0
+        }));
+
+      setResumenPresupuesto({
+        totalAsignado,
+        totalGastado,
+        porcentajeGastado,
+        categoriasMasGastadas
+      });
+    };
+
+    if (!loading) {
+      calcularResumen();
+    }
+  }, [presupuestos, cuentas, filtroMes, filtroAno, loading]);
 
   useEffect(() => {
     if (editingPresupuesto?.categoria) {
-      // Lista completa de categorías válidas
       const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
-      
-      // Si la categoría no está en la lista de válidas, convertirla
+
       if (!categoriasValidas.includes(editingPresupuesto.categoria)) {
-        // Mapeo para categorías antiguas
         const categoriasMapping = {
           'servicios': 'Luz',
-          'alimentos': 'Agua', 
+          'alimentos': 'Agua',
           'transporte': 'Gas',
           'entretenimiento': 'Internet',
           'salud': 'Utiles de Aseo',
           'educacion': 'Otros'
         };
-        
-        // Intentar mapear, o usar "Otros" como valor predeterminado
+
         const nuevaCategoria = categoriasMapping[editingPresupuesto.categoria.toLowerCase()] || 'Otros';
-        
-        setEditingPresupuesto({
-          ...editingPresupuesto,
+
+        setEditingPresupuesto(prev => ({
+          ...prev,
           categoria: nuevaCategoria,
-          categoriaEspecifica: nuevaCategoria === 'Otros' ? editingPresupuesto.categoria : ''
-        });
-        
+          categoriaEspecifica: nuevaCategoria === 'Otros' ? prev.categoria : ''
+        }));
+
         setMostrarCampoOtros(nuevaCategoria === 'Otros');
+      } else {
+        setMostrarCampoOtros(editingPresupuesto.categoria === 'Otros');
       }
+    } else {
+      setMostrarCampoOtros(false);
     }
-  }, [editingPresupuesto]);
+  }, [editingPresupuesto?.categoria]);
 
   const showNotification = (message, type = 'success', duration = 3000) => {
     setNotification({ message, type });
@@ -136,6 +143,7 @@ const Presupuesto = () => {
 
   const handleCrearPresupuesto = () => {
     setEditingPresupuesto(null);
+    setMostrarCampoOtros(false);
     setShowForm(true);
     if (mobileView && contentRef.current) {
       contentRef.current.scrollTo({ top: 0, behavior: 'smooth' });
@@ -153,7 +161,6 @@ const Presupuesto = () => {
   const handleGuardarPresupuesto = async (presupuestoData) => {
     try {
       const isEditing = !!presupuestoData.id;
-      setLoading(true);
       if (isEditing) {
         await db.presupuestos.update(presupuestoData.id, presupuestoData);
         showNotification(`Presupuesto actualizado correctamente`);
@@ -165,7 +172,7 @@ const Presupuesto = () => {
         });
         showNotification(`Presupuesto creado correctamente`);
       }
-      fetchData();
+      setRefreshTrigger(prev => prev + 1);
       setShowForm(false);
       setEditingPresupuesto(null);
     } catch (error) {
@@ -175,13 +182,15 @@ const Presupuesto = () => {
   };
 
   const handleEliminarPresupuesto = async (id) => {
-    try {
-      await db.presupuestos.delete(id);
-      showNotification('Presupuesto eliminado correctamente');
-      fetchData();
-    } catch (error) {
-      console.error('Error al eliminar presupuesto:', error);
-      showNotification('Error al eliminar el presupuesto', 'error');
+    if (window.confirm('¿Estás seguro de que quieres eliminar este presupuesto?')) {
+      try {
+        await db.presupuestos.delete(id);
+        showNotification('Presupuesto eliminado correctamente');
+        setRefreshTrigger(prev => prev + 1);
+      } catch (error) {
+        console.error('Error al eliminar presupuesto:', error);
+        showNotification('Error al eliminar el presupuesto', 'error');
+      }
     }
   };
 
@@ -200,11 +209,11 @@ const Presupuesto = () => {
       '#3F51B5', '#E91E63', '#00BCD4', '#8BC34A', '#FF9800',
       '#009688', '#673AB7', '#FFEB3B', '#795548', '#607D8B'
     ];
-    const labels = resumenPresupuesto.categoriasMasGastadas.map(c => 
+    const labels = resumenPresupuesto.categoriasMasGastadas.map(c =>
       c.categoria === 'sin_categoria' ? 'Sin categoría' : c.categoria
     );
     const data = resumenPresupuesto.categoriasMasGastadas.map(c => c.monto);
-    
+
     return {
       labels,
       datasets: [
@@ -236,7 +245,7 @@ const Presupuesto = () => {
     const gastosData = [];
     categorias.forEach(categoria => {
       presupuestosData.push(presupuestoPorCategoria[categoria] || 0);
-      
+
       const gastoCategoria = resumenPresupuesto.categoriasMasGastadas
         .find(c => c.categoria === categoria);
       gastosData.push(gastoCategoria ? gastoCategoria.monto : 0);
@@ -278,7 +287,7 @@ const Presupuesto = () => {
       },
       tooltip: {
         callbacks: {
-          label: function(context) {
+          label: function (context) {
             const value = context.raw;
             return formatMonto(value);
           }
@@ -303,16 +312,13 @@ const Presupuesto = () => {
 
   const handleCategoriaChange = (e) => {
     const categoriaSeleccionada = e.target.value;
-    console.log('Categoría seleccionada:', categoriaSeleccionada);
-    
-    // Si estamos editando un presupuesto, actualizar su categoría
     if (editingPresupuesto) {
-      setEditingPresupuesto({
-        ...editingPresupuesto,
-        categoria: categoriaSeleccionada
-      });
+      setEditingPresupuesto(prev => ({
+        ...prev,
+        categoria: categoriaSeleccionada,
+        categoriaEspecifica: categoriaSeleccionada === 'Otros' ? prev.categoriaEspecifica : ''
+      }));
     }
-    
     setMostrarCampoOtros(categoriaSeleccionada === 'Otros');
   };
 
@@ -322,8 +328,7 @@ const Presupuesto = () => {
       <div className="presupuesto-container">
         <div className="presupuesto-header">
           <h2>Presupuesto Familiar</h2>
-          
-          <button 
+          <button
             className="crear-presupuesto-button"
             onClick={handleCrearPresupuesto}
           >
@@ -333,7 +338,7 @@ const Presupuesto = () => {
         <div className="periodo-filter">
           <div className="filter-title">Período seleccionado:</div>
           <div className="filter-controls">
-            <select 
+            <select
               value={filtroMes}
               onChange={(e) => setFiltroMes(parseInt(e.target.value))}
               className="mes-select"
@@ -342,7 +347,7 @@ const Presupuesto = () => {
                 <option key={index} value={index}>{mes}</option>
               ))}
             </select>
-            <select 
+            <select
               value={filtroAno}
               onChange={(e) => setFiltroAno(parseInt(e.target.value))}
               className="ano-select"
@@ -353,8 +358,8 @@ const Presupuesto = () => {
             </select>
           </div>
         </div>
-        <div 
-          ref={contentRef} 
+        <div
+          ref={contentRef}
           className={`presupuesto-content ${showForm ? 'with-side-panel' : ''} ${mobileView ? 'mobile-view' : ''}`}
         >
           <div className="panel-principal">
@@ -375,7 +380,7 @@ const Presupuesto = () => {
                       <div className="card-value">{formatMonto(resumenPresupuesto.totalAsignado)}</div>
                     </div>
                   </div>
-                  
+
                   <div className="resumen-card total-gastado">
                     <div className="card-icon">💸</div>
                     <div className="card-content">
@@ -383,24 +388,24 @@ const Presupuesto = () => {
                       <div className="card-value">{formatMonto(resumenPresupuesto.totalGastado)}</div>
                     </div>
                   </div>
-                  
+
                   <div className="resumen-card porcentaje">
                     <div className="card-icon">📊</div>
                     <div className="card-content">
                       <div className="card-title">% Utilizado</div>
                       <div className="card-value">{resumenPresupuesto.porcentajeGastado}%</div>
                     </div>
-                    <div 
+                    <div
                       className={`progress-bar ${resumenPresupuesto.porcentajeGastado > 90 ? 'peligro' : resumenPresupuesto.porcentajeGastado > 75 ? 'advertencia' : 'normal'}`}
                     >
-                      <div 
+                      <div
                         className="progress"
                         style={{ width: `${Math.min(resumenPresupuesto.porcentajeGastado, 100)}%` }}
                       ></div>
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="graficos-container">
                   <div className="grafico-card">
                     <h3>Distribución de Gastos</h3>
@@ -408,7 +413,7 @@ const Presupuesto = () => {
                       <Pie data={getPieChartData()} options={chartOptions} />
                     </div>
                   </div>
-                  
+
                   <div className="grafico-card">
                     <h3>Presupuesto vs Gasto Real</h3>
                     <div className="grafico-wrapper">
@@ -416,16 +421,16 @@ const Presupuesto = () => {
                     </div>
                   </div>
                 </div>
-                
+
                 <div className="presupuestos-container">
                   <h3>Presupuestos del Período</h3>
                   {presupuestos.filter(p => {
-                    const fecha = new Date(p.fechaCreacion);
-                    return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+                    const fecha = p.fechaCreacion ? new Date(p.fechaCreacion) : null;
+                    return fecha && fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
                   }).length === 0 ? (
                     <div className="empty-table">
                       <p>No hay presupuestos para este período</p>
-                      <button 
+                      <button
                         className="action-button"
                         onClick={handleCrearPresupuesto}
                       >
@@ -447,9 +452,9 @@ const Presupuesto = () => {
                         </thead>
                         <tbody>
                           {presupuestos.filter(p => {
-                              const fecha = new Date(p.fechaCreacion);
-                              return fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
-                            })
+                            const fecha = p.fechaCreacion ? new Date(p.fechaCreacion) : null;
+                            return fecha && fecha.getMonth() === filtroMes && fecha.getFullYear() === filtroAno;
+                          })
                             .map(presupuesto => {
                               const gastoCategoria = resumenPresupuesto.categoriasMasGastadas
                                 .find(c => c.categoria === presupuesto.categoria);
@@ -457,12 +462,12 @@ const Presupuesto = () => {
                               const porcentajeUtilizado = presupuesto.montoAsignado > 0
                                 ? Math.round((gastoReal / presupuesto.montoAsignado) * 100)
                                 : 0;
-                                
+
                               return (
                                 <tr key={presupuesto.id}>
                                   <td>
-                                    {presupuesto.categoria === 'Otros' && presupuesto.categoriaEspecifica 
-                                      ? `${presupuesto.categoria} - ${presupuesto.categoriaEspecifica}` 
+                                    {presupuesto.categoria === 'Otros' && presupuesto.categoriaEspecifica
+                                      ? `${presupuesto.categoria} - ${presupuesto.categoriaEspecifica}`
                                       : presupuesto.categoria}
                                   </td>
                                   <td>{formatMonto(presupuesto.montoAsignado)}</td>
@@ -471,17 +476,17 @@ const Presupuesto = () => {
                                     <div className="porcentaje-container">
                                       <span className={
                                         porcentajeUtilizado > 100 ? 'excedido' :
-                                        porcentajeUtilizado > 90 ? 'peligro' :
-                                        porcentajeUtilizado > 75 ? 'advertencia' : ''
+                                          porcentajeUtilizado > 90 ? 'peligro' :
+                                            porcentajeUtilizado > 75 ? 'advertencia' : ''
                                       }>
                                         {porcentajeUtilizado}%
                                       </span>
                                       <div className="mini-progress-bar">
-                                        <div 
+                                        <div
                                           className={`mini-progress ${
                                             porcentajeUtilizado > 100 ? 'excedido' :
-                                            porcentajeUtilizado > 90 ? 'peligro' :
-                                            porcentajeUtilizado > 75 ? 'advertencia' : 'normal'
+                                              porcentajeUtilizado > 90 ? 'peligro' :
+                                                porcentajeUtilizado > 75 ? 'advertencia' : 'normal'
                                           }`}
                                           style={{ width: `${Math.min(porcentajeUtilizado, 100)}%` }}
                                         ></div>
@@ -490,14 +495,14 @@ const Presupuesto = () => {
                                   </td>
                                   <td>{presupuesto.creadorNombre || 'Usuario'}</td>
                                   <td className="acciones-column">
-                                    <button 
-                                      className="edit-button" 
+                                    <button
+                                      className="edit-button"
                                       onClick={() => handleEditarPresupuesto(presupuesto)}
                                     >
                                       ✏️
                                     </button>
-                                    <button 
-                                      className="delete-button" 
+                                    <button
+                                      className="delete-button"
                                       onClick={() => handleEliminarPresupuesto(presupuesto.id)}
                                     >
                                       🗑️
@@ -514,12 +519,12 @@ const Presupuesto = () => {
               </>
             )}
           </div>
-          
+
           {showForm && (
             <div className={`side-panel form-panel ${mobileView ? 'mobile' : ''}`}>
               <div className="panel-header">
                 <h3>{editingPresupuesto ? 'Editar Presupuesto' : 'Nuevo Presupuesto'}</h3>
-                <button 
+                <button
                   className="close-panel"
                   onClick={() => setShowForm(false)}
                   aria-label="Cerrar panel"
@@ -538,13 +543,13 @@ const Presupuesto = () => {
                     creadorNombre: formData.get('creadorNombre'),
                     categoriaEspecifica: formData.get('categoriaEspecifica') || null
                   };
-                  
+
                   if (editingPresupuesto) {
                     presupuestoData.id = editingPresupuesto.id;
                     presupuestoData.fechaCreacion = editingPresupuesto.fechaCreacion;
                     presupuestoData.userId = editingPresupuesto.userId;
                   }
-                  
+
                   handleGuardarPresupuesto(presupuestoData);
                 }}>
                   <div className="form-group">
@@ -554,12 +559,9 @@ const Presupuesto = () => {
                       name="categoria"
                       value={editingPresupuesto?.categoria || ''}
                       onChange={handleCategoriaChange}
-                      onClick={(e) => e.stopPropagation()} // Evitar que eventos de contenedores interfieran
                       required
-                      style={{zIndex: 10, position: 'relative'}} // Asegurar que el selector esté sobre otros elementos
                     >
                       <option value="">Seleccionar categoría</option>
-                      {/* Filtrar categorías para asegurar que no haya duplicados */}
                       {Array.from(new Set(categorias.map(cat => cat.nombre))).map(nombreCategoria => (
                         <option key={nombreCategoria} value={nombreCategoria}>
                           {nombreCategoria}
@@ -567,7 +569,7 @@ const Presupuesto = () => {
                       ))}
                     </select>
                   </div>
-                  
+
                   {mostrarCampoOtros && (
                     <div className="form-group">
                       <label htmlFor="categoriaEspecifica">Especificar Categoría*</label>
@@ -581,7 +583,7 @@ const Presupuesto = () => {
                       />
                     </div>
                   )}
-                  
+
                   <div className="form-group">
                     <label htmlFor="monto">Monto Asignado</label>
                     <input
@@ -594,7 +596,7 @@ const Presupuesto = () => {
                       defaultValue={editingPresupuesto?.montoAsignado || ''}
                     />
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="descripcion">Descripción (opcional)</label>
                     <textarea
@@ -604,7 +606,7 @@ const Presupuesto = () => {
                       defaultValue={editingPresupuesto?.descripcion || ''}
                     ></textarea>
                   </div>
-                  
+
                   <div className="form-group">
                     <label htmlFor="creadorNombre">Creador *</label>
                     <select
@@ -621,7 +623,7 @@ const Presupuesto = () => {
                       ))}
                     </select>
                   </div>
-                  
+
                   <div className="form-buttons">
                     <button type="submit" disabled={loading}>
                       {loading ? 'Guardando...' : editingPresupuesto ? 'Actualizar' : 'Guardar'}
@@ -643,7 +645,7 @@ const Presupuesto = () => {
         )}
 
         {mobileView && showForm && (
-          <button 
+          <button
             className="floating-back-button"
             onClick={() => setShowForm(false)}
           >

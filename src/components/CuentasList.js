@@ -2,7 +2,7 @@ import React from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import './CuentasList.css';
 
-const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel }) => {
+const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel, onDeleteCuenta }) => {
   const { currentUser } = useAuth();
   
   const formatFecha = (fechaString) => {
@@ -74,6 +74,19 @@ const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel }) => {
             <span className="creator-label">Creado por:</span>
             <span className="creator-value">{cuenta.usuarioCreacion === currentUser.uid ? 'Tú' : 'Familiar'}</span>
           </div>
+
+          {onDeleteCuenta && (
+            <button
+              className="cuenta-delete-button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDeleteCuenta(cuenta.id);
+              }}
+              aria-label={`Eliminar cuenta ${cuenta.nombre}`}
+            >
+              🗑️
+            </button>
+          )}
         </div>
       ))}
     </div>
