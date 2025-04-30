@@ -1,49 +1,39 @@
 import React from 'react';
+import styles from './Historial.module.css';
 
-const HistorialInterpretacion = ({ resumenGeneral, datosAgrupados, formatMonto }) => {
+// Estructura por defecto
+const defaultInterpretacionData = {
+  mensajePrincipal: "No hay datos suficientes para generar una interpretación.",
+  consejos: [],
+  totalMonto: 0, // Añadir propiedades esperadas
+  totalPagado: 0
+};
+
+const HistorialInterpretacion = ({ interpretacion = defaultInterpretacionData }) => {
+  // Acceso seguro
+  const mensajePrincipal = interpretacion?.mensajePrincipal || defaultInterpretacionData.mensajePrincipal;
+  const consejos = interpretacion?.consejos || defaultInterpretacionData.consejos;
+  const totalMonto = interpretacion?.totalMonto || defaultInterpretacionData.totalMonto; // Acceso seguro
+  const totalPagado = interpretacion?.totalPagado || defaultInterpretacionData.totalPagado; // Acceso seguro
+
   return (
-    <div className="interpretacion">
-      <h3>Interpretación</h3>
-      <p>A continuación se presenta un análisis de tus gastos:</p>
-      <ul>
-        <li>
-          <span className="dot blue"></span>
-          <strong>Monto total en el período seleccionado:</strong> {formatMonto(resumenGeneral.totalMonto)}
-        </li>
-        <li>
-          <span className="dot green"></span>
-          <strong>Has pagado:</strong> {formatMonto(resumenGeneral.totalPagado)} ({resumenGeneral.porcentajePagado}% del total)
-        </li>
-        <li>
-          <span className="dot red"></span>
-          <strong>Categoría con más gasto:</strong> {datosAgrupados.porCategoria.length > 0
-            ? `${datosAgrupados.porCategoria[0].categoria} (${formatMonto(datosAgrupados.porCategoria[0].totalMonto)})`
-            : 'Sin datos'}
-        </li>
-      </ul>
-
-      {datosAgrupados.porMes.length > 1 && ( // O usar datosAgrupados.porCategoria.length
-        <div className="tabla-categorias">
-          <h4>Categorías con mayor gasto</h4>
-          <table>
-            <thead>
-              <tr>
-                <th>Categoría</th>
-                <th>Monto</th>
-                <th>% del Total</th>
-              </tr>
-            </thead>
-            <tbody>
-              {datosAgrupados.porCategoria.slice(0, 5).map(cat => (
-                <tr key={cat.categoria}>
-                  <td>{cat.categoria}</td>
-                  <td>{formatMonto(cat.totalMonto)}</td>
-                  {/* Asegurar que resumenGeneral.totalMonto no sea 0 para evitar NaN */}
-                  <td>{resumenGeneral.totalMonto > 0 ? Math.round((cat.totalMonto / resumenGeneral.totalMonto) * 100) : 0}%</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
+    <div className={styles['interpretacion-container'] + ' ' + styles['card']}>
+      <h3 className={styles['interpretacion-titulo']}>Interpretación y Consejos</h3>
+      <p className={styles['mensaje-principal']}>{mensajePrincipal}</p>
+      {totalMonto > 0 && (
+        <p className={styles['interpretacion-total']}>Monto total de cuentas en el periodo: ${totalMonto.toLocaleString()}</p>
+      )}
+      {totalPagado > 0 && (
+        <p className={styles['interpretacion-total']}>Total pagado en el periodo: ${totalPagado.toLocaleString()}</p>
+      )}
+      {consejos.length > 0 && (
+        <div className={styles['consejos-lista']}>
+          <h4>Consejos:</h4>
+          <ul>
+            {consejos.map((consejo, index) => (
+              <li key={index}>{consejo}</li>
+            ))}
+          </ul>
         </div>
       )}
     </div>

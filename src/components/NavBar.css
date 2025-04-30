@@ -1,261 +1,233 @@
 .navbar {
-  background-color: #ffffff;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0.5rem 2rem;
-  position: sticky;
+  background-color: #333; /* Fondo oscuro */
+  color: white;
+  padding: 10px 20px; /* Padding horizontal */
+  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  position: sticky; /* Fijar la barra */
   top: 0;
-  z-index: 100;
-  flex-wrap: wrap;
-  transition: all 0.3s ease;
+  z-index: 1000;
 }
 
-.navbar-brand {
+.navbar-container {
+  max-width: 1200px;
+  margin: 0 auto;
   display: flex;
   align-items: center;
+  justify-content: space-between; /* Asegura espacio entre elementos principales */
+  flex-wrap: nowrap; /* Evitar que los elementos principales se envuelvan en escritorio */
 }
 
-.navbar-brand h1 {
-  margin: 0;
-  color: #4CAF50;
-  font-size: 1.5rem;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-}
-
-.navbar-links {
+.nav-brand {
   display: flex;
-  gap: 1.5rem;
   align-items: center;
-}
-
-.navbar-links a {
+  gap: 10px;
   text-decoration: none;
-  color: #333;
-  font-weight: 500;
-  padding: 0.6rem 0.8rem;
+  color: white;
+}
+
+.logo {
+  width: 35px;
+  height: 35px;
+  background-color: #4CAF50;
+  color: white;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  font-weight: bold;
+}
+
+.nav-brand h1 {
+  margin: 0;
+  font-size: 22px;
+}
+
+/* --- Estilos base para nav-links (escritorio) --- */
+.nav-links {
+  display: flex; /* Mostrar como flex en escritorio */
+  align-items: center;
+  gap: 15px; /* Espacio entre enlaces */
+  margin: 0 auto; /* Centrar los enlaces horizontalmente */
+  padding: 0 20px; /* Añadir padding para evitar que toquen los bordes */
+}
+
+.nav-link {
+  color: #eee;
+  text-decoration: none;
+  padding: 8px 12px;
   border-radius: 4px;
-  border-bottom: 2px solid transparent;
-  transition: all 0.2s ease;
+  transition: background-color 0.2s, color 0.2s;
+  font-size: 1rem;
   position: relative;
+  white-space: nowrap;
 }
 
-.navbar-links a:hover {
-  color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.05);
+.nav-link:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  color: white;
 }
 
-.navbar-links a.active {
-  color: #4CAF50;
-  border-bottom: 2px solid #4CAF50;
+.nav-link.active {
+  color: white;
+  font-weight: 600;
 }
 
-.navbar-links a.active::after {
+.nav-link.active::after {
   content: '';
   position: absolute;
   bottom: -2px;
-  left: 0;
-  width: 100%;
+  left: 10%;
+  right: 10%;
   height: 2px;
   background-color: #4CAF50;
-  transform: scaleX(1);
-  transition: transform 0.3s ease;
 }
 
-.navbar-user {
+.user-info {
   display: flex;
   align-items: center;
-  gap: 1rem;
+  gap: 15px;
+  margin-left: auto; /* Empujar a la derecha, asegurando que no choque con links */
+  flex-shrink: 0; /* Evitar que se encoja */
 }
 
-.user-name {
+.user-info span {
   font-weight: 500;
-  color: #2c3e50;
 }
 
 .logout-button {
   background-color: #f44336;
   color: white;
-  padding: 0.5rem 1rem;
   border: none;
   border-radius: 4px;
+  padding: 6px 12px;
   cursor: pointer;
-  font-size: 14px;
-  width: auto;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
 }
 
 .logout-button:hover {
   background-color: #d32f2f;
-  transform: translateY(-2px);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
 }
 
-.menu-toggle {
+/* --- Botón Hamburguesa (Oculto en escritorio) --- */
+.mobile-menu-button {
   display: none;
   background: none;
   border: none;
-  font-size: 1.5rem;
-  color: #333;
+  font-size: 28px;
   cursor: pointer;
-  padding: 0.3rem;
+  color: white; /* Color blanco para el icono */
+  padding: 5px;
+  line-height: 1;
 }
 
-/* Tablet Landscape */
-@media (max-width: 1024px) {
-  .navbar {
-    padding: 0.5rem 1rem;
-  }
-  
-  .navbar-links {
-    gap: 1rem;
-  }
-  
-  .navbar-links a {
-    padding: 0.5rem 0.6rem;
-    font-size: 0.95rem;
+/* --- Media Query para pantallas pequeñas --- */
+@media (max-width: 992px) { /* Ajustar breakpoint si es necesario */
+  .nav-links {
+     /* Reducir gap o padding si empiezan a apretarse antes del breakpoint móvil */
+     gap: 10px;
+     padding: 0 10px;
   }
 }
 
-/* Tablet Portrait */
-@media (max-width: 768px) {
-  .navbar {
-    padding: 0.5rem 1rem;
+@media (max-width: 768px) { /* Breakpoint para menú móvil */
+
+  .navbar-container {
+    flex-wrap: wrap; /* Permitir envolver en móvil */
+    position: relative; /* Para el menú absoluto */
   }
-  
-  .navbar-brand, .navbar-links, .navbar-user {
-    width: 100%;
+
+  .mobile-menu-button {
+    display: block; /* Mostrar el botón hamburguesa */
+    order: 3; /* Orden visual */
+    margin-left: 10px;
   }
-  
-  .navbar-brand {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 0;
-  }
-  
-  .menu-toggle {
-    display: block;
-  }
-  
-  .navbar-links {
-    height: 0;
-    overflow: hidden;
+
+  .nav-links {
+    display: none; /* Ocultar enlaces normales */
     flex-direction: column;
-    align-items: flex-start;
-    width: 100%;
+    position: absolute;
+    top: 100%; /* Debajo de la barra */
+    left: 0;
+    right: 0;
+    background-color: #444; /* Fondo ligeramente más claro para el menú */
+    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    padding: 10px 0;
+    z-index: 999; /* Debajo de la barra principal */
+    border-top: 1px solid #555;
+    align-items: stretch;
     gap: 0;
-    transition: height 0.3s ease;
-    margin: 0;
-    padding: 0;
+    margin: 0; /* Resetear margen */
   }
-  
-  .navbar-links.open {
-    height: auto;
-    margin-top: 0.5rem;
+
+  .nav-links.mobile-active {
+    display: flex; /* Mostrar menú cuando esté activo */
   }
-  
-  .navbar-links a {
+
+  .nav-link {
+    padding: 12px 20px;
+    text-align: left;
+    border-bottom: 1px solid #555;
     width: 100%;
-    padding: 0.8rem 0;
-    border-bottom: 1px solid #eee;
+    border-radius: 0;
+    font-size: 1rem;
+    color: #eee; /* Color de texto en menú móvil */
   }
-  
-  .navbar-links a:last-child {
+  .nav-link:last-child {
     border-bottom: none;
   }
-  
-  .navbar-links a.active {
-    border-left: 3px solid #4CAF50;
-    border-bottom: 1px solid #eee;
-    padding-left: 0.5rem;
-  }
-  
-  .navbar-links a.active::after {
-    display: none;
-  }
-  
-  .navbar-user {
-    margin-top: 0.5rem;
-    justify-content: space-between;
-    border-top: 1px solid #eee;
-    padding-top: 0.5rem;
-  }
-  
-  .user-name {
-    font-size: 0.9rem;
-    max-width: 150px;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-  }
-}
 
-/* Teléfonos móviles */
-@media (max-width: 480px) {
-  .navbar-brand h1 {
-    font-size: 1.3rem;
+  .nav-link:hover {
+     background-color: #555; /* Hover en menú móvil */
+     color: white;
   }
-  
+
+  .nav-link.active {
+    background-color: #4CAF50; /* Activo en menú móvil */
+    color: white;
+    font-weight: bold;
+  }
+  .nav-link.active::after {
+     display: none; /* Ocultar línea inferior en móvil */
+  }
+
+  .user-info {
+    order: 2; /* User info antes del botón hamburguesa */
+    margin-left: auto; /* Mantener a la derecha si cabe */
+    gap: 10px; /* Reducir gap */
+  }
+  .user-info span {
+     font-size: 0.9rem; /* Reducir fuente si es necesario */
+  }
   .logout-button {
-    padding: 0.4rem 0.8rem;
-    font-size: 0.8rem;
+     padding: 5px 10px;
+     font-size: 0.85rem;
   }
-  
-  .navbar-links a {
-    font-size: 0.9rem;
-    padding: 0.7rem 0;
-  }
-  
-  .user-name {
-    font-size: 0.8rem;
-    max-width: 120px;
+
+  .nav-brand {
+     order: 1;
+     /* Ajustar tamaño si es necesario */
+     /* font-size: 20px; */
   }
 }
 
-/* Pantallas muy pequeñas */
-@media (max-width: 320px) {
-  .navbar-brand h1 {
-    font-size: 1.1rem;
-  }
-  
-  .user-name {
-    max-width: 100px;
-  }
-}
-
-/* Modo oscuro - si decides implementarlo en el futuro */
-@media (prefers-color-scheme: dark) {
-  .navbar {
-    background-color: #1a1a1a;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.3);
-  }
-  
-  .navbar-brand h1 {
-    color: #5FCF65;
-  }
-  
-  .navbar-links a {
-    color: #e0e0e0;
-  }
-  
-  .navbar-links a:hover {
-    color: #5FCF65;
-    background-color: rgba(95, 207, 101, 0.1);
-  }
-  
-  .navbar-links a.active {
-    color: #5FCF65;
-    border-bottom-color: #5FCF65;
-  }
-  
-  .user-name {
-    color: #d0d0d0;
-  }
-  
-  .menu-toggle {
-    color: #e0e0e0;
-  }
+@media (max-width: 480px) {
+   .nav-brand h1 {
+      font-size: 18px; /* Más pequeño en pantallas muy chicas */
+   }
+   .logo {
+      width: 30px;
+      height: 30px;
+      font-size: 18px;
+   }
+   .user-info {
+      gap: 8px;
+   }
+   .user-info span {
+      max-width: 100px; /* Limitar ancho del nombre */
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+   }
 }

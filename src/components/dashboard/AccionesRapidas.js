@@ -1,7 +1,10 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom'; // Importar useNavigate
 
 // Asumiendo que las funciones de navegación y setActiveTab se pasan como props
 const AccionesRapidas = ({ irAGestionCuentas, irAPresupuesto, setActiveTab }) => {
+  const navigate = useNavigate(); // Usar el hook useNavigate
+
   return (
     <div className="acciones-rapidas">
       <div className="section-header">
@@ -20,7 +23,7 @@ const AccionesRapidas = ({ irAGestionCuentas, irAPresupuesto, setActiveTab }) =>
           <span className="accion-icon">💸</span>
           <span className="accion-text">Pagar Cuenta</span>
         </button>
-        <button className="accion-button" onClick={() => setActiveTab('historial')}>
+        <button className="accion-button" onClick={() => navigate('/historial')}>
           <span className="accion-icon">📅</span>
           <span className="accion-text">Ver Historial</span>
         </button>

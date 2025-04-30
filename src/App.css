@@ -1,3 +1,15 @@
+/* Resetear margen del body */
+body {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box; /* Incluir padding y border en el tamaño total */
+}
+
+/* Asegurar que todos los elementos hereden box-sizing */
+*, *::before, *::after {
+  box-sizing: inherit;
+}
+
 /* Estilos globales para toda la aplicación */
 .App {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

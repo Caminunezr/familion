@@ -37,7 +37,10 @@ export function procesarCuentasYPagosHistorial(cuentasArray, pagosArray) {
   }, {});
 
   return cuentasArray.map(cuenta => {
-    const pagosCuenta = pagosPorCuenta[cuenta.id] || [];
+    const pagosCuenta = (pagosPorCuenta[cuenta.id] || []).map(pago => ({
+      ...pago,
+      rutaComprobante: pago.rutaComprobante || pago.comprobanteUrl || null
+    }));
     const totalPagado = pagosCuenta.reduce((sum, pago) => sum + (parseFloat(pago.montoPagado) || 0), 0);
     const montoCuenta = parseFloat(cuenta.monto) || 0;
     const estaPagada = totalPagado >= montoCuenta;
@@ -53,7 +56,7 @@ export function procesarCuentasYPagosHistorial(cuentasArray, pagosArray) {
       porcentajePagado: montoCuenta > 0 ? Math.min(100, Math.round((totalPagado / montoCuenta) * 100)) : 0,
       fechaUltimoPago: fechaUltimoPago ? fechaUltimoPago.toISOString() : null,
       pagosCuenta,
-      categoria: categoriaNormalizada // Usar la categoría normalizada
+      categoria: categoriaNormalizada
     };
   });
 }
@@ -192,3 +195,42 @@ export function agruparDatosHistorial(cuentasFiltradas, modo, formatoMesFunc) {
 
   return { porMes, porCategoria, porPeriodo };
 }
+
+/**
+ * Placeholder para generar opciones de período basadas en fechas.
+ * TODO: Implementar la lógica real para extraer años/meses de las fechas.
+ * @param {string[]} fechas - Array de strings de fechas (ISO o similar).
+ * @returns {Array} - Array de opciones de período (ej: [{ value: '2023-10', label: 'Oct 2023' }]).
+ */
+export const generarPeriodos = (fechas = []) => {
+  console.warn("generarPeriodos no implementado, usando valores por defecto.");
+  // Lógica temporal:
+  const ahora = new Date();
+  const mesActual = `${ahora.getFullYear()}-${String(ahora.getMonth() + 1).padStart(2, '0')}`;
+  return [
+    { value: 'mesActual', label: 'Mes Actual' },
+    { value: 'mesAnterior', label: 'Mes Anterior' },
+    { value: mesActual, label: `Específico: ${mesActual}` } // Ejemplo
+  ];
+};
+
+/**
+ * Placeholder para procesar todos los datos históricos filtrados y agrupados.
+ * TODO: Implementar la lógica real de filtrado, agrupación y cálculo de resumen/gráficos.
+ * @param {Object} datosCompletos - Objeto con arrays { cuentas, pagos, presupuestos, aportes }.
+ * @param {Object} filtros - Objeto con los filtros aplicados.
+ * @param {string} agrupacion - Criterio de agrupación ('categoria', 'mes').
+ * @returns {Object} - Objeto con { resumen, datosGrafico, interpretacion, tablaCategorias }.
+ */
+export const procesarDatosHistorial = (datosCompletos, filtros, agrupacion) => {
+  console.warn("procesarDatosHistorial no implementado, devolviendo datos vacíos.");
+  // Lógica temporal:
+  // Aquí deberías llamar a tus otras funciones (filtrarCuentasHistorial, agruparDatosHistorial, etc.)
+  // y construir el objeto de resultado final.
+  return {
+    resumen: { /* datos de resumen calculados */ },
+    datosGrafico: { /* datos formateados para Chart.js */ },
+    interpretacion: [ /* strings con análisis o insights */ ],
+    tablaCategorias: [ /* array con datos por categoría */ ]
+  };
+};

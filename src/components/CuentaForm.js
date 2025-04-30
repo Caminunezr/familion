@@ -1,257 +1,146 @@
-import React, { useState, useEffect } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { saveFile } from '../utils/fileStorage';
-import './CuentaForm.css';
+import React, { useState } from 'react';
+import styles from './CuentaForm.module.css';
 
-const CuentaForm = ({ cuenta, categorias, onSave, onCancel }) => {
-  const { currentUser } = useAuth();
-  const [formData, setFormData] = useState({
-    nombre: '', // Ahora será para el nombre específico cuando es "Otros"
-    monto: '',
-    proveedor: '',
-    fechaVencimiento: '',
-    categoria: '',
-    descripcion: '',
-    categoriaEspecifica: '' // Para el nombre específico cuando la categoría es "Otros"
-  });
-  const [mostrarCampoOtros, setMostrarCampoOtros] = useState(false);
-  const [factura, setFactura] = useState(null);
-  const [error, setError] = useState('');
-  const [loading, setLoading] = useState(false);
-  
-  // Cargar datos de la cuenta si existe
-  useEffect(() => {
-    if (cuenta) {
-      // Lista de categorías válidas
-      const categoriasValidas = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
-      
-      // Si la categoría no es válida, mapearla o usar "Otros"
-      let categoria = cuenta.categoria || '';
-      if (!categoriasValidas.includes(categoria)) {
-        // Mapeo para categorías antiguas
-        const categoriasMapping = {
-          'servicios': 'Luz',
-          'alimentos': 'Agua',
-          'transporte': 'Gas',
-          'entretenimiento': 'Internet',
-          'salud': 'Utiles de Aseo',
-          'educacion': 'Otros'
-        };
-        
-        categoria = categoriasMapping[categoria.toLowerCase()] || 'Otros';
-      }
-      
-      setFormData({
-        nombre: cuenta.nombre || '',
-        monto: cuenta.monto || '',
-        proveedor: cuenta.proveedor || '',
-        fechaVencimiento: cuenta.fechaVencimiento ? cuenta.fechaVencimiento.split('T')[0] : '',
-        categoria: categoria,
-        descripcion: cuenta.descripcion || '',
-        categoriaEspecifica: categoria === 'Otros' ? cuenta.nombre : cuenta.categoriaEspecifica || ''
-      });
-      
-      setMostrarCampoOtros(categoria === 'Otros');
-    }
-  }, [cuenta]);
-  
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    
-    // Registrar el evento para depuración
-    console.log(`Cambiando ${name} a: ${value}`);
-    
-    // Usar callback para asegurar que el estado se actualice correctamente
-    setFormData(prevData => ({
-      ...prevData,
-      [name]: value
-    }));
+const CuentaForm = ({ formData, onInputChange, onFileChange, onEliminarFacturaChange, onGuardarCuenta, onCancelar, categorias, proveedores, formLoading, error, isEditing, cuentaActual }) => {
+  const [facturaPreview, setFacturaPreview] = useState(null);
 
-    // Mostrar el campo adicional si se selecciona "Otros"
-    if (name === 'categoria') {
-      setMostrarCampoOtros(value === 'Otros');
-    }
-  };
-  
   const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      setFactura(e.target.files[0]);
+    const file = e.target.files[0];
+    onFileChange(e);
+    if (file) {
+      const url = URL.createObjectURL(file);
+      setFacturaPreview(url);
+    } else {
+      setFacturaPreview(null);
     }
   };
-  
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    try {
-      setLoading(true);
-      setError('');
-      
-      // Validaciones básicas
-      if (formData.categoria === 'Otros' && !formData.categoriaEspecifica.trim()) {
-        throw new Error('Debes especificar un nombre para la categoría "Otros"');
-      }
-      
-      if (!formData.monto || isNaN(formData.monto) || parseFloat(formData.monto) <= 0) {
-        throw new Error('El monto debe ser un número mayor que cero');
-      }
-      
-      // Construir objeto de cuenta
-      const cuentaData = {
-        // Usar la categoría como nombre, excepto cuando es "Otros"
-        nombre: formData.categoria === 'Otros' ? formData.categoriaEspecifica.trim() : formData.categoria,
-        monto: parseFloat(formData.monto),
-        proveedor: formData.proveedor.trim(),
-        categoria: formData.categoria,
-        descripcion: formData.descripcion.trim(),
-        fechaVencimiento: formData.fechaVencimiento ? new Date(formData.fechaVencimiento).toISOString() : null,
-        categoriaEspecifica: formData.categoria === 'Otros' ? formData.categoriaEspecifica.trim() : null
-      };
-      
-      // Si hay una factura nueva, guardarla
-      if (factura) {
-        const rutaFactura = await saveFile(factura, 'facturas');
-        cuentaData.rutaFactura = rutaFactura;
-      } else if (cuenta && cuenta.rutaFactura) {
-        // Mantener la factura existente si no se cambia
-        cuentaData.rutaFactura = cuenta.rutaFactura;
-      }
-      
-      // Si es edición, mantener el ID
-      if (cuenta) {
-        cuentaData.id = cuenta.id;
-      }
-      
-      // Guardar la cuenta
-      onSave(cuentaData);
-      
-    } catch (error) {
-      setError(error.message);
-    } finally {
-      setLoading(false);
-    }
-  };
-  
-  return (
-    <form className="cuenta-form" onSubmit={handleSubmit}>
-      {error && <div className="error-message">{error}</div>}
-      
-      <div className="form-group">
-        <label htmlFor="categoria">Tipo de Cuenta/Servicio*</label>
-        <select
-          id="categoria"
-          name="categoria"
-          value={formData.categoria}
-          onChange={handleChange}
-          onClick={(e) => e.stopPropagation()} // Prevenir que eventos de contenedores interfieran
-          required
-        >
-          <option value="">Seleccionar tipo</option>
-          {/* Filtrar categorías para asegurar que no haya duplicados */}
-          {Array.from(new Set(categorias.map(cat => cat.nombre))).map(nombreCategoria => (
-            <option key={nombreCategoria} value={nombreCategoria}>
-              {nombreCategoria}
-            </option>
-          ))}
-        </select>
-      </div>
 
-      {mostrarCampoOtros && (
-        <div className="form-group">
-          <label htmlFor="categoriaEspecifica">Especificar Nombre*</label>
-          <input
-            type="text"
-            id="categoriaEspecifica"
-            name="categoriaEspecifica"
-            value={formData.categoriaEspecifica}
-            onChange={handleChange}
-            placeholder="Ej: Reparación, Mantenimiento, etc."
+  return (
+    <div className={styles.formContainer}>
+      <div className={styles.formHeader}>
+        <h3>{isEditing ? 'Editar Cuenta' : 'Nueva Cuenta'}</h3>
+        <button className={styles.closeBtn} onClick={onCancelar} aria-label="Cerrar">&times;</button>
+      </div>
+      <div className={styles.formContent}>
+        {error && <div className={styles.errorMessage}>{error}</div>}
+        <div className={styles.formGroup}>
+          <label>Categoría *</label>
+          <select
+            name="categoria"
+            value={formData.categoria}
+            onChange={onInputChange}
+            className={styles.select}
             required
+            disabled={formLoading}
+          >
+            <option value="">Selecciona una categoría</option>
+            {categorias.map(cat => (
+              <option key={cat} value={cat}>{cat}</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+          <label>Proveedor *</label>
+          <select
+            name="proveedor"
+            value={formData.proveedor}
+            onChange={onInputChange}
+            className={styles.select}
+            required
+            disabled={formLoading}
+          >
+            <option value="">Selecciona un proveedor</option>
+            {proveedores.map(prov => (
+              <option key={prov.id} value={prov.id}>{prov.nombre}</option>
+            ))}
+          </select>
+        </div>
+        <div className={styles.formGroup}>
+          <label>Monto *</label>
+          <input
+            type="number"
+            name="monto"
+            value={formData.monto}
+            onChange={onInputChange}
+            className={styles.input}
+            min="0.01"
+            step="0.01"
+            required
+            disabled={formLoading}
           />
         </div>
-      )}
-      
-      <div className="form-group">
-        <label htmlFor="monto">Monto*</label>
-        <input
-          type="number"
-          id="monto"
-          name="monto"
-          value={formData.monto}
-          onChange={handleChange}
-          min="1"
-          step="1"
-          required
-        />
+        <div className={styles.formGroup}>
+          <label>Fecha de vencimiento *</label>
+          <input
+            type="date"
+            name="fechaVencimiento"
+            value={formData.fechaVencimiento}
+            onChange={onInputChange}
+            className={styles.input}
+            required
+            disabled={formLoading}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Fecha de emisión</label>
+          <input
+            type="date"
+            name="fechaEmision"
+            value={formData.fechaEmision}
+            onChange={onInputChange}
+            className={styles.input}
+            disabled={formLoading}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Descripción</label>
+          <textarea
+            name="descripcion"
+            value={formData.descripcion}
+            onChange={onInputChange}
+            className={styles.textarea}
+            disabled={formLoading}
+          />
+        </div>
+        <div className={styles.formGroup}>
+          <label>Factura/Boleta</label>
+          <input
+            type="file"
+            name="factura"
+            onChange={handleFileChange}
+            className={styles.input}
+            accept=".pdf,.jpg,.jpeg,.png"
+            disabled={formLoading}
+          />
+          {facturaPreview && (
+            <div className={styles.filePreview}>
+              {facturaPreview.match(/\.(jpg|jpeg|png)$/i) ? (
+                <img src={facturaPreview} alt="Preview" />
+              ) : facturaPreview.match(/\.(pdf)$/i) ? (
+                <iframe src={facturaPreview} title="Factura PDF" />
+              ) : null}
+            </div>
+          )}
+          {isEditing && cuentaActual && cuentaActual.factura && (
+            <div style={{marginTop:8}}>
+              <span style={{fontSize:'0.97em', color:'#888'}}>Factura actual adjunta.</span>
+              <br />
+              <input
+                type="checkbox"
+                name="eliminarFactura"
+                checked={!!formData.eliminarFactura}
+                onChange={onEliminarFacturaChange}
+                disabled={formLoading}
+              /> Eliminar factura actual
+            </div>
+          )}
+        </div>
       </div>
-      
-      <div className="form-group">
-        <label htmlFor="proveedor">Proveedor</label>
-        <input
-          type="text"
-          id="proveedor"
-          name="proveedor"
-          value={formData.proveedor}
-          onChange={handleChange}
-        />
+      <div className={styles.formButtons}>
+        <button type="button" className={styles.cancelBtn} onClick={onCancelar} disabled={formLoading}>Cancelar</button>
+        <button type="button" onClick={onGuardarCuenta} disabled={formLoading}>{formLoading ? 'Guardando...' : isEditing ? 'Guardar Cambios' : 'Crear Cuenta'}</button>
       </div>
-      
-      <div className="form-group">
-        <label htmlFor="fechaVencimiento">Fecha de vencimiento</label>
-        <input
-          type="date"
-          id="fechaVencimiento"
-          name="fechaVencimiento"
-          value={formData.fechaVencimiento}
-          onChange={handleChange}
-        />
-      </div>
-      
-      <div className="form-group">
-        <label htmlFor="descripcion">Descripción</label>
-        <textarea
-          id="descripcion"
-          name="descripcion"
-          value={formData.descripcion}
-          onChange={handleChange}
-          rows="4"
-        ></textarea>
-      </div>
-      
-      <div className="file-input-container">
-        <label className="file-input-label">Factura o comprobante</label>
-        
-        {cuenta && cuenta.rutaFactura && !factura && (
-          <div className="factura-actual">
-            <span className="factura-icon">📄</span>
-            Factura actual: {cuenta.rutaFactura.split('/')[1]}
-          </div>
-        )}
-        
-        <input
-          type="file"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={handleFileChange}
-        />
-      </div>
-      
-      <div className="form-buttons">
-        <button 
-          type="button" 
-          className="cancel-button" 
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Cancelar
-        </button>
-        <button 
-          type="submit" 
-          className="submit-button"
-          disabled={loading}
-        >
-          {loading ? 'Guardando...' : cuenta ? 'Actualizar' : 'Guardar'}
-        </button>
-      </div>
-    </form>
+    </div>
   );
 };
 

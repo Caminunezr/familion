@@ -1,0 +1,186 @@
+/* CuentaForm.module.css - estilos modernos y responsivos para el formulario de cuenta nueva/editar */
+.formContainer {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 8px 32px rgba(25,118,210,0.13);
+  padding: 36px 32px 28px 32px;
+  max-width: 540px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.formHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0;
+  border-bottom: 1.5px solid #e0e0e0;
+  padding-bottom: 12px;
+}
+
+.formHeader h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin: 0;
+  color: #1976d2;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 1.7rem;
+  color: #888;
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.closeBtn:hover {
+  color: #e53935;
+}
+
+.formContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin-top: 18px;
+}
+
+.formSection {
+  margin-bottom: 22px;
+}
+
+.formSectionTitle {
+  font-size: 1.08rem;
+  color: #1976d2;
+  font-weight: 600;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.formGroup {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.formGroup label {
+  font-size: 1rem;
+  font-weight: 500;
+  color: #1976d2;
+}
+
+.input,
+.select,
+.textarea {
+  border: 1.5px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 1.08rem;
+  background: #f9f9f9;
+  transition: border 0.2s;
+}
+.input:focus,
+.select:focus,
+.textarea:focus {
+  border: 1.5px solid #1976d2;
+  outline: none;
+}
+
+.textarea {
+  min-height: 80px;
+  resize: vertical;
+}
+
+.filePreview {
+  margin-top: 10px;
+  text-align: center;
+}
+.filePreview img {
+  max-width: 220px;
+  max-height: 160px;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+}
+.filePreview iframe {
+  width: 220px;
+  height: 160px;
+  border-radius: 10px;
+  border: 1.5px solid #e0e0e0;
+  margin-bottom: 6px;
+  box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+}
+
+.formButtons {
+  display: flex;
+  gap: 16px;
+  margin-top: 18px;
+  justify-content: flex-end;
+  border-top: 1.5px solid #e0e0e0;
+  padding-top: 16px;
+}
+.formButtons button {
+  background: #1976d2;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 28px;
+  font-size: 1.08rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.formButtons .cancelBtn {
+  background: #e53935;
+}
+.formButtons button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.errorMessage {
+  background: #ffebee;
+  color: #e53935;
+  border-left: 4px solid #e53935;
+  padding: 9px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 1.03rem;
+}
+.successMessage {
+  background: #e8f5e9;
+  color: #43a047;
+  border-left: 4px solid #43a047;
+  padding: 9px 14px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  font-size: 1.03rem;
+}
+
+@media (max-width: 700px) {
+  .formContainer {
+    padding: 16px 4vw 10px 4vw;
+    border-radius: 12px;
+    max-width: 99vw;
+  }
+  .formButtons {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .formButtons button {
+    width: 100%;
+  }
+  .filePreview img,
+  .filePreview iframe {
+    max-width: 98vw;
+    width: 98vw;
+    height: auto;
+  }
+}

@@ -1,0 +1,340 @@
+/*
+  GestionCuentasModern.css
+  Estilos modernos y limpios para la gestión de cuentas y pagos
+  Puedes ajustar colores y detalles visuales según tu preferencia
+*/
+:root {
+  --color-bg: #f7f9fb;
+  --color-panel: #fff;
+  --color-primary: #1976d2;
+  --color-primary-light: #e3f0fd;
+  --color-success: #43a047;
+  --color-danger: #e53935;
+  --color-warning: #fbc02d;
+  --color-text: #222;
+  --color-muted: #888;
+  --color-border: #e0e0e0;
+  --radius: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+}
+
+body, .gestion-cuentas-page {
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
+}
+
+.gestion-cuentas-container {
+  display: flex;
+  gap: 32px;
+  padding: 32px 0;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.cuentas-list-area {
+  flex: 1 1 350px;
+  max-width: 400px;
+  overflow-y: auto;
+  background: var(--color-panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 24px 16px;
+}
+
+.cuentas-list-gc {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.cuenta-card-gc {
+  background: var(--color-primary-light);
+  border-radius: var(--radius);
+  box-shadow: 0 1px 4px rgba(25, 118, 210, 0.07);
+  padding: 18px 16px;
+  cursor: pointer;
+  transition: box-shadow 0.2s, transform 0.2s;
+  border: 1px solid var(--color-border);
+  position: relative;
+}
+.cuenta-card-gc:hover {
+  box-shadow: 0 4px 16px rgba(25, 118, 210, 0.13);
+  transform: translateY(-2px) scale(1.01);
+}
+.cuenta-card-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
+}
+.cuenta-nombre {
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.cuenta-estado-badge {
+  font-size: 0.9rem;
+  padding: 2px 10px;
+  border-radius: 8px;
+  color: #fff;
+  background: var(--color-warning);
+  font-weight: 500;
+}
+.cuenta-estado-badge.pagada {
+  background: var(--color-success);
+}
+.cuenta-estado-badge.vencida {
+  background: var(--color-danger);
+}
+.cuenta-estado-badge.pendiente {
+  background: var(--color-warning);
+}
+.cuenta-card-details {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 18px;
+  font-size: 0.97rem;
+  color: var(--color-muted);
+}
+.cuenta-card-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 12px;
+}
+.cuenta-card-actions button {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 6px 16px;
+  font-size: 0.97rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.cuenta-card-actions .btn-eliminar {
+  background: var(--color-danger);
+}
+.cuenta-card-actions .btn-editar {
+  background: var(--color-success);
+}
+.cuenta-card-actions button:hover {
+  filter: brightness(1.08);
+}
+
+/* Panel lateral (detalle o formulario) */
+.form-area-gc.detalle-panel, .form-area-gc {
+  flex: 1 1 420px;
+  border-radius: 18px;
+  box-shadow: none;
+  padding: 0;
+  background: transparent;
+  max-width: 100%;
+  margin-left: auto;
+  margin-right: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+.panel-content {
+  padding: 0 0 18px 0;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.panel-header h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+.close-panel-btn, .close-form-btn {
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition: color 0.2s;
+}
+.close-panel-btn:hover, .close-form-btn:hover {
+  color: var(--color-danger);
+}
+.detalle-seccion {
+  margin-bottom: 18px;
+}
+.detalle-seccion h4 {
+  font-size: 1.08rem;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+.detalle-item {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 4px;
+  font-size: 0.98rem;
+}
+
+/* Historial de pagos */
+.lista-pagos-detalle {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.pago-item-detalle {
+  background: #f1f8e9;
+  border-left: 4px solid var(--color-success);
+  border-radius: 8px;
+  padding: 8px 12px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 18px;
+  align-items: center;
+  font-size: 0.97rem;
+}
+.pago-item-detalle .btn-ver-comprobante {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 5px;
+  padding: 2px 10px;
+  font-size: 0.93rem;
+  margin-left: 8px;
+}
+
+/* Factura/boleta y comprobante */
+.btn-ver-archivo {
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: 5px;
+  padding: 2px 10px;
+  font-size: 0.93rem;
+  text-decoration: none;
+  margin-right: 6px;
+  transition: background 0.2s;
+}
+.btn-ver-archivo:hover {
+  background: #125ea7;
+}
+.factura-indicator {
+  color: var(--color-primary);
+  font-size: 1.1em;
+  margin-left: 4px;
+}
+
+/* Formulario de pago y cuenta */
+.pago-form-container, .form-container {
+  background: var(--color-panel);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  padding: 18px 12px 8px 12px;
+  margin-top: 10px;
+}
+.pago-form .form-group, .form-container .form-group {
+  margin-bottom: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.pago-form input, .form-container input, .form-container select, .form-container textarea {
+  border: 1px solid var(--color-border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  font-size: 1rem;
+  background: #f9f9f9;
+  transition: border 0.2s;
+}
+.pago-form input:focus, .form-container input:focus, .form-container select:focus, .form-container textarea:focus {
+  border: 1.5px solid var(--color-primary);
+  outline: none;
+}
+.form-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 10px;
+}
+.form-buttons button {
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+.form-buttons .cancel-button {
+  background: var(--color-danger);
+}
+.form-buttons button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+/* Mensajes */
+.error-message {
+  background: #ffebee;
+  color: var(--color-danger);
+  border-left: 4px solid var(--color-danger);
+  padding: 7px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
+}
+.success-message {
+  background: #e8f5e9;
+  color: var(--color-success);
+  border-left: 4px solid var(--color-success);
+  padding: 7px 12px;
+  border-radius: 6px;
+  margin-bottom: 10px;
+  font-size: 0.98rem;
+}
+
+/* Responsive */
+@media (max-width: 900px) {
+  .gestion-cuentas-container {
+    flex-direction: column;
+    gap: 18px;
+    padding: 18px 0;
+  }
+  .form-area-gc.detalle-panel, .form-area-gc {
+    max-width: 100%;
+    min-width: 0;
+    margin: 0;
+  }
+  .cuentas-list-area {
+    max-width: 100%;
+    padding: 16px 4px;
+  }
+}
+
+@media (max-width: 700px) {
+  .form-area-gc.detalle-panel, .form-area-gc {
+    border-radius: 10px;
+    padding: 0;
+  }
+}
+
+@media (max-width: 700px) {
+  .panel-actions button,
+  .form-buttons button {
+    width: 100%;
+    margin-bottom: 8px;
+  }
+  .panel-actions {
+    flex-direction: column;
+    gap: 0;
+  }
+}
+
+@media (max-width: 600px) {
+  .gestion-cuentas-container {
+    padding: 6px 0;
+  }
+  .form-area-gc.detalle-panel, .form-area-gc {
+    padding: 12px 4px 8px 4px;
+  }
+}

@@ -1,215 +1,189 @@
 .cuentas-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  gap: 28px;
   width: 100%;
+  margin-top: 18px;
 }
 
 .cuenta-card {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
-  position: relative; /* Necesario para posicionar el botón absoluto */
-  display: flex; /* Cambiar a flex para alinear contenido y botón */
-  justify-content: space-between; /* Separar contenido y botón */
-  align-items: center; /* Centrar verticalmente */
-  padding: 15px;
-  padding-right: 40px; /* Ajustar espacio para el botón */
-  cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
-  border-left: 4px solid #ddd;
+  background: linear-gradient(135deg, #fff 80%, #f7f9fb 100%);
+  border-radius: 20px;
+  box-shadow: 0 8px 32px rgba(25,118,210,0.13);
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  min-height: 210px;
+  padding: 0 0 0 0;
+  border-left-width: 10px;
+  border-left-style: solid;
+  transition: transform 0.22s, box-shadow 0.22s;
+  overflow: hidden;
+}
+.cuenta-card:hover {
+  transform: translateY(-6px) scale(1.025);
+  box-shadow: 0 12px 32px rgba(25,118,210,0.18);
 }
 
 .cuenta-card-content {
-  flex-grow: 1; /* Permitir que el contenido ocupe el espacio */
-  cursor: pointer; /* Mantener cursor en el área clickeable */
-}
-
-.cuenta-delete-button {
-  position: absolute; /* Posición absoluta relativa a .cuenta-card */
-  top: 50%; /* Centrar verticalmente */
-  right: 8px; /* Más cerca del borde */
-  transform: translateY(-50%); /* Ajuste fino vertical */
-  background-color: transparent; /* Fondo transparente por defecto */
-  border: none;
-  color: #aaa; /* Color gris suave por defecto */
-  font-size: 16px; /* Tamaño ajustado */
-  cursor: pointer;
-  padding: 6px; /* Padding interno para área de clic */
-  border-radius: 50%; /* Círculo perfecto */
-  width: 28px; /* Ancho fijo */
-  height: 28px; /* Alto fijo */
+  flex-grow: 1;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0.6; /* Ligeramente transparente hasta hover */
-  transition: background-color 0.2s ease, color 0.2s ease, opacity 0.2s ease;
-}
-
-.cuenta-card:hover .cuenta-delete-button {
-  opacity: 1; /* Totalmente visible al pasar sobre la tarjeta */
-}
-
-.cuenta-delete-button:hover {
-  background-color: rgba(231, 76, 60, 0.15); /* Fondo rojo muy suave */
-  color: #e74c3c; /* Color rojo vivo */
-  opacity: 1; /* Asegurar opacidad completa */
-}
-
-.cuenta-delete-button:active {
-  background-color: rgba(231, 76, 60, 0.25); /* Fondo un poco más oscuro al hacer clic */
-  transform: translateY(-50%) scale(0.95); /* Efecto de presión */
-}
-
-.cuenta-pendiente {
-  border-left-color: #e74c3c;
-}
-
-.cuenta-pagada {
-  border-left-color: #2ecc71;
-}
-
-.cuenta-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+  flex-direction: column;
+  padding: 28px 24px 18px 24px;
+  gap: 10px;
 }
 
 .cuenta-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
 }
 
 .cuenta-header h3 {
   margin: 0;
-  font-size: 18px;
-  color: #333;
+  font-size: 1.25rem;
+  color: #1976d2;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.categoria-icon {
+  font-size: 1.7em;
+  margin-right: 6px;
+  vertical-align: middle;
 }
 
 .cuenta-badges {
   display: flex;
   flex-direction: column;
-  gap: 5px;
   align-items: flex-end;
+  gap: 7px;
 }
 
-.cuenta-categoria, .cuenta-estado {
-  font-size: 12px;
-  padding: 4px 8px;
-  border-radius: 12px;
-  color: white;
-  text-align: center;
+.cuenta-categoria {
+  font-size: 1.01rem;
+  padding: 4px 14px;
+  border-radius: 10px;
+  font-weight: 600;
+  margin-bottom: 2px;
+  box-shadow: 0 1px 4px rgba(25,118,210,0.08);
+  display: inline-block;
 }
 
-.estado-pendiente {
-  background-color: #e74c3c;
+.cuenta-estado {
+  font-size: 0.98rem;
+  padding: 3px 12px;
+  border-radius: 8px;
+  font-weight: 600;
+  border: 1.5px solid transparent;
+  display: inline-block;
 }
 
-.estado-pagado {
-  background-color: #2ecc71;
-}
+/* Colores por categoría */
+.cuenta-card.luz { border-left-color: #ffe082; }
+.cuenta-categoria.luz { background: #ffe082; color: #b58900; }
+.cuenta-card.agua { border-left-color: #81d4fa; }
+.cuenta-categoria.agua { background: #81d4fa; color: #01579b; }
+.cuenta-card.gas { border-left-color: #ffab91; }
+.cuenta-categoria.gas { background: #ffab91; color: #bf360c; }
+.cuenta-card.internet { border-left-color: #b3e5fc; }
+.cuenta-categoria.internet { background: #b3e5fc; color: #0277bd; }
+.cuenta-card.arriendo { border-left-color: #c8e6c9; }
+.cuenta-categoria.arriendo { background: #c8e6c9; color: #388e3c; }
+.cuenta-card.gasto-comun { border-left-color: #f8bbd0; }
+.cuenta-categoria.gasto-comun { background: #f8bbd0; color: #ad1457; }
+.cuenta-card.otros { border-left-color: #d1c4e9; }
+.cuenta-categoria.otros { background: #d1c4e9; color: #512da8; }
 
-/* Categorías actualizadas */
-.categoria-luz { background-color: #f39c12; }
-.categoria-agua { background-color: #3498db; }
-.categoria-gas { background-color: #e74c3c; }
-.categoria-internet { background-color: #9b59b6; }
-.categoria-utiles-de-aseo { background-color: #2ecc71; }
-.categoria-otros { background-color: #95a5a6; }
+/* Colores por estado */
+.cuenta-estado.estado-pagado { background: #e8f5e9; color: #388e3c; border: 1.5px solid #43a047; }
+.cuenta-estado.estado-pendiente { background: #fffde7; color: #fbc02d; border: 1.5px solid #fbc02d; }
+.cuenta-estado.estado-vencida { background: #ffebee; color: #e53935; border: 1.5px solid #e53935; }
 
 .cuenta-details {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-  margin-bottom: 10px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 24px;
+  font-size: 1.05rem;
+  color: #555;
+  margin-bottom: 0;
 }
-
-.cuenta-provider, .cuenta-due-date {
-  grid-column: 1;
-  font-size: 14px;
+.cuenta-amount {
+  font-weight: 700;
+  color: #1976d2;
+  font-size: 1.18rem;
 }
-
-.cuenta-amount, .cuenta-payment {
-  grid-column: 2;
-  font-size: 14px;
-  text-align: right;
-  font-weight: bold;
-}
-
 .cuenta-factura {
   display: flex;
   align-items: center;
-  font-size: 13px;
-  color: #666;
-  margin-top: 8px;
+  font-size: 1.01rem;
+  color: #1976d2;
+  margin-top: 6px;
 }
-
 .factura-icon {
-  margin-right: 5px;
+  margin-right: 6px;
+  font-size: 1.1em;
 }
-
 .cuenta-creator {
   display: flex;
   justify-content: flex-end;
-  font-size: 12px;
-  color: #777;
+  font-size: 0.97rem;
+  color: #888;
   margin-top: 10px;
 }
-
-.creator-label {
-  margin-right: 5px;
+.cuenta-delete-button {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  background-color: transparent;
+  border: none;
+  color: #aaa;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 7px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.6;
+  transition: background-color 0.2s, color 0.2s, opacity 0.2s;
+  z-index: 2;
 }
-
-.cuentas-loading, .cuentas-empty {
-  padding: 20px;
-  text-align: center;
-  color: #666;
-  font-style: italic;
+.cuenta-card:hover .cuenta-delete-button {
+  opacity: 1;
 }
-
-@media (max-width: 768px) {
-  .cuenta-details {
+.cuenta-delete-button:hover {
+  background-color: rgba(231, 76, 60, 0.15);
+  color: #e74c3c;
+  opacity: 1;
+}
+.cuenta-delete-button:active {
+  background-color: rgba(231, 76, 60, 0.25);
+  transform: scale(0.95);
+}
+@media (max-width: 900px) {
+  .cuentas-list {
     grid-template-columns: 1fr;
+    gap: 18px;
   }
-  
-  .cuenta-amount, .cuenta-payment {
-    grid-column: 1;
-    text-align: left;
+  .cuenta-card-content {
+    padding: 18px 10px 12px 14px;
   }
-  
-  .cuenta-header {
-    flex-direction: column;
-    align-items: flex-start;
+}
+@media (max-width: 600px) {
+  .cuentas-list {
+    grid-template-columns: 1fr;
+    gap: 12px;
   }
-  
-  .cuenta-badges {
-    align-items: flex-start;
-    margin-top: 5px;
-    flex-direction: row;
-    gap: 5px;
-    flex-wrap: wrap;
+  .cuenta-card-content {
+    padding: 14px 6px 10px 10px;
   }
-  
-  .cuenta-card {
-    padding: 12px;
-    padding-right: 35px; /* Ajustar espacio para el botón */
-  }
-  
-  .cuenta-delete-button {
-    right: 5px;
-    font-size: 15px;
-    width: 26px;
-    height: 26px;
-  }
-  
-  .cuenta-categoria, .cuenta-estado {
-    font-size: 10px;
-    padding: 3px 6px;
-  }
-  
   .cuenta-header h3 {
-    font-size: 16px;
-    margin-bottom: 8px;
+    font-size: 1.05rem;
   }
 }

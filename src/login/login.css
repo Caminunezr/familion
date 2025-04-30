@@ -1,3 +1,6 @@
+/*
+  login.css - Estilos modernos y claros para el login
+*/
 .login-container {
   min-height: 100vh;
   background-color: #f5f8fa;
@@ -71,17 +74,9 @@
   font-size: 14px;
 }
 
-.input-with-icon {
-  position: relative;
-}
-
-.input-icon {
-  display: none; /* Ocultar los iconos */
-}
-
 .form-group input {
   width: 100%;
-  padding: 12px; /* Quitar el padding izquierdo extra */
+  padding: 12px;
   border: 1px solid #ddd;
   border-radius: 8px;
   font-size: 16px;
@@ -95,53 +90,11 @@
   border-color: #4CAF50;
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
   background-color: white;
-  color: #333; /* Mantener el color de texto consistente en focus */
+  color: #333;
 }
 
 .form-group input::placeholder {
   color: #bbb;
-}
-
-.form-options {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 25px;
-  flex-wrap: wrap;
-  gap: 10px;
-}
-
-.remember-me {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.remember-me input[type="checkbox"] {
-  width: 18px;
-  height: 18px;
-  cursor: pointer;
-  accent-color: #4CAF50;
-}
-
-.remember-me label {
-  cursor: pointer;
-  font-size: 14px;
-  color: #555;
-}
-
-.forgot-password {
-  background: none;
-  border: none;
-  color: #4CAF50;
-  font-size: 14px;
-  cursor: pointer;
-  text-decoration: underline;
-  transition: color 0.2s;
-}
-
-.forgot-password:hover {
-  color: #388E3C;
 }
 
 .primary-button {
@@ -173,46 +126,11 @@
   box-shadow: none;
 }
 
-.secondary-button {
-  width: 100%;
-  padding: 14px;
-  background-color: #f1f1f1;
-  color: #555;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 16px;
-  font-weight: 600;
-  transition: all 0.3s ease;
-}
-
-.secondary-button:hover {
-  background-color: #e0e0e0;
-}
-
-.secondary-button:disabled {
-  background-color: #f1f1f1;
-  color: #aaa;
-  cursor: not-allowed;
-}
-
 .signup-link {
   text-align: center;
   margin-top: 25px;
   font-size: 15px;
   color: #555;
-}
-
-.signup-link a {
-  color: #4CAF50;
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.2s;
-}
-
-.signup-link a:hover {
-  text-decoration: underline;
-  color: #388E3C;
 }
 
 .alert {
@@ -229,13 +147,6 @@
   border-left: 4px solid #e53935;
 }
 
-.instructions {
-  margin-bottom: 20px;
-  color: #666;
-  font-size: 14px;
-  line-height: 1.5;
-}
-
 .loading-spinner {
   width: 20px;
   height: 20px;
@@ -243,44 +154,6 @@
   border-radius: 50%;
   border-top-color: white;
   animation: spin 1s linear infinite;
-}
-
-.form-actions {
-  display: flex;
-  gap: 15px;
-}
-
-.form-actions button {
-  flex: 1;
-}
-
-/* Estilos para recuperación de contraseña exitosa */
-.success-message {
-  text-align: center;
-  animation: fadeIn 0.5s ease;
-}
-
-.success-icon {
-  font-size: 36px;
-  color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
-  width: 70px;
-  height: 70px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin: 0 auto 20px;
-}
-
-.success-message p {
-  color: #555;
-  margin-bottom: 20px;
-  line-height: 1.5;
-}
-
-.back-button {
-  margin-top: 15px;
 }
 
 @keyframes fadeIn {
@@ -311,87 +184,46 @@
   }
 }
 
-/* Responsive styles */
 @media (max-width: 480px) {
   .login-card {
     padding: 20px;
   }
-  
-  .form-options {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  
-  .forgot-password {
-    margin-left: 26px;
-  }
 }
 
-/* Modo oscuro */
 @media (prefers-color-scheme: dark) {
   .login-container {
     background-image: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
   }
-  
   .login-brand h1 {
     color: #f0f0f0;
   }
-  
   .login-card {
     background-color: #222;
     box-shadow: 0 10px 30px rgba(0,0,0,0.3);
   }
-  
   .login-card h2 {
     color: #f0f0f0;
   }
-  
   .form-group label {
     color: #ccc;
   }
-  
   .form-group input {
     background-color: #333;
     border-color: #444;
-    color: #f0f0f0; /* Asegurar alto contraste en modo oscuro */
+    color: #f0f0f0;
   }
-  
   .form-group input:focus {
     border-color: #4CAF50;
     background-color: #2a2a2a;
-    color: #f0f0f0; /* Mantener color consistente en focus */
+    color: #f0f0f0;
   }
-  
   .form-group input::placeholder {
-    color: #777; /* Asegurar que sea visible pero no demasiado */
+    color: #777;
   }
-  
-  .input-icon {
-    color: #777; /* Hacer el icono más visible en modo oscuro */
-  }
-  
-  .remember-me label {
-    color: #ccc;
-  }
-  
   .signup-link {
     color: #ccc;
   }
-  
   .alert-danger {
     background-color: rgba(229, 57, 53, 0.2);
-  }
-  
-  .instructions, .success-message p {
-    color: #ccc;
-  }
-  
-  .secondary-button {
-    background-color: #333;
-    color: #ddd;
-  }
-  
-  .secondary-button:hover {
-    background-color: #444;
   }
 }

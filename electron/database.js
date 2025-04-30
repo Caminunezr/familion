@@ -1,0 +1,1 @@
+// Este archivo ya no se utiliza. Toda la lógica de almacenamiento local fue migrada a LokiJS (ver electron/lokiDb.js).

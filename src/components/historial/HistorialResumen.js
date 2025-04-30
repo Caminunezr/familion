@@ -1,45 +1,31 @@
 import React from 'react';
+import styles from './Historial.module.css';
 
-// Asumiendo que formatMonto se pasa como prop o se importa de utils
-const HistorialResumen = ({ resumenGeneral, formatMonto }) => {
+// Añadir valores por defecto para la prop 'resumen'
+const HistorialResumen = ({ resumen = { totalCuentas: 0, totalMonto: 0, totalPagado: 0, porcentajePagado: 0 } }) => {
+  // Acceder a las propiedades de forma segura
+  const totalCuentas = resumen.totalCuentas || 0;
+  const totalMonto = resumen.totalMonto || 0;
+  const totalPagado = resumen.totalPagado || 0;
+  const porcentajePagado = resumen.porcentajePagado || 0;
+
   return (
-    <div className="resumen-container">
-      <h3>Resumen General</h3>
-      <div className="resumen-cards">
-        <div className="resumen-card">
-          <div className="card-icon total-icon">📊</div>
-          <div className="card-content">
-            <div className="card-title">Total de Cuentas</div>
-            <div className="card-value">{resumenGeneral.totalCuentas}</div>
-          </div>
-        </div>
-        <div className="resumen-card">
-          <div className="card-icon monto-icon">💰</div>
-          <div className="card-content">
-            <div className="card-title">Monto Total</div>
-            <div className="card-value">{formatMonto(resumenGeneral.totalMonto)}</div>
-          </div>
-        </div>
-        <div className="resumen-card">
-          <div className="card-icon pagado-icon">✅</div>
-          <div className="card-content">
-            <div className="card-title">Total Pagado</div>
-            <div className="card-value">{formatMonto(resumenGeneral.totalPagado)}</div>
-          </div>
-        </div>
-        <div className="resumen-card">
-          <div className="card-icon progreso-icon">📈</div>
-          <div className="card-content">
-            <div className="card-title">Porcentaje Pagado</div>
-            <div className="card-value">{resumenGeneral.porcentajePagado}%</div>
-            <div className="progress-bar">
-              <div
-                className="progress"
-                style={{ width: `${resumenGeneral.porcentajePagado}%` }}
-              ></div>
-            </div>
-          </div>
-        </div>
+    <div className={styles['historial-resumen']}>
+      <div className={styles['resumen-item']}>
+        <div className={styles['resumen-valor']}>{totalCuentas}</div>
+        <div className={styles['resumen-label']}>Total Cuentas</div>
+      </div>
+      <div className={styles['resumen-item']}>
+        <div className={styles['resumen-valor']}>${totalMonto.toLocaleString()}</div>
+        <div className={styles['resumen-label']}>Monto Total</div>
+      </div>
+      <div className={styles['resumen-item']}>
+        <div className={styles['resumen-valor']}>${totalPagado.toLocaleString()}</div>
+        <div className={styles['resumen-label']}>Total Pagado</div>
+      </div>
+      <div className={styles['resumen-item']}>
+        <div className={styles['resumen-valor']}>{porcentajePagado.toFixed(0)}%</div>
+        <div className={styles['resumen-label']}>Pagado</div>
       </div>
     </div>
   );

@@ -1,0 +1,223 @@
+/* ... existing styles ... */
+
+.user-actions {
+  display: flex;
+  gap: 8px; /* Espacio entre botones */
+  align-items: center; /* Alinear botones verticalmente si tienen diferente altura */
+}
+
+.user-actions button {
+  padding: 5px 10px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9em;
+  transition: background-color 0.2s, opacity 0.2s; /* Añadir transición de opacidad */
+  white-space: nowrap; /* Evitar que el texto del botón se divida */
+}
+
+.btn-edit {
+  background-color: #2196f3; /* Azul */
+  color: white;
+}
+
+.btn-edit:hover {
+  background-color: #1976d2;
+}
+
+.btn-edit:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+}
+
+/* --- Estilos para el botón Cambiar Rol --- */
+.btn-toggle-admin {
+  /* Estilo base */
+}
+
+.btn-toggle-admin.is-admin {
+  background-color: #ff9800; /* Naranja para "Quitar Admin" */
+  color: white;
+}
+.btn-toggle-admin.is-admin:hover {
+  background-color: #f57c00;
+}
+
+.btn-toggle-admin.is-not-admin {
+  background-color: #4caf50; /* Verde para "Hacer Admin" */
+  color: white;
+}
+.btn-toggle-admin.is-not-admin:hover {
+  background-color: #388e3c;
+}
+
+.btn-toggle-admin:disabled {
+  background-color: #bdbdbd;
+  cursor: not-allowed;
+  opacity: 0.7; /* Hacerlo más tenue cuando está deshabilitado */
+}
+/* --- Fin Estilos Cambiar Rol --- */
+
+/* --- Estilos para el botón Eliminar --- */
+.btn-delete {
+  background-color: #f44336; /* Rojo */
+  color: white;
+}
+
+.btn-delete:hover {
+  background-color: #d32f2f;
+}
+
+.btn-delete:disabled {
+  background-color: #bdbdbd; /* Gris cuando está deshabilitado */
+  cursor: not-allowed;
+  opacity: 0.7; /* Hacerlo más tenue */
+}
+/* --- Fin Estilos --- */
+
+/* --- Estilos para la página de administración --- */
+.admin-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+}
+
+.admin-container {
+  max-width: 1000px;
+  margin: 20px auto;
+  padding: 20px;
+  background-color: transparent;
+}
+
+.admin-container h2 {
+  text-align: center;
+  margin-bottom: 30px;
+  color: #333;
+}
+
+.admin-container.loading,
+.admin-container.error {
+  text-align: center;
+  color: #666;
+  font-size: 1.2em;
+  padding: 40px;
+}
+.admin-container.error h2 {
+  color: #d32f2f;
+}
+
+.card { /* Reutilizando estilo si existe globalmente */
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  padding: 25px;
+  margin-bottom: 25px;
+}
+
+.error-message {
+  color: #d32f2f;
+  background-color: #ffebee;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  text-align: center;
+}
+
+.user-list-section h3 {
+  margin-top: 0;
+  margin-bottom: 20px;
+  color: #333;
+  border-bottom: 1px solid #eee;
+  padding-bottom: 10px;
+}
+
+.user-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 20px;
+}
+
+.user-table th,
+.user-table td {
+  border: 1px solid #ddd;
+  padding: 10px 12px;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.user-table th {
+  background-color: #f2f2f2;
+  font-weight: 600;
+}
+
+.user-table tbody tr:nth-child(even) {
+  background-color: #f9f9f9;
+}
+
+.user-table tbody tr:hover {
+  background-color: #f1f1f1;
+}
+
+.delete-user-btn {
+  background-color: #f44336; /* Rojo */
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
+}
+
+.delete-user-btn:hover {
+  background-color: #d32f2f;
+}
+
+.delete-user-btn:disabled {
+  background-color: #aaa;
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.admin-warning {
+  background-color: #fff3cd;
+  color: #856404;
+  border: 1px solid #ffeeba;
+  padding: 15px;
+  border-radius: 4px;
+  font-size: 0.9rem;
+  margin-top: 15px;
+}
+
+.admin-warning strong {
+  font-weight: 600;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .admin-container {
+    padding: 10px;
+  }
+  .user-table {
+    display: block;
+    overflow-x: auto; /* Permite scroll horizontal en tablas */
+    white-space: nowrap;
+  }
+  .user-table th,
+  .user-table td {
+    padding: 8px;
+    font-size: 0.9rem;
+  }
+  .delete-user-btn {
+    padding: 5px 8px;
+    font-size: 0.8rem;
+  }
+  .user-actions {
+    flex-wrap: wrap; /* Permitir que los botones pasen a la siguiente línea si no caben */
+  }
+  .user-actions button {
+    flex-basis: calc(50% - 4px); /* Intentar que ocupen mitad del espacio menos el gap */
+    text-align: center;
+  }
+}
+
+/* ... (resto de estilos existentes, modal, etc.) ... */

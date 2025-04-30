@@ -1,54 +1,46 @@
-import React, { useEffect } from 'react';
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import React from 'react';
+import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
-import ProtectedRoute from './components/ProtectedRoute';
-import Login from './components/Login';
+import Login from './login/login';
 import Signup from './components/Signup';
-// Actualizar la ruta de importación para Dashboard
 import Dashboard from './components/dashboard/Dashboard';
-// Actualizar la ruta de importación para GestionCuentas
 import GestionCuentas from './components/gestion-cuentas/GestionCuentas';
-// Cambiar la importación de Presupuesto
 import Presupuesto from './components/presupuesto/Presupuesto';
 import Historial from './components/historial/Historial';
-import { migrarCategoriasAntiguas } from './utils/dataMigration';
-import { limpiarCategorias } from './utils/cleanCategories';
+import ProtectedRoute from './components/ProtectedRoute';
+import AdminPage from './components/admin/AdminPage'; // Importar AdminPage
+import Admin from './components/Admin'; // Importar el componente Admin
 import './App.css';
 
 function App() {
-  useEffect(() => {
-    // Ejecutar migración de categorías antiguas al iniciar la app y limpiar categorías
-    const inicializarDatos = async () => {
-      try {
-        await migrarCategoriasAntiguas();
-        // Añadir limpieza de categorías para asegurar que solo existan las nuevas
-        await limpiarCategorias();
-      } catch (error) {
-        console.error("Error en inicialización de datos:", error);
-      }
-    };
-    
-    inicializarDatos();
-  }, []);
-  
   return (
-    <div className="App">
-      <AuthProvider>
-        <Router>
+    <AuthProvider>
+      <Router>
+        <div className="App">
           <Routes>
+            {/* Rutas Públicas */}
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
-            
+
+            {/* Rutas Protegidas */}
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/gestion-cuentas" element={<ProtectedRoute><GestionCuentas /></ProtectedRoute>} />
             <Route path="/presupuesto" element={<ProtectedRoute><Presupuesto /></ProtectedRoute>} />
-            
             <Route path="/historial" element={<ProtectedRoute><Historial /></ProtectedRoute>} />
+            {/* Nueva Ruta de Administración */}
+            <Route path="/admin" element={
+              <ProtectedRoute requireAdmin={true}> {/* Asegúrate que ProtectedRoute soporte requireAdmin */}
+                <Admin />
+              </ProtectedRoute>
+            } />
+
+            {/* Ruta por defecto o Not Found (opcional) */}
+            {/* <Route path="*" element={<NotFound />} /> */}
           </Routes>
-        </Router>
-      </AuthProvider>
-    </div>
+        </div>
+      </Router>
+    </AuthProvider>
   );
 }
 

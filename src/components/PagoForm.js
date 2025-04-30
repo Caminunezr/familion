@@ -1,313 +1,110 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
-import db from '../utils/database';
-import { saveFile } from '../utils/fileStorage';
-import './PagoForm.css';
 
 const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
   const { currentUser } = useAuth();
-  const [formData, setFormData] = useState({
-    montoPagado: cuenta ? cuenta.monto.toString() : '',
-    fechaPago: new Date().toISOString().split('T')[0],
-    metodoPago: ''
+  const [montoPagado, setMontoPagado] = useState(Number(cuenta.monto) || 0);
+  const [fechaPago, setFechaPago] = useState(() => {
+    const hoy = new Date();
+    return hoy.toISOString().split('T')[0];
   });
   const [comprobante, setComprobante] = useState(null);
-  const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [presupuestosMes, setPresupuestosMes] = useState([]);
-  const [presupuestoSeleccionado, setPresupuestoSeleccionado] = useState('');
-  const [registrarComoAporte, setRegistrarComoAporte] = useState(true);
-
-  // Buscar presupuestos del mes actual al cargar el componente
-  useEffect(() => {
-    const fetchPresupuestos = async () => {
-      try {
-        // Obtener el mes actual en formato YYYY-MM
-        const fechaPago = new Date(formData.fechaPago);
-        const mesActual = `${fechaPago.getFullYear()}-${String(fechaPago.getMonth() + 1).padStart(2, '0')}`;
-        
-        // Buscar presupuestos para este mes
-        const presupuestosData = await db.presupuestos
-          .where('mes')
-          .equals(mesActual)
-          .toArray();
-        
-        setPresupuestosMes(presupuestosData);
-        
-        // Si hay solo un presupuesto, seleccionarlo automáticamente
-        if (presupuestosData.length === 1) {
-          setPresupuestoSeleccionado(presupuestosData[0].id.toString());
-        }
-      } catch (error) {
-        console.error('Error al buscar presupuestos:', error);
-      }
-    };
-    
-    fetchPresupuestos();
-  }, [formData.fechaPago]);
-
-  // Actualizar la búsqueda de presupuestos cuando cambia la fecha de pago
-  useEffect(() => {
-    const actualizarPresupuestos = async () => {
-      try {
-        const fechaPago = new Date(formData.fechaPago);
-        const mesPago = `${fechaPago.getFullYear()}-${String(fechaPago.getMonth() + 1).padStart(2, '0')}`;
-        
-        // Buscar presupuestos para este mes
-        const presupuestosData = await db.presupuestos
-          .where('mes')
-          .equals(mesPago)
-          .toArray();
-        
-        setPresupuestosMes(presupuestosData);
-        
-        // Resetear la selección si no hay presupuestos
-        if (presupuestosData.length === 0) {
-          setPresupuestoSeleccionado('');
-        } 
-        // Seleccionar automáticamente si solo hay uno
-        else if (presupuestosData.length === 1) {
-          setPresupuestoSeleccionado(presupuestosData[0].id.toString());
-        }
-      } catch (error) {
-        console.error('Error al actualizar presupuestos:', error);
-      }
-    };
-    
-    actualizarPresupuestos();
-  }, [formData.fechaPago]);
-
-  const handleChange = (e) => {
-    const { name, value } = e.target;
-    setFormData({
-      ...formData,
-      [name]: value
-    });
-  };
+  const [error, setError] = useState(null);
+  const [success, setSuccess] = useState(false);
 
   const handleFileChange = (e) => {
-    if (e.target.files.length > 0) {
-      setComprobante(e.target.files[0]);
-    }
-  };
-
-  const handlePresupuestoChange = (e) => {
-    setPresupuestoSeleccionado(e.target.value);
+    setComprobante(e.target.files[0] || null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    if (!formData.montoPagado || !formData.fechaPago) {
-      setError('El monto y la fecha de pago son obligatorios');
-      return;
-    }
-    
+    setLoading(true);
+    setError(null);
+    setSuccess(false);
     try {
-      setLoading(true);
-      let rutaComprobante = null;
-      
-      if (comprobante) {
-        rutaComprobante = await saveFile(comprobante, 'comprobantes');
+      const token = localStorage.getItem('access');
+      if (!token) throw new Error('No autenticado');
+      const formData = new FormData();
+      formData.append('cuenta', Number(cuenta.id)); // Aseguramos que sea número
+      formData.append('monto_pagado', Number(montoPagado)); // Aseguramos que sea número
+      formData.append('fecha_pago', fechaPago); // Debe ser YYYY-MM-DD
+      if (comprobante) formData.append('comprobante', comprobante);
+      // El usuario se asigna automáticamente en el backend
+      const res = await fetch('http://localhost:8000/api/pagos/', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+      if (!res.ok) {
+        let msg = 'Error al registrar el pago';
+        try {
+          const errorJson = await res.json();
+          console.log('Detalle error backend:', errorJson); // <-- para depuración
+          msg += ': ' + JSON.stringify(errorJson);
+        } catch {}
+        throw new Error(msg);
       }
-      
-      // Validar que el monto sea numérico
-      const montoPagado = parseFloat(formData.montoPagado);
-      if (isNaN(montoPagado) || montoPagado <= 0) {
-        throw new Error('El monto debe ser un número mayor que cero');
-      }
-      
-      // Guardar el pago
-      const pagoData = {
-        cuentaId: cuenta.id,
-        montoPagado: montoPagado,
-        fechaPago: formData.fechaPago,
-        metodoPago: formData.metodoPago,
-        pagadoPor: currentUser.uid,
-        rutaComprobante,
-        fechaCreacion: new Date().toISOString()
-      };
-      
-      console.log('Guardando pago:', pagoData);
-      const pagoId = await db.pagos.add(pagoData);
-      console.log('Pago guardado con ID:', pagoId);
-      
-      // Actualizar estado de la cuenta si está pagada completamente
-      const pagosAnteriores = await db.pagos.where('cuentaId').equals(cuenta.id).toArray();
-      const totalPagado = pagosAnteriores.reduce((sum, p) => sum + (parseFloat(p.montoPagado) || 0), 0) + montoPagado;
-      
-      if (totalPagado >= cuenta.monto) {
-        // Marcar cuenta como pagada
-        console.log('Actualizando cuenta como pagada:', cuenta.id);
-        await db.cuentas.update(cuenta.id, { 
-          estaPagada: true,
-          fechaActualizacion: new Date().toISOString()
-        });
-      }
-      
-      // Si se seleccionó registrar como aporte y hay un presupuesto seleccionado
-      if (registrarComoAporte && presupuestoSeleccionado) {
-        const presupuestoId = parseInt(presupuestoSeleccionado);
-        
-        // Crear un aporte automático
-        await db.aportes.add({
-          presupuestoId,
-          miembroId: currentUser.uid,
-          monto: montoPagado,
-          fechaAporte: formData.fechaPago,
-          rutaComprobante,
-          fechaCreacion: new Date().toISOString(),
-          tipoPago: 'cuenta', // Para identificar que proviene de un pago de cuenta
-          cuentaId: cuenta.id,
-          cuentaNombre: cuenta.nombre,
-          pagoId // Referencia al pago que generó este aporte
-        });
-      }
-      
-      // Añadir un pequeño retraso para asegurar que la BD se actualice
-      setTimeout(() => {
-        if (onSuccess) onSuccess();
-      }, 500);
-      
-    } catch (error) {
-      console.error('Error al guardar pago:', error);
-      setError('Error al guardar el pago: ' + error.message);
+      setSuccess(true);
+      if (onSuccess) onSuccess();
+    } catch (err) {
+      setError(err.message);
     } finally {
       setLoading(false);
     }
   };
 
-  // Formatear mes para mostrar
-  const formatoMes = (mesString) => {
-    const [año, mes] = mesString.split('-');
-    const nombresMeses = [
-      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-    ];
-    
-    return `${nombresMeses[parseInt(mes) - 1]} ${año}`;
-  };
-
   return (
-    <form className="pago-form" onSubmit={handleSubmit}>
-      <h3>Registrar Pago para: {cuenta?.nombre}</h3>
-      
-      {error && <div className="error-message">{error}</div>}
-      
-      <div className="form-group">
-        <label htmlFor="montoPagado">Monto Pagado *</label>
-        <input
-          type="number"
-          id="montoPagado"
-          name="montoPagado"
-          value={formData.montoPagado}
-          onChange={handleChange}
-          step="0.01"
-          required
-        />
-      </div>
-      
-      <div className="form-group">
-        <label htmlFor="fechaPago">Fecha de Pago *</label>
-        <input
-          type="date"
-          id="fechaPago"
-          name="fechaPago"
-          value={formData.fechaPago}
-          onChange={handleChange}
-          required
-        />
-      </div>
-      
-      <div className="form-group">
-        <label htmlFor="metodoPago">Método de Pago</label>
-        <select
-          id="metodoPago"
-          name="metodoPago"
-          value={formData.metodoPago}
-          onChange={handleChange}
-        >
-          <option value="">Seleccionar método</option>
-          <option value="efectivo">Efectivo</option>
-          <option value="tarjeta_debito">Tarjeta de Débito</option>
-          <option value="tarjeta_credito">Tarjeta de Crédito</option>
-          <option value="transferencia">Transferencia</option>
-          <option value="otro">Otro</option>
-        </select>
-      </div>
-      
-      <div className="form-group">
-        <label htmlFor="comprobante">Comprobante de Pago</label>
-        <input
-          type="file"
-          id="comprobante"
-          accept=".pdf,.jpg,.jpeg,.png"
-          onChange={handleFileChange}
-        />
-      </div>
-      
-      {/* Sección para incluir en presupuesto */}
-      <div className="presupuesto-section">
-        <div className="form-info-box">
-          <p><strong>Información importante:</strong> Registrar este pago te eximirá de aportar parte o todo de los $150,000 mensuales, dependiendo del monto pagado.</p>
-        </div>
-        
-        <div className="form-group checkbox-group">
+    <div className="pago-form-container">
+      <h3>Registrar Pago</h3>
+      <form onSubmit={handleSubmit} className="pago-form">
+        {error && <div className="error-message">{error}</div>}
+        {success && <div className="success-message">Pago registrado correctamente.</div>}
+        <div className="form-group">
+          <label>Monto pagado *</label>
           <input
-            type="checkbox"
-            id="registrarComoAporte"
-            checked={registrarComoAporte}
-            onChange={(e) => setRegistrarComoAporte(e.target.checked)}
+            type="number"
+            min="0.01"
+            step="0.01"
+            value={montoPagado}
+            onChange={e => setMontoPagado(e.target.value)}
+            required
+            disabled={loading}
           />
-          <label htmlFor="registrarComoAporte">
-            Incluir como aporte al presupuesto mensual
-          </label>
         </div>
-        
-        {registrarComoAporte && (
-          <div className="form-group">
-            <label htmlFor="presupuesto">Seleccionar presupuesto</label>
-            {presupuestosMes.length === 0 ? (
-              <div className="no-presupuesto-warning">
-                No hay presupuestos para este mes. <a href="/presupuesto" target="_blank" rel="noopener noreferrer">Crear uno</a>
-              </div>
-            ) : (
-              <select
-                id="presupuesto"
-                value={presupuestoSeleccionado}
-                onChange={handlePresupuestoChange}
-                required={registrarComoAporte}
-              >
-                <option value="">Seleccionar presupuesto</option>
-                {presupuestosMes.map(p => (
-                  <option key={p.id} value={p.id}>
-                    {formatoMes(p.mes)} - {p.creadorNombre}
-                  </option>
-                ))}
-              </select>
-            )}
-          </div>
-        )}
-      </div>
-      
-      <div className="form-buttons">
-        <button 
-          type="button" 
-          className="cancel-button" 
-          onClick={onCancel}
-          disabled={loading}
-        >
-          Cancelar
-        </button>
-        <button 
-          type="submit" 
-          className="submit-button"
-          disabled={loading || (registrarComoAporte && presupuestosMes.length > 0 && !presupuestoSeleccionado)}
-        >
-          {loading ? 'Guardando...' : 'Registrar Pago'}
-        </button>
-      </div>
-    </form>
+        <div className="form-group">
+          <label>Fecha de pago *</label>
+          <input
+            type="date"
+            value={fechaPago}
+            onChange={e => setFechaPago(e.target.value)}
+            required
+            disabled={loading}
+          />
+        </div>
+        <div className="form-group">
+          <label>Comprobante (PDF, JPG, PNG)</label>
+          <input
+            type="file"
+            accept=".pdf,.jpg,.jpeg,.png"
+            onChange={handleFileChange}
+            disabled={loading}
+          />
+        </div>
+        <div className="form-group">
+          <label>Usuario</label>
+          <input
+            type="text"
+            value={currentUser?.username || 'Desconocido'}
+            disabled
+          />
+        </div>
+        <div className="form-buttons">
+          <button type="button" onClick={onCancel} disabled={loading}>Cancelar</button>
+          <button type="submit" disabled={loading}>{loading ? 'Registrando...' : 'Registrar Pago'}</button>
+        </div>
+      </form>
+    </div>
   );
 };
 
