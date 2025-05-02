@@ -8,6 +8,7 @@ import GestionCuentasForm from './GestionCuentasForm';
 import GestionCuentasDetalle from './GestionCuentasDetalle';
 import Modal from '../Modal';
 import './GestionCuentas.css';
+import { procesarCuentasYPagosHistorial } from '../../utils/historialUtils';
 
 const estadoInicialFormulario = {
   monto: '',
@@ -92,14 +93,20 @@ const GestionCuentas = () => {
 
   const cargarCuentas = useCallback(async () => {
     if (authLoading || !currentUser) return;
-
     setLoading(true);
     setError(null);
     try {
-      const cuentasData = await fetchAPI(`${API_BASE_URL}/cuentas/`);
-      setCuentas(Array.isArray(cuentasData) ? cuentasData : []);
+      const [cuentasData, pagosData] = await Promise.all([
+        fetchAPI(`${API_BASE_URL}/cuentas/`),
+        fetchAPI(`${API_BASE_URL}/pagos/`)
+      ]);
+      const cuentasProcesadas = procesarCuentasYPagosHistorial(
+        Array.isArray(cuentasData) ? cuentasData : [],
+        Array.isArray(pagosData) ? pagosData : []
+      );
+      setCuentas(cuentasProcesadas);
     } catch (err) {
-      console.error("Error cargando cuentas:", err);
+      console.error("Error cargando cuentas o pagos:", err);
       setError(`No se pudieron cargar las cuentas: ${err.message}`);
       setCuentas([]);
     } finally {

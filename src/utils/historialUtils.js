@@ -28,18 +28,25 @@ function normalizarCategoria(categoriaNombre) {
 
 export function procesarCuentasYPagosHistorial(cuentasArray, pagosArray) {
   console.log("Procesando cuentas y pagos (historialUtils):", cuentasArray.length, pagosArray.length);
+  // Adaptar para aceptar pagos con campo 'cuenta' o 'cuentaId', y monto 'monto_pagado' o 'montoPagado'
   const pagosPorCuenta = pagosArray.reduce((acc, pago) => {
-    if (!acc[pago.cuentaId]) {
-      acc[pago.cuentaId] = [];
+    // Soportar ambos nombres de campo para la cuenta
+    const cuentaId = pago.cuentaId || pago.cuenta;
+    if (!cuentaId) return acc;
+    if (!acc[cuentaId]) {
+      acc[cuentaId] = [];
     }
-    acc[pago.cuentaId].push(pago);
+    acc[cuentaId].push(pago);
     return acc;
   }, {});
 
   return cuentasArray.map(cuenta => {
     const pagosCuenta = (pagosPorCuenta[cuenta.id] || []).map(pago => ({
       ...pago,
-      rutaComprobante: pago.rutaComprobante || pago.comprobanteUrl || null
+      // Soportar ambos nombres de campo para el monto
+      montoPagado: pago.montoPagado !== undefined ? pago.montoPagado : pago.monto_pagado,
+      rutaComprobante: pago.rutaComprobante || pago.comprobanteUrl || pago.comprobante || null,
+      fechaPago: pago.fechaPago || pago.fecha_pago
     }));
     const totalPagado = pagosCuenta.reduce((sum, pago) => sum + (parseFloat(pago.montoPagado) || 0), 0);
     const montoCuenta = parseFloat(cuenta.monto) || 0;

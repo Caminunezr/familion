@@ -1,6 +1,7 @@
 import React from 'react';
 import { HashRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
+import { useAuth } from './contexts/AuthContext';
 import Login from './login/login';
 import Signup from './components/Signup';
 import Dashboard from './components/dashboard/Dashboard';
@@ -13,6 +14,11 @@ import Admin from './components/Admin'; // Importar el componente Admin
 import './App.css';
 
 function App() {
+  const { loading } = useAuth();
+  if (loading) {
+    return <div style={{display:'flex',justifyContent:'center',alignItems:'center',height:'100vh',fontSize:22,color:'#1976d2'}}>Cargando autenticación...</div>;
+  }
+
   return (
     <AuthProvider>
       <Router>
