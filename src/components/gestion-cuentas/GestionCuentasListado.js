@@ -1,5 +1,17 @@
 import React, { useState, useMemo } from 'react';
 import { agruparDatosHistorial } from '../../utils/historialUtils';
+import { Bar } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 // Iconos por categoría (puedes cambiar por SVGs si lo prefieres)
 const categoriaIcono = {
@@ -81,6 +93,81 @@ function agruparPorAnio(meses) {
     agrupado[anio].push(mes);
   });
   return agrupado;
+}
+
+function getResumenAnual(meses) {
+  // Agrupa por año y suma totales por mes
+  const resumenPorAnio = {};
+  meses.forEach(mes => {
+    const [anio, mesNum] = mes.periodo.split('-');
+    if (!resumenPorAnio[anio]) resumenPorAnio[anio] = Array(12).fill(null).map(() => ({pagado:0, pendiente:0, cuentas:0}));
+    const idx = parseInt(mesNum, 10) - 1;
+    const totalPagado = mes.cuentas.reduce((sum, c) => sum + (parseFloat(c.totalPagado) || 0), 0);
+    const totalMonto = mes.cuentas.reduce((sum, c) => sum + (parseFloat(c.monto) || 0), 0);
+    resumenPorAnio[anio][idx] = {
+      pagado: totalPagado,
+      pendiente: Math.max(0, totalMonto - totalPagado),
+      cuentas: mes.cuentas.length
+    };
+  });
+  return resumenPorAnio;
+}
+
+function ResumenAnual({ meses, anioActivo }) {
+  const resumen = getResumenAnual(meses);
+  const data = resumen[anioActivo] || [];
+  const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  const chartData = {
+    labels,
+    datasets: [
+      {
+        label: 'Pagado',
+        data: data.map(m => m ? m.pagado : 0),
+        backgroundColor: '#43a047',
+        borderRadius: 6,
+        maxBarThickness: 32
+      },
+      {
+        label: 'Pendiente',
+        data: data.map(m => m ? m.pendiente : 0),
+        backgroundColor: '#e53935',
+        borderRadius: 6,
+        maxBarThickness: 32
+      }
+    ]
+  };
+  const totalCuentas = data.reduce((sum, m) => sum + (m ? m.cuentas : 0), 0);
+  const totalPagado = data.reduce((sum, m) => sum + (m ? m.pagado : 0), 0);
+  const totalPendiente = data.reduce((sum, m) => sum + (m ? m.pendiente : 0), 0);
+  return (
+    <div style={{background:'#fff',borderRadius:16,padding:'18px 10px 10px 10px',margin:'0 0 18px 0',boxShadow:'0 2px 8px rgba(25,118,210,0.07)',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+      <div style={{display:'flex',flexWrap:'wrap',gap:18,justifyContent:'center',alignItems:'center',width:'100%'}}>
+        <div style={{fontWeight:700,fontSize:18,color:'#1976d2'}}>Resumen {anioActivo}</div>
+        <div style={{fontSize:15}}><strong>Total cuentas:</strong> {totalCuentas}</div>
+        <div style={{fontSize:15,color:'#43a047'}}><strong>Pagado:</strong> ${totalPagado.toLocaleString()}</div>
+        <div style={{fontSize:15,color:'#e53935'}}><strong>Pendiente:</strong> ${totalPendiente.toLocaleString()}</div>
+      </div>
+      <div style={{width:'100%',maxWidth:600,minWidth:0}}>
+        <Bar
+          data={chartData}
+          options={{
+            responsive: true,
+            plugins: {
+              legend: { position: 'top' },
+              title: { display: false }
+            },
+            scales: {
+              x: { stacked: true, grid: {display:false} },
+              y: { stacked: true, beginAtZero:true, grid: {color:'#eee'} }
+            },
+            maintainAspectRatio: false,
+            aspectRatio: 2.5,
+          }}
+          height={220}
+        />
+      </div>
+    </div>
+  );
 }
 
 const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => (
@@ -274,6 +361,7 @@ const GestionCuentasListado = ({
       <div style={{ flex: 1, overflowX: 'auto', transition: 'background 0.4s' }}>
         {meses.filter(m => m.periodo === mesActivo).map((mes, idx) => (
           <div key={mes.periodo} style={{ opacity: fade ? 1 : 0, transition: 'opacity 0.4s' }}>
+            <ResumenAnual meses={meses} anioActivo={mes.periodo.split('-')[0]} />
             <TimelineCards
               cuentas={mes.cuentas}
               getEstadoCuenta={getEstadoCuenta}

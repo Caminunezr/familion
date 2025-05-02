@@ -75,7 +75,29 @@ const NavBar = () => {
 
         {currentUser && (
           <div className="user-info">
-            <span>{currentUser.displayName || currentUser.email}</span>
+            <button
+              className="user-name-badge"
+              style={{
+                background: 'linear-gradient(90deg,rgba(71, 71, 71, 0.71) 60%,rgb(83, 83, 83) 100%)',
+                color: 'white',
+                border: 'none',
+                borderRadius: '18px',
+                padding: '6px 16px',
+                fontWeight: 600,
+                fontSize: '1rem',
+                marginRight: 10,
+                boxShadow: '0 2px 6px rgba(25,118,210,0.10)',
+                cursor: 'default',
+                letterSpacing: '0.5px',
+                display: 'flex',
+                alignItems: 'center',
+                gap: 8
+              }}
+              disabled
+            >
+              <span style={{fontSize:'1.1em',marginRight:4}}>👤</span>
+              {currentUser.username || currentUser.displayName || currentUser.email}
+            </button>
             <button onClick={handleLogout} className="logout-button">
               Cerrar Sesión
             </button>
