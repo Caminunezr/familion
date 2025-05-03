@@ -25,6 +25,18 @@ const categoriaIcono = {
   'Otros': '📦',
 };
 
+// Definir colores por categoría
+const categoriaColor = {
+  'Luz': '#FFEB3B', // Amarillo
+  'Agua': '#4FC3F7', // Celeste
+  'Gas': '#FFB74D', // Naranja
+  'Internet': '#1976D2', // Azul
+  'Utiles de Aseo': '#AED581', // Verde claro
+  'Arriendo': '#757575', // Gris oscuro
+  'Gasto Común': '#BA68C8', // Violeta
+  'Otros': '#BDBDBD', // Gris claro
+};
+
 const getCategoriaClass = (categoria) => {
   switch (categoria) {
     case 'Luz': return 'cat-luz';
@@ -95,57 +107,61 @@ function agruparPorAnio(meses) {
   return agrupado;
 }
 
-function getResumenAnual(meses) {
-  // Agrupa por año y suma totales por mes
+function getResumenAnualPorCategoria(meses) {
+  // Devuelve un objeto: { anio: [{categoria: monto, ...}, ...por cada mes] }
   const resumenPorAnio = {};
   meses.forEach(mes => {
     const [anio, mesNum] = mes.periodo.split('-');
-    if (!resumenPorAnio[anio]) resumenPorAnio[anio] = Array(12).fill(null).map(() => ({pagado:0, pendiente:0, cuentas:0}));
+    if (!resumenPorAnio[anio]) resumenPorAnio[anio] = Array(12).fill(null).map(() => ({}));
     const idx = parseInt(mesNum, 10) - 1;
-    const totalPagado = mes.cuentas.reduce((sum, c) => sum + (parseFloat(c.totalPagado) || 0), 0);
-    const totalMonto = mes.cuentas.reduce((sum, c) => sum + (parseFloat(c.monto) || 0), 0);
-    resumenPorAnio[anio][idx] = {
-      pagado: totalPagado,
-      pendiente: Math.max(0, totalMonto - totalPagado),
-      cuentas: mes.cuentas.length
-    };
+    mes.cuentas.forEach(cuenta => {
+      const cat = cuenta.categoria || 'Otros';
+      const monto = parseFloat(cuenta.monto) || 0;
+      if (!resumenPorAnio[anio][idx][cat]) resumenPorAnio[anio][idx][cat] = 0;
+      resumenPorAnio[anio][idx][cat] += monto;
+    });
   });
   return resumenPorAnio;
 }
 
 function ResumenAnual({ meses, anioActivo }) {
-  const resumen = getResumenAnual(meses);
+  const resumen = getResumenAnualPorCategoria(meses);
   const data = resumen[anioActivo] || [];
   const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  // Obtener todas las categorías presentes en el año
+  const categorias = Array.from(new Set(
+    data.flatMap(m => Object.keys(m))
+  ));
+  // Colores por categoría (usar los definidos antes)
+  const categoriaColor = {
+    'Luz': '#FFEB3B',
+    'Agua': '#4FC3F7',
+    'Gas': '#FFB74D',
+    'Internet': '#1976D2',
+    'Utiles de Aseo': '#AED581',
+    'Arriendo': '#757575',
+    'Gasto Común': '#BA68C8',
+    'Otros': '#BDBDBD',
+  };
   const chartData = {
     labels,
-    datasets: [
-      {
-        label: 'Pagado',
-        data: data.map(m => m ? m.pagado : 0),
-        backgroundColor: '#43a047',
-        borderRadius: 6,
-        maxBarThickness: 32
-      },
-      {
-        label: 'Pendiente',
-        data: data.map(m => m ? m.pendiente : 0),
-        backgroundColor: '#e53935',
-        borderRadius: 6,
-        maxBarThickness: 32
-      }
-    ]
+    datasets: categorias.map(cat => ({
+      label: cat,
+      data: data.map(m => m[cat] || 0),
+      backgroundColor: categoriaColor[cat] || '#BDBDBD',
+      borderRadius: 6,
+      maxBarThickness: 32
+    }))
   };
-  const totalCuentas = data.reduce((sum, m) => sum + (m ? m.cuentas : 0), 0);
-  const totalPagado = data.reduce((sum, m) => sum + (m ? m.pagado : 0), 0);
-  const totalPendiente = data.reduce((sum, m) => sum + (m ? m.pendiente : 0), 0);
+  // Totales
+  const totalCuentas = meses.filter(m=>m.periodo.startsWith(anioActivo)).reduce((sum, m) => sum + m.cuentas.length, 0);
+  const totalMonto = meses.filter(m=>m.periodo.startsWith(anioActivo)).reduce((sum, m) => sum + m.cuentas.reduce((s, c) => s + (parseFloat(c.monto)||0), 0), 0);
   return (
     <div style={{background:'#fff',borderRadius:16,padding:'18px 10px 10px 10px',margin:'0 0 18px 0',boxShadow:'0 2px 8px rgba(25,118,210,0.07)',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
       <div style={{display:'flex',flexWrap:'wrap',gap:18,justifyContent:'center',alignItems:'center',width:'100%'}}>
         <div style={{fontWeight:700,fontSize:18,color:'#1976d2'}}>Resumen {anioActivo}</div>
         <div style={{fontSize:15}}><strong>Total cuentas:</strong> {totalCuentas}</div>
-        <div style={{fontSize:15,color:'#43a047'}}><strong>Pagado:</strong> ${totalPagado.toLocaleString()}</div>
-        <div style={{fontSize:15,color:'#e53935'}}><strong>Pendiente:</strong> ${totalPendiente.toLocaleString()}</div>
+        <div style={{fontSize:15,color:'#1976d2'}}><strong>Total monto:</strong> ${totalMonto.toLocaleString()}</div>
       </div>
       <div style={{width:'100%',maxWidth:600,minWidth:0}}>
         <Bar
@@ -170,48 +186,76 @@ function ResumenAnual({ meses, anioActivo }) {
   );
 }
 
-const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => (
-  <div style={{ minWidth: 210, borderRight: '2px solid #e0e0e0', padding: '18px 0', background: '#f7f9fb', height: '100%', overflowY: 'auto' }}>
-    {Object.entries(aniosMeses).map(([anio, meses]) => (
-      <div key={anio} style={{marginBottom: 18}}>
-        <div style={{fontWeight: 700, fontSize: 17, color: '#1976d2', margin: '0 0 8px 18px'}}>{anio}</div>
-        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
-          {meses.map(mes => {
-            const resumen = getResumenMes(mes);
-            return (
-              <div
-                key={mes.periodo}
-                onClick={() => onSelectMes(mes.periodo)}
-                style={{
-                  cursor: 'pointer',
-                  padding: '10px 18px 10px 24px',
-                  fontWeight: mes.periodo === mesActivo ? 700 : 400,
-                  color: mes.periodo === mesActivo ? '#1976d2' : '#555',
-                  background: mes.periodo === mesActivo ? '#e3f0fd' : 'transparent',
-                  borderRight: mes.periodo === mesActivo ? '4px solid #1976d2' : '4px solid transparent',
-                  borderRadius: '18px 0 0 18px',
-                  marginBottom: 2,
-                  position: 'relative',
-                  transition: 'background 0.2s, color 0.2s',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8
-                }}
-              >
-                <span style={{ fontSize: 15 }}>{mes.etiqueta}</span>
-                <span style={{marginLeft: 8, fontSize: 18}}>{resumen.icono}</span>
-                <span style={{fontSize: 12, color: '#888', marginLeft: 8}}>
-                  {resumen.totalCuentas} cuentas | ${resumen.totalPagado.toLocaleString()} pagado | ${resumen.totalPendiente.toLocaleString()} pendiente
-                </span>
-              </div>
-            );
-          })}
+const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => {
+  const currentYear = new Date().getFullYear().toString();
+  const [expandedYears, setExpandedYears] = React.useState([currentYear]);
+
+  const toggleYear = (anio) => {
+    setExpandedYears((prev) =>
+      prev.includes(anio)
+        ? prev.filter((y) => y !== anio)
+        : [...prev, anio]
+    );
+  };
+
+  // Ordenar años: actual primero, luego descendente
+  const orderedYears = Object.keys(aniosMeses).sort((a, b) => {
+    if (a === currentYear) return -1;
+    if (b === currentYear) return 1;
+    return b.localeCompare(a);
+  });
+
+  return (
+    <div style={{ minWidth: 210, borderRight: '2px solid #e0e0e0', padding: '18px 0', background: '#f7f9fb', height: '100%', overflowY: 'auto' }}>
+      {orderedYears.map(anio => (
+        <div key={anio} style={{marginBottom: 18}}>
+          <div
+            style={{fontWeight: 700, fontSize: 17, color: '#1976d2', margin: '0 0 8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}
+            onClick={() => toggleYear(anio)}
+          >
+            <span>{anio}</span>
+            <span style={{fontSize: 15, color: '#888'}}>{expandedYears.includes(anio) ? '▼' : '▶'}</span>
+          </div>
+          {expandedYears.includes(anio) && (
+            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
+              {aniosMeses[anio].map(mes => {
+                const resumen = getResumenMes(mes);
+                return (
+                  <div
+                    key={mes.periodo}
+                    onClick={() => onSelectMes(mes.periodo)}
+                    style={{
+                      cursor: 'pointer',
+                      padding: '10px 18px 10px 24px',
+                      fontWeight: mes.periodo === mesActivo ? 700 : 400,
+                      color: mes.periodo === mesActivo ? '#1976d2' : '#555',
+                      background: mes.periodo === mesActivo ? '#e3f0fd' : 'transparent',
+                      borderRight: mes.periodo === mesActivo ? '4px solid #1976d2' : '4px solid transparent',
+                      borderRadius: '18px 0 0 18px',
+                      marginBottom: 2,
+                      position: 'relative',
+                      transition: 'background 0.2s, color 0.2s',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'space-between',
+                      gap: 8
+                    }}
+                  >
+                    <span style={{ fontSize: 15 }}>{mes.etiqueta}</span>
+                    <span style={{marginLeft: 8, fontSize: 18}}>{resumen.icono}</span>
+                    <span style={{fontSize: 12, color: '#888', marginLeft: 8}}>
+                      {resumen.totalCuentas} cuentas | ${resumen.totalPagado.toLocaleString()} pagado | ${resumen.totalPendiente.toLocaleString()} pendiente
+                    </span>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </div>
-      </div>
-    ))}
-  </div>
-);
+      ))}
+    </div>
+  );
+};
 
 const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaClass, onAbrirPanel, onEliminarCuenta, filtro, setFiltro, busqueda, setBusqueda, colorFondo }) => {
   // Filtrado por estado/categoría/búsqueda
@@ -248,7 +292,15 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
       </div>
       {/* Línea vertical */}
       <div style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 4, background: '#e0e0e0', borderRadius: 2 }} />
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 18 }}>
+      {/* Grid de tarjetas */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
+        gap: '16px',
+        alignItems: 'stretch',
+        width: '100%',
+        marginTop: 8
+      }}>
         {cuentasFiltradas.map((cuenta, idx) => {
           const { estado, clase } = getEstadoCuenta(cuenta);
           const tituloPrincipal = cuenta.proveedor_nombre || cuenta.descripcion || cuenta.categoria || 'Cuenta';
@@ -261,39 +313,67 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
               {/* Tarjeta */}
               <div
                 className={`cuenta-card-gc ${clase} ${getCategoriaClass(cuenta.categoria)}`}
-                style={{ minWidth: 280, maxWidth: 480, background: '#fff', borderLeft: `6px solid ${clase === 'pagada' ? '#43a047' : clase === 'vencida' ? '#e53935' : '#ffc107'}`, boxShadow: '0 2px 8px rgba(25,118,210,0.08)', borderRadius: 12, padding: 14, marginLeft: 24, position: 'relative', display: 'flex', alignItems: 'center', gap: 14, transition: 'box-shadow 0.2s, background 0.2s' }}
+                style={{
+                  minWidth: 220,
+                  maxWidth: 320,
+                  background: '#fff',
+                  borderLeft: `7px solid ${categoriaColor[cuenta.categoria] || '#BDBDBD'}`,
+                  boxShadow: '0 1px 4px rgba(25,118,210,0.07)',
+                  borderRadius: 10,
+                  padding: 10,
+                  marginLeft: 18,
+                  marginBottom: 8,
+                  position: 'relative',
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 6,
+                  transition: 'box-shadow 0.2s, background 0.2s',
+                  fontSize: 14,
+                  cursor: 'pointer',
+                  overflow: 'hidden',
+                }}
                 onClick={() => onAbrirPanel && onAbrirPanel(cuenta)}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 4px 16px rgba(25,118,210,0.13)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(25,118,210,0.08)'}
+                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(25,118,210,0.13)'}
+                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(25,118,210,0.07)'}
               >
-                <div style={{ fontSize: '2rem', marginRight: 10, flexShrink: 0, filter: 'drop-shadow(0 1px 2px #bbb)' }}>{icono}</div>
-                <div className="cuenta-card-content" style={{ flex: 1, minWidth: 0 }}>
-                  <div className="cuenta-card-header" style={{display:'flex', justifyContent:'space-between', alignItems:'center'}}>
-                    <span className="cuenta-nombre" style={{ fontSize: '1.08rem', fontWeight: 700 }}>{tituloPrincipal}</span>
-                    <span className={`cuenta-estado-badge ${clase}`}>{estado}</span>
-                  </div>
-                  <div className="cuenta-card-details" style={{fontSize:13, color:'#555'}}>
-                    <span><strong>Categoría:</strong> {cuenta.categoria}</span>
-                    {proveedorDisplay !== tituloPrincipal && proveedorDisplay !== 'N/A' && (
-                      <span><strong>Proveedor:</strong> {proveedorDisplay}</span>
-                    )}
-                    <span style={{ fontWeight: 600, color: '#1976d2' }}><strong>Monto:</strong> {Number(cuenta.monto || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                    <span><strong>Vence:</strong> {cuenta.fecha_vencimiento ? new Date(cuenta.fecha_vencimiento).toLocaleDateString('es-CL') : 'N/A'}</span>
-                    {cuenta.factura && <span className="factura-indicator" title="Factura adjunta">📄</span>}
-                  </div>
+                {/* Badge de estado en la esquina superior derecha */}
+                <span className={`cuenta-estado-badge ${clase}`}
+                  style={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    fontSize: 11,
+                    padding: '2px 8px',
+                    borderRadius: 8,
+                    background: clase === 'pagada' ? '#e8f5e9' : clase === 'vencida' ? '#ffebee' : '#fffde7',
+                    color: clase === 'pagada' ? '#388e3c' : clase === 'vencida' ? '#c62828' : '#f9a825',
+                    fontWeight: 600,
+                    zIndex: 2,
+                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
+                  }}
+                >{estado}</span>
+                {/* Contenido principal */}
+                <div style={{display:'flex',alignItems:'center',gap:8, marginBottom:2}}>
+                  <span style={{fontSize: '1.3rem'}}>{icono}</span>
+                  <span style={{fontWeight:700, fontSize:13, color:'#1976d2', flex:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tituloPrincipal}</span>
                 </div>
-                <div className="cuenta-card-actions" style={{ opacity: 0, pointerEvents: 'none', transition: 'opacity 0.2s', display:'flex', gap:8 }}>
-                  <button className="btn-editar" onClick={e => { e.stopPropagation(); onAbrirPanel(cuenta); }} style={{background:'#1976d2', color:'#fff', border:'none', borderRadius:5, padding:'4px 10px', fontSize:13, cursor:'pointer'}}>Ver / Editar</button>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6, marginBottom:2}}>
+                  <span style={{fontWeight:600, color:'#1976d2'}}>{Number(cuenta.monto || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
+                  <span style={{fontSize:12, color:'#888'}}>Vence: {cuenta.fecha_vencimiento ? new Date(cuenta.fecha_vencimiento).toLocaleDateString('es-CL') : 'N/A'}</span>
+                </div>
+                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6}}>
+                  <span style={{fontSize:12, color:'#555', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{cuenta.categoria}</span>
+                  {proveedorDisplay !== tituloPrincipal && proveedorDisplay !== 'N/A' && (
+                    <span style={{fontSize:12, color:'#888', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{proveedorDisplay}</span>
+                  )}
+                  {cuenta.factura && <span className="factura-indicator" title="Factura adjunta" style={{fontSize:15}}>📄</span>}
+                </div>
+                <div className="cuenta-card-actions" style={{ position:'absolute', bottom:8, right:8, display:'flex', gap:4, opacity:0.7 }}>
+                  <span title="Ver / Editar" style={{cursor:'pointer',fontSize:16}} onClick={e => { e.stopPropagation(); onAbrirPanel(cuenta); }}>✏️</span>
                   {onEliminarCuenta && (
-                    <button className="btn-eliminar" onClick={e => { e.stopPropagation(); onEliminarCuenta(cuenta.id); }} style={{background:'#e53935', color:'#fff', border:'none', borderRadius:5, padding:'4px 10px', fontSize:13, cursor:'pointer'}}>Eliminar</button>
+                    <span title="Eliminar" style={{cursor:'pointer',fontSize:16}} onClick={e => { e.stopPropagation(); onEliminarCuenta(cuenta.id); }}>🗑️</span>
                   )}
                 </div>
-                <style>{`
-                  .cuenta-card-gc:hover .cuenta-card-actions {
-                    opacity: 1 !important;
-                    pointer-events: auto !important;
-                  }
-                `}</style>
               </div>
             </div>
           );
