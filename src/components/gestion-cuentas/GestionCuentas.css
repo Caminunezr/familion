@@ -58,37 +58,39 @@
 /* Tarjetas de Resumen */
 .resumen-cards-gc {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-  gap: 22px;
-  margin-bottom: 18px;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); /* Más anchas */
+  gap: 32px; /* Más separación */
+  margin-bottom: 28px;
 }
 
 .resumen-card-gc {
   background: #fff;
-  border-radius: 12px;
-  padding: 18px 16px;
-  box-shadow: 0 2px 8px rgba(25,118,210,0.08);
+  border-radius: 18px;
+  padding: 32px 28px;
+  box-shadow: 0 4px 16px rgba(25,118,210,0.10);
   display: flex;
   align-items: center;
-  gap: 15px;
+  gap: 28px;
+  min-height: 120px;
   transition: transform 0.2s, box-shadow 0.2s;
 }
 
 .resumen-card-gc:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 4px 16px rgba(25,118,210,0.13);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 24px rgba(25,118,210,0.16);
 }
 
 .resumen-icono-gc {
-  font-size: 2.1rem;
-  width: 48px;
-  height: 48px;
+  font-size: 3.2rem;
+  width: 72px;
+  height: 72px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 50%;
   background: #e3f0fd;
   color: #1976d2;
+  flex-shrink: 0;
 }
 
 /* Iconos específicos (ejemplos) */
@@ -98,15 +100,21 @@
 .resumen-card-gc:nth-child(4) .resumen-icono-gc { background-color: #fdeeee; color: #dc3545; } /* Próximas */
 
 .resumen-valor-gc {
-  font-size: 1.3rem;
-  font-weight: 600;
-  color: #333;
-  margin-bottom: 3px;
+  font-size: 2.1rem;
+  font-weight: 700;
+  color: #222;
+  margin-bottom: 6px;
 }
 
 .resumen-titulo-gc {
-  font-size: 1rem;
+  font-size: 1.15rem;
   color: #6c757d;
+  font-weight: 500;
+}
+
+/* Asegurar que los elementos no se superpongan y estén alineados verticalmente */
+.resumen-card-gc > * {
+  flex: none;
 }
 
 /* Barra de Filtros */
@@ -597,7 +605,24 @@ form, .panel-content {
     gap: 16px;
   }
   .resumen-cards-gc {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 18px;
+  }
+  .resumen-card-gc {
+    padding: 22px 12px;
+    min-height: 90px;
+    gap: 14px;
+  }
+  .resumen-icono-gc {
+    font-size: 2.1rem;
+    width: 48px;
+    height: 48px;
+  }
+  .resumen-valor-gc {
+    font-size: 1.3rem;
+  }
+  .resumen-titulo-gc {
+    font-size: 1rem;
   }
 }
 
