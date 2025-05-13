@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import axios from 'axios';
 
 const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
   const { currentUser } = useAuth();
@@ -12,6 +13,27 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [success, setSuccess] = useState(false);
+  const [aportes, setAportes] = useState([]);
+  const [aporteId, setAporteId] = useState('');
+
+  useEffect(() => {
+    // Obtener aportes disponibles para el presupuesto de la cuenta
+    const fetchAportes = async () => {
+      try {
+        // Se asume que la cuenta tiene un campo presupuesto o presupuesto_id
+        const presupuestoId = cuenta.presupuesto || cuenta.presupuesto_id;
+        if (!presupuestoId) return;
+        const token = localStorage.getItem('access');
+        const res = await axios.get(`http://localhost:8000/api/aportes/?presupuesto=${presupuestoId}`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setAportes(res.data);
+      } catch (err) {
+        setAportes([]);
+      }
+    };
+    fetchAportes();
+  }, [cuenta]);
 
   const handleFileChange = (e) => {
     setComprobante(e.target.files[0] || null);
@@ -30,6 +52,7 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
       formData.append('monto_pagado', Number(montoPagado)); // Aseguramos que sea número
       formData.append('fecha_pago', fechaPago); // Debe ser YYYY-MM-DD
       if (comprobante) formData.append('comprobante', comprobante);
+      if (aporteId) formData.append('aporte', aporteId);
       // El usuario se asigna automáticamente en el backend
       const res = await fetch('http://localhost:8000/api/pagos/', {
         method: 'POST',
@@ -90,6 +113,18 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
             onChange={handleFileChange}
             disabled={loading}
           />
+        </div>
+        <div className="form-group">
+          <label>Aporte utilizado *</label>
+          <select value={aporteId} onChange={e => setAporteId(e.target.value)} required disabled={loading || aportes.length === 0}>
+            <option value="">-- Selecciona un aporte --</option>
+            {aportes.map(aporte => (
+              <option key={aporte.id} value={aporte.id}>
+                {aporte.nombreAportador || aporte.usuarioUsername || 'Aporte'} - ${aporte.monto}
+              </option>
+            ))}
+          </select>
+          {aportes.length === 0 && <div style={{color:'#e53935',marginTop:6}}>No hay aportes disponibles para este presupuesto.</div>}
         </div>
         <div className="form-group">
           <label>Usuario</label>

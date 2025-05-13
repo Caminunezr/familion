@@ -6,7 +6,7 @@ import Login from './login/login';
 import Signup from './components/Signup';
 import Dashboard from './components/dashboard/Dashboard';
 import GestionCuentas from './components/gestion-cuentas/GestionCuentas';
-import Presupuesto from './components/presupuesto/Presupuesto';
+import PresupuestoDashboard from './components/presupuesto/PresupuestoDashboard';
 import Historial from './components/historial/Historial';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminPage from './components/admin/AdminPage'; // Importar AdminPage
@@ -32,7 +32,7 @@ function App() {
             <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
             <Route path="/gestion-cuentas" element={<ProtectedRoute><GestionCuentas /></ProtectedRoute>} />
-            <Route path="/presupuesto" element={<ProtectedRoute><Presupuesto /></ProtectedRoute>} />
+            <Route path="/presupuesto" element={<ProtectedRoute><PresupuestoDashboard /></ProtectedRoute>} />
             <Route path="/historial" element={<ProtectedRoute><Historial /></ProtectedRoute>} />
             {/* Nueva Ruta de Administración */}
             <Route path="/admin" element={

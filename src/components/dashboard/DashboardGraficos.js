@@ -1,6 +1,15 @@
 import React from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
-// ChartJS debe estar registrado en el componente padre (Dashboard.js) o aquí
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from 'chart.js';
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 const DashboardGraficos = ({ datosPorCategoria, comparativaMeses }) => {
   const doughnutOptions = {

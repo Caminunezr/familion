@@ -3,12 +3,66 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import './NavBar.css';
 
+const COLOR_PALETTE = [
+  '#4caf50', '#2196f3', '#ff9800', '#f44336', '#607d8b', '#ba68c8', '#ffd600', '#00bcd4', '#e91e63', '#795548', '#8bc34a', '#009688', '#ff5722', '#3f51b5', '#cddc39', '#9c27b0'
+];
+
+const ProfileModal = ({ currentColor, onSave, onClose }) => {
+  const [color, setColor] = useState(currentColor || '#607d8b');
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState(null);
+
+  const handleSave = async () => {
+    setSaving(true); setError(null);
+    try {
+      const token = localStorage.getItem('access');
+      const res = await fetch('http://localhost:8000/api/profile/', {
+        method: 'PATCH',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ color }),
+      });
+      if (!res.ok) throw new Error('Error al guardar el color');
+      onSave(color);
+    } catch (e) {
+      setError('No se pudo guardar el color');
+    }
+    setSaving(false);
+  };
+
+  return (
+    <div className="presupuesto-modal-bg responsive-modal-bg" style={{display:'flex',zIndex:2000}}>
+      <div className="presupuesto-modal responsive-modal" style={{minWidth:320}}>
+        <button className="presupuesto-modal-close" onClick={onClose}>×</button>
+        <h3>Editar Perfil</h3>
+        <div style={{marginBottom:16}}>
+          <div style={{marginBottom:8,fontWeight:500}}>Color de usuario:</div>
+          <div style={{display:'flex',flexWrap:'wrap',gap:10}}>
+            {COLOR_PALETTE.map(c => (
+              <button key={c} onClick={()=>setColor(c)} style={{
+                width:32, height:32, borderRadius:'50%', border: color===c?'3px solid #1976d2':'2px solid #eee', background:c, cursor:'pointer', outline:'none', boxShadow: color===c?'0 0 0 2px #1976d2':'none', transition:'box-shadow 0.2s'}} aria-label={`Elegir color ${c}`}></button>
+            ))}
+          </div>
+        </div>
+        <button onClick={handleSave} disabled={saving} style={{width:'100%',background:'#4caf50',color:'#fff',padding:10,border:'none',borderRadius:6,marginTop:10}}>
+          {saving ? 'Guardando...' : 'Guardar'}
+        </button>
+        {error && <div className="presupuesto-feedback-error">{error}</div>}
+      </div>
+    </div>
+  );
+};
+
 const NavBar = () => {
   const { currentUser, logout } = useAuth();
   const navigate = useNavigate();
   const [isAdmin, setIsAdmin] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false); // Estado para menú móvil
   const navRef = useRef(null); // Ref para detectar clics fuera
+  const [showProfile, setShowProfile] = useState(false);
+  const [userColor, setUserColor] = useState(currentUser?.color || '#607d8b');
 
   const handleLogout = async () => {
     try {
@@ -78,7 +132,7 @@ const NavBar = () => {
             <button
               className="user-name-badge"
               style={{
-                background: 'linear-gradient(90deg,rgba(71, 71, 71, 0.71) 60%,rgb(83, 83, 83) 100%)',
+                background: userColor,
                 color: 'white',
                 border: 'none',
                 borderRadius: '18px',
@@ -87,13 +141,14 @@ const NavBar = () => {
                 fontSize: '1rem',
                 marginRight: 10,
                 boxShadow: '0 2px 6px rgba(25,118,210,0.10)',
-                cursor: 'default',
+                cursor: 'pointer',
                 letterSpacing: '0.5px',
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8
               }}
-              disabled
+              onClick={()=>setShowProfile(true)}
+              title="Editar perfil"
             >
               <span style={{fontSize:'1.1em',marginRight:4}}>👤</span>
               {currentUser.username || currentUser.displayName || currentUser.email}
@@ -101,6 +156,13 @@ const NavBar = () => {
             <button onClick={handleLogout} className="logout-button">
               Cerrar Sesión
             </button>
+            {showProfile && (
+              <ProfileModal
+                currentColor={userColor}
+                onSave={color => { setUserColor(color); setShowProfile(false); window.location.reload(); }}
+                onClose={()=>setShowProfile(false)}
+              />
+            )}
           </div>
         )}
       </div>

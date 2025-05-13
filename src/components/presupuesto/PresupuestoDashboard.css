@@ -1,0 +1,247 @@
+.presupuesto-dashboard {
+  max-width: 1100px;
+  margin: 32px auto 0 auto;
+  padding: 0 18px;
+  background: #f7f9fb;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px #0002;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.presupuesto-tarjetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 18px;
+  margin-bottom: 28px;
+  justify-content: center;
+}
+
+.presupuesto-tarjeta {
+  background: #fff;
+  border-radius: 14px;
+  padding: 22px 28px;
+  min-width: 180px;
+  text-align: center;
+  margin: 0;
+  box-shadow: 0 2px 8px #0001;
+  font-size: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.presupuesto-tarjeta:hover {
+  box-shadow: 0 6px 18px #0002;
+  transform: translateY(-3px) scale(1.03);
+}
+.presupuesto-tarjeta .valor {
+  font-size: 26px;
+  font-weight: 700;
+  margin-top: 4px;
+}
+.tarjeta-aportado { background: linear-gradient(90deg,#4caf50 80%,#81c784 100%); color: #fff; }
+.tarjeta-gastado { background: linear-gradient(90deg,#f44336 80%,#e57373 100%); color: #fff; }
+.tarjeta-ahorrado { background: linear-gradient(90deg,#2196f3 80%,#64b5f6 100%); color: #fff; }
+.tarjeta-deuda { background: linear-gradient(90deg,#ff9800 80%,#ffd54f 100%); color: #fff; }
+.tarjeta-sobrante { background: linear-gradient(90deg,#607d8b 80%,#b0bec5 100%); color: #fff; }
+
+.progreso-container {
+  margin: 24px 0;
+  background: #fff;
+  border-radius: 12px;
+  padding: 22px 18px;
+  box-shadow: 0 2px 8px #0001;
+}
+.progreso-label {
+  font-weight: 500;
+  margin-bottom: 10px;
+  color: #1976d2;
+}
+.progreso-barra {
+  height: 18px;
+  background: #e0e0e0;
+  border-radius: 9px;
+  overflow: hidden;
+  margin-top: 4px;
+}
+.progreso-relleno {
+  height: 100%;
+  background: linear-gradient(90deg,#4caf50 60%,#81c784 100%);
+  transition: width 0.5s;
+  border-radius: 9px;
+}
+
+.presupuesto-acciones {
+  display: flex;
+  gap: 18px;
+  margin: 32px 0 18px 0;
+  justify-content: center;
+}
+.presupuesto-acciones button {
+  padding: 12px 28px;
+  border: none;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  font-size: 1em;
+  background: #1976d2;
+  color: #fff;
+  box-shadow: 0 2px 8px #1976d220;
+  transition: background 0.2s, transform 0.2s;
+}
+.presupuesto-acciones button:hover {
+  background: #125ea7;
+  transform: translateY(-2px) scale(1.04);
+}
+
+/* Modales */
+.presupuesto-modal-bg {
+  position: fixed;
+  top: 0; left: 0; width: 100vw; height: 100vh;
+  background: #0008;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.presupuesto-modal {
+  background: #fff;
+  border-radius: 12px;
+  padding: 36px 28px 28px 28px;
+  min-width: 320px;
+  max-width: 400px;
+  box-shadow: 0 6px 32px #0003;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.presupuesto-modal-close {
+  position: absolute;
+  top: 10px;
+  right: 16px;
+  font-size: 22px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #888;
+  transition: color 0.2s;
+}
+.presupuesto-modal-close:hover {
+  color: #f44336;
+}
+.presupuesto-modal input {
+  padding: 10px 12px;
+  border: 1.5px solid #ced4da;
+  border-radius: 6px;
+  font-size: 1rem;
+  background: #f9f9f9;
+  margin-bottom: 8px;
+}
+.presupuesto-modal button {
+  margin-top: 8px;
+}
+
+/* Feedback */
+.presupuesto-feedback-error {
+  color: #d32f2f;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+.presupuesto-feedback-success {
+  color: #388e3c;
+  margin-bottom: 8px;
+  font-weight: 500;
+}
+
+@media (max-width: 900px) {
+  .presupuesto-dashboard {
+    padding: 0 6px;
+    border-radius: 10px;
+  }
+  .presupuesto-tarjetas {
+    gap: 10px;
+  }
+  .presupuesto-tarjeta {
+    padding: 16px 10px;
+    min-width: 120px;
+    font-size: 15px;
+  }
+  .progreso-container {
+    padding: 14px 6px;
+  }
+}
+
+@media (max-width: 600px) {
+  .presupuesto-dashboard {
+    padding: 0 2px;
+    border-radius: 0;
+    min-width: 0;
+  }
+  .presupuesto-tarjetas {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+  .presupuesto-tarjeta {
+    min-width: 0;
+    width: 100%;
+    font-size: 14px;
+    padding: 12px 6px;
+  }
+  .progreso-container {
+    padding: 10px 2px;
+  }
+  .presupuesto-modal {
+    min-width: 90vw;
+    max-width: 98vw;
+    padding: 18px 6px 12px 6px;
+  }
+}
+
+/* Mejoras de responsividad para el dashboard de presupuesto */
+.responsive-dashboard, .responsive-panel {
+  width: 100%;
+  max-width: 900px;
+  margin: auto;
+}
+.responsive-tarjetas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+}
+.responsive-chart-container {
+  max-width: 100vw;
+}
+.responsive-listados {
+  display: flex;
+  gap: 16px;
+}
+.responsive-modal {
+  min-width: 340px;
+}
+@media (max-width: 700px) {
+  .responsive-tarjetas {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .responsive-panel {
+    padding: 8px;
+  }
+  .responsive-chart-container {
+    max-width: 100vw;
+  }
+  .responsive-listados {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .responsive-modal {
+    width: 95vw;
+    min-width: unset;
+    padding: 10px 4px;
+  }
+}

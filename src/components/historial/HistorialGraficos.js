@@ -1,6 +1,17 @@
 import React from 'react';
 import { Doughnut, Bar } from 'react-chartjs-2';
 import styles from './Historial.module.css';
+import {
+  Chart as ChartJS,
+  ArcElement,
+  BarElement,
+  CategoryScale,
+  LinearScale,
+  Tooltip,
+  Legend
+} from 'chart.js';
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
+
 // Asegúrate que ChartJS esté registrado (probablemente en Dashboard.js o Historial.js)
 
 // Definir estructura por defecto más robusta

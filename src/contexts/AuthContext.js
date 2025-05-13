@@ -7,7 +7,7 @@ export function useAuth() {
 }
 
 export function AuthProvider({ children }) {
-  const [currentUser, setCurrentUser] = useState(null); // Almacenará { username, id }
+  const [currentUser, setCurrentUser] = useState(null); // Almacenará { username, id, color }
   const [groupId, setGroupId] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -57,9 +57,9 @@ export function AuthProvider({ children }) {
       const profile = await res.json();
       const userId = profile.user_id || profile.user?.id; // Intenta obtener el ID
       const username = profile.user?.username || profile.user; // Intenta obtener el username
-
+      const color = profile.color || (profile.user && profile.user.color) || '#607d8b';
       if (userId && username) {
-        setCurrentUser({ id: userId, username: username });
+        setCurrentUser({ id: userId, username: username, color });
         setGroupId(profile.group_id);
       } else {
         console.error("No se pudo obtener userId o username del perfil:", profile);

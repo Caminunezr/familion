@@ -1,0 +1,589 @@
+import React, { useEffect, useState } from 'react';
+import './PresupuestoDashboard.css';
+import NavBar from '../NavBar';
+import {
+  getPresupuestos,
+  getAportes,
+  getGastos,
+  getDeudas,
+  getAhorros,
+  getMovimientos,
+  createAporte,
+  createGasto,
+  createDeuda,
+  createAhorro,
+  createPresupuesto,
+  deleteAporte,
+  deleteAhorro,
+  deleteDeuda,
+  deleteGasto
+} from '../../services/presupuesto';
+import { Bar } from 'react-chartjs-2';
+import { Bar as BarChart } from 'react-chartjs-2';
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  BarElement,
+  Title,
+  Tooltip,
+  Legend
+} from 'chart.js';
+import { useAuth } from '../../contexts/AuthContext';
+ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
+
+const formatoMoneda = valor => valor?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
+
+const Tarjeta = ({ titulo, valor, color, clase }) => (
+  <div className={`presupuesto-tarjeta ${clase || ''}`} style={{ background: color }}>
+    <div>{titulo}</div>
+    <div className="valor">{valor}</div>
+  </div>
+);
+
+const initialForm = { monto: '', comentario: '', usuarioId: '' };
+
+const PresupuestoDashboard = () => {
+  const { currentUser } = useAuth();
+  const [usuarios, setUsuarios] = useState([]);
+  const [presupuesto, setPresupuesto] = useState(null);
+  const [aportes, setAportes] = useState([]);
+  const [gastos, setGastos] = useState([]);
+  const [deudas, setDeudas] = useState([]);
+  const [ahorros, setAhorros] = useState([]);
+  const [movimientos, setMovimientos] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [showAporte, setShowAporte] = useState(false);
+  const [showDeuda, setShowDeuda] = useState(false);
+  const [showAhorro, setShowAhorro] = useState(false);
+  const [form, setForm] = useState(initialForm);
+  const [accionLoading, setAccionLoading] = useState(false);
+  const [accionError, setAccionError] = useState(null);
+  const [accionSuccess, setAccionSuccess] = useState(null);
+  const [showCrearPresupuesto, setShowCrearPresupuesto] = useState(false);
+  const [nuevoPresupuesto, setNuevoPresupuesto] = useState({ montoObjetivo: '', fechaMes: '' });
+  const [crearLoading, setCrearLoading] = useState(false);
+  const [crearError, setCrearError] = useState(null);
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const mesActual = new Date().toISOString().slice(0, 7) + '-01'; // "2025-05-01"
+        const resPres = await getPresupuestos({ fecha_mes: mesActual });
+        const presupuestoActivo = resPres.data[0];
+        setPresupuesto(presupuestoActivo);
+        if (presupuestoActivo) {
+          const [resAportes, resGastos, resDeudas, resAhorros, resMov] = await Promise.all([
+            getAportes({ presupuesto: presupuestoActivo.id }),
+            getGastos({ presupuesto: presupuestoActivo.id }),
+            getDeudas({ presupuesto: presupuestoActivo.id }),
+            getAhorros({ presupuesto: presupuestoActivo.id }),
+            getMovimientos({ presupuesto: presupuestoActivo.id })
+          ]);
+          setAportes(resAportes.data);
+          setGastos(resGastos.data);
+          setDeudas(resDeudas.data);
+          setAhorros(resAhorros.data);
+          setMovimientos(resMov.data);
+        }
+      } catch (err) {
+        setError('Error al cargar los datos de presupuesto');
+      }
+      setLoading(false);
+    };
+    fetchData();
+  }, []);
+
+  useEffect(() => {
+    async function fetchUsuarios() {
+      try {
+        const token = localStorage.getItem('access');
+        const res = await fetch('http://localhost:8000/api/usuarios/', {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setUsuarios(data);
+        } else {
+          setUsuarios([]);
+        }
+      } catch {
+        setUsuarios([]);
+      }
+    }
+    fetchUsuarios();
+  }, []);
+
+  const recargarDatos = async () => {
+    setLoading(true);
+    try {
+      const mesActual = new Date().toISOString().slice(0, 7) + '-01';
+      const resPres = await getPresupuestos({ fecha_mes: mesActual });
+      const presupuestoActivo = resPres.data[0];
+      setPresupuesto(presupuestoActivo);
+      if (presupuestoActivo) {
+        const [resAportes, resGastos, resDeudas, resAhorros, resMov] = await Promise.all([
+          getAportes({ presupuesto: presupuestoActivo.id }),
+          getGastos({ presupuesto: presupuestoActivo.id }),
+          getDeudas({ presupuesto: presupuestoActivo.id }),
+          getAhorros({ presupuesto: presupuestoActivo.id }),
+          getMovimientos({ presupuesto: presupuestoActivo.id })
+        ]);
+        setAportes(resAportes.data);
+        setGastos(resGastos.data);
+        setDeudas(resDeudas.data);
+        setAhorros(resAhorros.data);
+        setMovimientos(resMov.data);
+      }
+    } catch (err) {
+      setError('Error al recargar los datos de presupuesto');
+    }
+    setLoading(false);
+  };
+
+  // Handlers para formularios
+  const handleInputChange = e => setForm({ ...form, [e.target.name]: e.target.value });
+
+  const handleAporte = async () => {
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      const usuarioId = form.usuarioId || currentUser?.id;
+      const nombreAportador = usuarios.find(u => u.id === usuarioId)?.username || currentUser?.username;
+      await createAporte({
+        ...form,
+        presupuesto: presupuesto.id,
+        usuario: usuarioId,
+        nombre_aportador: nombreAportador
+      });
+      setShowAporte(false); setForm(initialForm); setAccionSuccess('Aporte registrado');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al registrar aporte'); }
+    setAccionLoading(false);
+  };
+
+  const handleDeuda = async () => {
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await createDeuda({ ...form, presupuesto: presupuesto.id });
+      setShowDeuda(false); setForm(initialForm); setAccionSuccess('Deuda registrada');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al registrar deuda'); }
+    setAccionLoading(false);
+  };
+  const handleAhorro = async () => {
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await createAhorro({ ...form, presupuesto: presupuesto.id });
+      setShowAhorro(false); setForm(initialForm); setAccionSuccess('Ahorro registrado');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al registrar ahorro'); }
+    setAccionLoading(false);
+  };
+
+  const handleEliminarAporte = async (aporteId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este aporte?')) return;
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await deleteAporte(aporteId);
+      setAccionSuccess('Aporte eliminado');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al eliminar el aporte'); }
+    setAccionLoading(false);
+  };
+
+  const handleEliminarAhorro = async (ahorroId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este ahorro?')) return;
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await deleteAhorro(ahorroId);
+      setAccionSuccess('Ahorro eliminado');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al eliminar el ahorro'); }
+    setAccionLoading(false);
+  };
+
+  const handleEliminarDeuda = async (deudaId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar esta deuda?')) return;
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await deleteDeuda(deudaId);
+      setAccionSuccess('Deuda eliminada');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al eliminar la deuda'); }
+    setAccionLoading(false);
+  };
+
+  const handleEliminarGasto = async (gastoId) => {
+    if (!window.confirm('¿Seguro que deseas eliminar este gasto?')) return;
+    setAccionLoading(true); setAccionError(null); setAccionSuccess(null);
+    try {
+      await deleteGasto(gastoId);
+      setAccionSuccess('Gasto eliminado');
+      await recargarDatos();
+    } catch (e) { setAccionError('Error al eliminar el gasto'); }
+    setAccionLoading(false);
+  };
+
+  if (loading) return <><NavBar /><div className="presupuesto-dashboard"><div className="presupuesto-panel">Cargando presupuesto...</div></div></>;
+  if (error) return <><NavBar /><div className="presupuesto-dashboard"><div className="presupuesto-panel" style={{ color: 'red' }}>{error}</div></div></>;
+  if (!presupuesto) return (
+    <>
+      <NavBar />
+      <div className="presupuesto-dashboard">
+        <div className="presupuesto-panel">
+          <div>No hay presupuesto para este mes.</div>
+          <button style={{marginTop: 20, background: '#4caf50', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: 6, fontWeight: 600}}
+            onClick={() => setShowCrearPresupuesto(true)}>
+            Crear Presupuesto Mensual
+          </button>
+          {showCrearPresupuesto && (
+            <div className="presupuesto-modal-bg" style={{display: 'flex'}}>
+              <div className="presupuesto-modal">
+                <button className="presupuesto-modal-close" onClick={()=>setShowCrearPresupuesto(false)}>×</button>
+                <h3>Crear Presupuesto Mensual</h3>
+                <input
+                  name="montoObjetivo"
+                  type="number"
+                  placeholder="Monto objetivo (CLP)"
+                  value={nuevoPresupuesto.montoObjetivo}
+                  onChange={e => setNuevoPresupuesto({ ...nuevoPresupuesto, montoObjetivo: e.target.value })}
+                  style={{width:'100%',marginBottom:12}}
+                />
+                <input
+                  name="fechaMes"
+                  type="month"
+                  placeholder="Mes"
+                  value={nuevoPresupuesto.fechaMes}
+                  onChange={e => setNuevoPresupuesto({ ...nuevoPresupuesto, fechaMes: e.target.value })}
+                  style={{width:'100%',marginBottom:12}}
+                />
+                <button
+                  onClick={async () => {
+                    setCrearLoading(true); setCrearError(null);
+                    try {
+                      const fechaMes = nuevoPresupuesto.fechaMes ? `${nuevoPresupuesto.fechaMes}-01` : new Date().toISOString().slice(0,7) + '-01';
+                      await createPresupuesto({
+                        monto_objetivo: Number(nuevoPresupuesto.montoObjetivo),
+                        fecha_mes: fechaMes,
+                        familia: "familia_camnr"
+                      });
+                      setShowCrearPresupuesto(false);
+                      setNuevoPresupuesto({ montoObjetivo: '', fechaMes: '' });
+                      await recargarDatos();
+                    } catch (e) {
+                      // Mostrar el error real del backend si existe
+                      setCrearError(e.response?.data ? JSON.stringify(e.response.data) : 'Error al crear presupuesto');
+                    }
+                    setCrearLoading(false);
+                  }}
+                  disabled={crearLoading || !nuevoPresupuesto.montoObjetivo || !nuevoPresupuesto.fechaMes}
+                  style={{width:'100%',background:'#4caf50',color:'#fff',padding:10,border:'none',borderRadius:6,marginBottom:8}}
+                >
+                  {crearLoading ? 'Creando...' : 'Crear'}
+                </button>
+                {crearError && <div className="presupuesto-feedback-error">{crearError}</div>}
+              </div>
+            </div>
+          )}
+        </div>
+      </div>
+    </>
+  );
+
+  // Cálculos
+  const totalAportado = aportes.reduce((sum, a) => sum + parseFloat(a.monto), 0);
+  const totalGastado = gastos.reduce((sum, g) => sum + parseFloat(g.monto), 0); // Solo gastos = pagos de cuentas
+  const totalAhorrado = ahorros.reduce((sum, a) => sum + parseFloat(a.monto), 0);
+  const totalDeuda = deudas.filter(d => !d.pagado).reduce((sum, d) => sum + parseFloat(d.monto), 0);
+  // Solo considerar gastos como dinero ocupado
+  const saldoAportes = Math.max(0, totalAportado - totalGastado);
+
+  // --- NUEVO: Gráfico de aportes por usuario ---
+  const resumenAportesPorUsuario = {};
+  aportes.forEach(a => {
+    const nombre = a.nombreAportador || a.usuarioUsername || 'Sin nombre';
+    resumenAportesPorUsuario[nombre] = (resumenAportesPorUsuario[nombre] || 0) + parseFloat(a.monto);
+  });
+  const usuariosAporte = Object.keys(resumenAportesPorUsuario);
+  const montosAporte = usuariosAporte.map(u => resumenAportesPorUsuario[u]);
+  // Obtener color personalizado de cada usuario (si existe)
+  const getColorUsuario = (nombre) => {
+    const user = usuarios.find(u => u.username === nombre);
+    return user?.color || '#4caf50';
+  };
+  const coloresAportePersonalizados = usuariosAporte.map(nombre => getColorUsuario(nombre));
+  const dataAportesPorUsuario = {
+    labels: usuariosAporte,
+    datasets: [
+      {
+        label: 'Aportado',
+        data: montosAporte,
+        backgroundColor: coloresAportePersonalizados,
+        borderRadius: 6,
+      },
+    ],
+  };
+  const optionsAportesPorUsuario = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: 'Aportes por Usuario' },
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => formatoMoneda(v) } },
+      x: { grid: { display: false } },
+    },
+  };
+
+  // El gráfico solo muestra aportes restantes vs. gastados en cuentas
+  const dataBar = {
+    labels: ['Aportes Restantes', 'Aportes Ocupados (pagos de cuentas)'],
+    datasets: [
+      {
+        label: 'CLP',
+        data: [saldoAportes, totalGastado],
+        backgroundColor: ['#4caf50', '#f44336'],
+        borderRadius: 6,
+      },
+    ],
+  };
+  const optionsBar = {
+    responsive: true,
+    plugins: {
+      legend: { display: false },
+      title: { display: true, text: 'Estado de los Aportes' },
+    },
+    scales: {
+      y: { beginAtZero: true, ticks: { callback: v => formatoMoneda(v) } },
+      x: { grid: { display: false } },
+    },
+  };
+
+  // Ordenar movimientos del más reciente al más antiguo
+  const movimientosOrdenados = [...movimientos].sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+
+  return (
+    <>
+      <NavBar />
+      <div className="presupuesto-dashboard responsive-dashboard">
+        <div className="presupuesto-panel responsive-panel">
+          <h2 style={{marginBottom: 16}}>Presupuesto Familiar - {presupuesto.fechaMes ? presupuesto.fechaMes.slice(0,7) : ''}</h2>
+          <div className="presupuesto-tarjetas responsive-tarjetas">
+            <Tarjeta titulo="Aportado" valor={formatoMoneda(totalAportado)} color="#4caf50" clase="tarjeta-aportado" />
+            <Tarjeta titulo="Gastado" valor={formatoMoneda(totalGastado)} color="#f44336" clase="tarjeta-gastado" />
+            <Tarjeta titulo="Ahorrado" valor={formatoMoneda(totalAhorrado)} color="#2196f3" clase="tarjeta-ahorrado" />
+            <Tarjeta titulo="Deuda activa" valor={formatoMoneda(totalDeuda)} color="#ff9800" clase="tarjeta-deuda" />
+            <Tarjeta titulo="Sobrante" valor={formatoMoneda(saldoAportes)} color="#607d8b" clase="tarjeta-sobrante" />
+          </div>
+          {/* Gráfico de barras en vez de barra de progreso */}
+          <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto 0', width: '100%', overflowX: 'auto'}}>
+            <Bar data={dataBar} options={optionsBar} />
+          </div>
+          {/* Gráfico de aportes por usuario */}
+          <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto', width: '100%', overflowX: 'auto'}}>
+            <BarChart data={dataAportesPorUsuario} options={optionsAportesPorUsuario} />
+          </div>
+          <div className="presupuesto-acciones responsive-acciones">
+            <button style={{background:'#4caf50'}} onClick={()=>setShowAporte(true)}>Agregar Aporte</button>
+            <button style={{background:'#ff9800'}} onClick={()=>setShowDeuda(true)}>Registrar Deuda</button>
+            <button style={{background:'#2196f3'}} onClick={()=>setShowAhorro(true)}>Registrar Ahorro</button>
+          </div>
+          {accionError && <div className="presupuesto-feedback-error">{accionError}</div>}
+          {accionSuccess && <div className="presupuesto-feedback-success">{accionSuccess}</div>}
+
+          {/* Listados detallados */}
+          <div className="presupuesto-listados responsive-listados">
+            <div className="presupuesto-listado-col">
+              <h4>Aportes</h4>
+              <ul className="presupuesto-lista">
+                {aportes.length === 0 && <li style={{color:'#888'}}>No hay aportes registrados.</li>}
+                {aportes.map(a => (
+                  <li key={a.id}>
+                    <b>{formatoMoneda(a.monto)}</b> por {a.nombreAportador || a.usuarioUsername || 'Sin nombre'}
+                    {a.comentario && <span style={{color:'#888'}}> — {a.comentario}</span>}
+                    <button style={{marginLeft:8, color:'#fff', background:'#e53935', border:'none', borderRadius:4, padding:'2px 8px', fontSize:'0.95em', cursor:'pointer'}}
+                      onClick={() => handleEliminarAporte(a.id)} disabled={accionLoading}>
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="presupuesto-listado-col">
+              <h4>Gastos</h4>
+              <ul className="presupuesto-lista">
+                {gastos.length === 0 && <li style={{color:'#888'}}>No hay gastos registrados.</li>}
+                {gastos.map(g => (
+                  <li key={g.id} style={{display:'flex',alignItems:'center',gap:8}}>
+                    {/* Icono según categoría de gasto */}
+                    {(() => {
+                      // Usar la categoría real del gasto para el ícono
+                      const categoria = (g.categoria_nombre || g.categoria || '').toLowerCase();
+                      if (categoria.includes('agua')) return <span title="Agua" style={{fontSize:20}}>💧</span>;
+                      if (categoria.includes('luz') || categoria.includes('electricidad')) return <span title="Luz" style={{fontSize:20}}>💡</span>;
+                      if (categoria.includes('gas')) return <span title="Gas" style={{fontSize:20}}>🔥</span>;
+                      if (categoria.includes('internet')) return <span title="Internet" style={{fontSize:20}}>🌐</span>;
+                      if (categoria.includes('arriendo') || categoria.includes('renta')) return <span title="Arriendo" style={{fontSize:20}}>🏠</span>;
+                      if (categoria.includes('telefono')) return <span title="Teléfono" style={{fontSize:20}}>📞</span>;
+                      if (categoria.includes('colegio') || categoria.includes('educacion')) return <span title="Educación" style={{fontSize:20}}>🎓</span>;
+                      if (categoria.includes('salud') || categoria.includes('isapre') || categoria.includes('fonasa')) return <span title="Salud" style={{fontSize:20}}>🩺</span>;
+                      if (categoria.includes('supermercado') || categoria.includes('comida')) return <span title="Supermercado" style={{fontSize:20}}>🛒</span>;
+                      return <span title="Otro" style={{fontSize:20}}>💸</span>;
+                    })()}
+                    <b>{formatoMoneda(g.monto)}</b>
+                    {g.cuenta_nombre && <span style={{color:'#888'}}> — {g.cuenta_nombre}</span>}
+                    {g.descripcion && <span style={{color:'#888'}}> — {g.descripcion}</span>}
+                    <button style={{marginLeft:8, color:'#fff', background:'#e53935', border:'none', borderRadius:4, padding:'2px 8px', fontSize:'0.95em', cursor:'pointer'}}
+                      onClick={() => handleEliminarGasto(g.id)} disabled={accionLoading}>
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="presupuesto-listado-col">
+              <h4>Ahorros</h4>
+              <ul className="presupuesto-lista">
+                {ahorros.length === 0 && <li style={{color:'#888'}}>No hay ahorros registrados.</li>}
+                {ahorros.map(a => (
+                  <li key={a.id}>
+                    <b>{formatoMoneda(a.monto)}</b> {a.comentario && <span style={{color:'#888'}}>— {a.comentario}</span>}
+                    <button style={{marginLeft:8, color:'#fff', background:'#2196f3', border:'none', borderRadius:4, padding:'2px 8px', fontSize:'0.95em', cursor:'pointer'}}
+                      onClick={() => handleEliminarAhorro(a.id)} disabled={accionLoading}>
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+            <div className="presupuesto-listado-col">
+              <h4>Deudas</h4>
+              <ul className="presupuesto-lista">
+                {deudas.length === 0 && <li style={{color:'#888'}}>No hay deudas registradas.</li>}
+                {deudas.map(d => (
+                  <li key={d.id}>
+                    <b>{formatoMoneda(d.monto)}</b> {d.pagado ? <span style={{color:'#43a047'}}>(Pagada)</span> : <span style={{color:'#e53935'}}>(Pendiente)</span>}
+                    {d.comentario && <span style={{color:'#888'}}> — {d.comentario}</span>}
+                    <button style={{marginLeft:8, color:'#fff', background:'#ff9800', border:'none', borderRadius:4, padding:'2px 8px', fontSize:'0.95em', cursor:'pointer'}}
+                      onClick={() => handleEliminarDeuda(d.id)} disabled={accionLoading}>
+                      Eliminar
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          </div>
+
+          {/* Historial de movimientos */}
+          <div className="presupuesto-historial responsive-historial">
+            <h4>Historial de Movimientos</h4>
+            {movimientosOrdenados.length === 0 ? (
+              <ul className="presupuesto-lista"><li style={{color:'#888'}}>No hay movimientos registrados.</li></ul>
+            ) : (
+              <>
+                <div style={{display:'flex',flexDirection:'column',gap:10}}>
+                  {movimientosOrdenados.slice(0,3).map(m => (
+                    <div key={m.id} className="movimiento-tarjeta" style={{background:'#f7f9fb',borderRadius:10,padding:12,boxShadow:'0 2px 8px rgba(25,118,210,0.07)'}}>
+                      <div style={{fontWeight:600,color:'#1976d2'}}>{m.tipo.charAt(0).toUpperCase() + m.tipo.slice(1)}</div>
+                      <div style={{fontSize:15}}>{formatoMoneda(m.monto)}</div>
+                      {m.descripcion && <div style={{color:'#888',fontSize:13,marginTop:2}}>{m.descripcion}</div>}
+                      <div style={{color:'#888',fontSize:12,marginTop:4}}>{new Date(m.fecha).toLocaleString('es-CL')}</div>
+                    </div>
+                  ))}
+                </div>
+                {movimientosOrdenados.length > 3 && (
+                  <details style={{marginTop:12}}>
+                    <summary style={{cursor:'pointer',color:'#1976d2',fontWeight:600,fontSize:15}}>Ver más movimientos ({movimientosOrdenados.length - 3} más)</summary>
+                    <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:8}}>
+                      {movimientosOrdenados.slice(3).map(m => (
+                        <div key={m.id} className="movimiento-tarjeta" style={{background:'#f7f9fb',borderRadius:10,padding:12,boxShadow:'0 2px 8px rgba(25,118,210,0.07)'}}>
+                          <div style={{fontWeight:600,color:'#1976d2'}}>{m.tipo.charAt(0).toUpperCase() + m.tipo.slice(1)}</div>
+                          <div style={{fontSize:15}}>{formatoMoneda(m.monto)}</div>
+                          {m.descripcion && <div style={{color:'#888',fontSize:13,marginTop:2}}>{m.descripcion}</div>}
+                          <div style={{color:'#888',fontSize:12,marginTop:4}}>{new Date(m.fecha).toLocaleString('es-CL')}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </details>
+                )}
+              </>
+            )}
+          </div>
+
+          {/* Desglose por usuario */}
+          <div className="presupuesto-desglose-usuario responsive-desglose">
+            <h4>Desglose de aportes por usuario</h4>
+            <ul className="presupuesto-lista">
+              {(() => {
+                const resumen = {};
+                aportes.forEach(a => {
+                  const nombre = a.nombreAportador || a.usuarioUsername || 'Sin nombre';
+                  resumen[nombre] = (resumen[nombre] || 0) + parseFloat(a.monto);
+                });
+                const usuarios = Object.keys(resumen);
+                if (usuarios.length === 0) return <li style={{color:'#888'}}>No hay aportes registrados.</li>;
+                return usuarios.map(nombre => (
+                  <li key={nombre}><b>{nombre}:</b> {formatoMoneda(resumen[nombre])}</li>
+                ));
+              })()}
+            </ul>
+          </div>
+
+          {/* Modales para formularios */}
+          <div className="presupuesto-modal-bg responsive-modal-bg" style={{display: showAporte ? 'flex' : 'none'}}>
+            <div className="presupuesto-modal responsive-modal">
+              <button className="presupuesto-modal-close" onClick={()=>setShowAporte(false)}>×</button>
+              <h3>Agregar Aporte</h3>
+              <input name="monto" type="number" placeholder="Monto" value={form.monto} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <input name="comentario" placeholder="Comentario" value={form.comentario} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <label>Aportado por</label>
+              <select
+                name="usuarioId"
+                value={form.usuarioId || currentUser?.id || ''}
+                onChange={handleInputChange}
+                style={{width:'100%',marginBottom:12}}
+              >
+                {usuarios.length === 0 && (
+                  <option value={currentUser?.id || ''}>{currentUser?.username || 'Tú'}</option>
+                )}
+                {usuarios.map(u => (
+                  <option key={u.id} value={u.id}>{u.username}</option>
+                ))}
+              </select>
+              <button onClick={handleAporte} disabled={accionLoading} style={{width:'100%',background:'#4caf50',color:'#fff',padding:10,border:'none',borderRadius:6}}>
+                {accionLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+          <div className="presupuesto-modal-bg responsive-modal-bg" style={{display: showDeuda ? 'flex' : 'none'}}>
+            <div className="presupuesto-modal responsive-modal">
+              <button className="presupuesto-modal-close" onClick={()=>setShowDeuda(false)}>×</button>
+              <h3>Registrar Deuda</h3>
+              <input name="monto" type="number" placeholder="Monto" value={form.monto} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <input name="comentario" placeholder="Comentario" value={form.comentario} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <button onClick={handleDeuda} disabled={accionLoading} style={{width:'100%',background:'#ff9800',color:'#fff',padding:10,border:'none',borderRadius:6}}>
+                {accionLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+          <div className="presupuesto-modal-bg responsive-modal-bg" style={{display: showAhorro ? 'flex' : 'none'}}>
+            <div className="presupuesto-modal responsive-modal">
+              <button className="presupuesto-modal-close" onClick={()=>setShowAhorro(false)}>×</button>
+              <h3>Registrar Ahorro</h3>
+              <input name="monto" type="number" placeholder="Monto" value={form.monto} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <input name="comentario" placeholder="Comentario" value={form.comentario} onChange={handleInputChange} style={{width:'100%',marginBottom:12}} />
+              <button onClick={handleAhorro} disabled={accionLoading} style={{width:'100%',background:'#2196f3',color:'#fff',padding:10,border:'none',borderRadius:6}}>
+                {accionLoading ? 'Guardando...' : 'Guardar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default PresupuestoDashboard;
