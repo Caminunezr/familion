@@ -1,7 +1,8 @@
 from rest_framework import routers
 from .views import (
     CuentaViewSet, PagoViewSet, profile_view, ProveedoresPorCategoriaView, TransferirSobranteView, CerrarMesView,
-    PresupuestoMensualViewSet, AporteViewSet, GastoPresupuestoViewSet, DeudaPresupuestoViewSet, AhorroPresupuestoViewSet, MovimientoPresupuestoViewSet
+    PresupuestoMensualViewSet, AporteViewSet, GastoPresupuestoViewSet, DeudaPresupuestoViewSet, AhorroPresupuestoViewSet, MovimientoPresupuestoViewSet,
+    UsuariosListView
 )
 from django.urls import path
 
@@ -17,6 +18,7 @@ router.register(r'movimientos-presupuesto', MovimientoPresupuestoViewSet)
 
 urlpatterns = router.urls + [
     path('profile/', profile_view, name='profile'),
+    path('usuarios/', UsuariosListView.as_view(), name='usuarios-list'),
     path('proveedores-por-categoria/', ProveedoresPorCategoriaView.as_view(), name='proveedores-por-categoria'),
     path('presupuesto/<int:presupuesto_id>/transferir-sobrante/', TransferirSobranteView.as_view(), name='transferir-sobrante'),
     path('presupuesto/<int:presupuesto_id>/cerrar-mes/', CerrarMesView.as_view(), name='cerrar-mes'),

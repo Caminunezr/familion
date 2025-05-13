@@ -15,6 +15,7 @@ from rest_framework.decorators import api_view, permission_classes, authenticati
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
+from django.contrib.auth.models import User
 
 class CuentaViewSet(viewsets.ModelViewSet):
     queryset = Cuenta.objects.all()
@@ -306,3 +307,18 @@ class MovimientoPresupuestoViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_fields = ['presupuesto', 'tipo', 'usuario']
+
+class UsuariosListView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        perfiles = Profile.objects.select_related('user').all()
+        data = [
+            {
+                'id': p.user.id,
+                'username': p.user.username,
+                'color': p.color
+            }
+            for p in perfiles
+        ]
+        return Response(data)
