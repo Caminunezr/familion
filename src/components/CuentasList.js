@@ -22,6 +22,14 @@ const categoriaClase = {
   'Otros': 'otros',
 };
 
+const formatMonto = (monto) => {
+  return new Intl.NumberFormat('es-CL', {
+    style: 'currency',
+    currency: 'CLP',
+    minimumFractionDigits: 0
+  }).format(monto);
+};
+
 const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel, onDeleteCuenta }) => {
   const { currentUser } = useAuth();
 
@@ -65,34 +73,36 @@ const CuentasList = ({ cuentas, onSelectCuenta, estadoLabel, onDeleteCuenta }) =
               🗑️
             </button>
             <div className="cuenta-card-content">
-              <div className="cuenta-header">
+              <div className="cuenta-icono-grande">
+                <span className="categoria-icon-grande">{categoriaIcono[cat]}</span>
+              </div>
+              <div className="cuenta-header mejorada">
                 <h3>
-                  <span className="categoria-icon">{categoriaIcono[cat]}</span>
                   {cuenta.nombre}
                 </h3>
-                <div className="cuenta-badges">
-                  <span className={`cuenta-categoria ${catClase}`}>{cat}</span>
-                  <span className={`cuenta-estado estado-${estado}`}>{
+                <div className="cuenta-badges mejorada">
+                  <span className={`cuenta-categoria mejorada ${catClase}`}>{cat}</span>
+                  <span className={`cuenta-estado mejorada estado-${estado}`}>{
                     estado === 'pagado' ? 'Pagada' : estado === 'vencida' ? 'Vencida' : 'Pendiente'
                   }</span>
                   {cuenta.facturaUrl && (
-                    <span className="factura-icon" title="Tiene factura/boleta">📄</span>
+                    <span className="factura-icon mejorada" title="Tiene factura/boleta">📄</span>
                   )}
                 </div>
               </div>
-              <div className="cuenta-details">
+              <div className="cuenta-details mejorada">
+                <div className="cuenta-amount-grande"><strong>Monto:</strong> <span className="monto-destacado">{formatMonto(cuenta.monto)}</span></div>
+                <div><strong>Pagado:</strong> {formatMonto(cuenta.totalPagado || 0)}</div>
                 <div><strong>Proveedor:</strong> {cuenta.proveedor || 'No especificado'}</div>
-                <div className="cuenta-amount"><strong>Monto:</strong> ${cuenta.monto.toFixed(2)}</div>
-                <div><strong>Pagado:</strong> ${(cuenta.totalPagado || 0).toFixed(2)}</div>
                 <div><strong>Vencimiento:</strong> {formatFecha(cuenta.fechaVencimiento)}</div>
               </div>
               {cuenta.facturaUrl && (
-                <div className="cuenta-factura">
+                <div className="cuenta-factura mejorada">
                   <span className="factura-icon">📄</span>
                   Factura disponible
                 </div>
               )}
-              <div className="cuenta-creator">
+              <div className="cuenta-creator mejorada">
                 <span className="creator-label">Creado por:</span>
                 <span className="creator-value">
                   {cuenta.creadorId === currentUser.uid ? 'Tú' : (cuenta.creadorNombre || 'Familiar')}

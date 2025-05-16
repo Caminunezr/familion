@@ -9,14 +9,14 @@ import {
   getAhorros,
   getMovimientos,
   createAporte,
-  createGasto,
   createDeuda,
   createAhorro,
   createPresupuesto,
   deleteAporte,
   deleteAhorro,
   deleteDeuda,
-  deleteGasto
+  deleteGasto,
+  cerrarMes
 } from '../../services/presupuesto';
 import { Bar } from 'react-chartjs-2';
 import { Bar as BarChart } from 'react-chartjs-2';
@@ -30,6 +30,9 @@ import {
   Legend
 } from 'chart.js';
 import { useAuth } from '../../contexts/AuthContext';
+import ReactDatePicker from 'react-datepicker';
+import 'react-datepicker/dist/react-datepicker.css';
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend);
 
 const formatoMoneda = valor => valor?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
@@ -65,6 +68,9 @@ const PresupuestoDashboard = () => {
   const [nuevoPresupuesto, setNuevoPresupuesto] = useState({ montoObjetivo: '', fechaMes: '' });
   const [crearLoading, setCrearLoading] = useState(false);
   const [crearError, setCrearError] = useState(null);
+  const [cerrarLoading, setCerrarLoading] = useState(false);
+  const [cerrarError, setCerrarError] = useState(null);
+  const [cerrarSuccess, setCerrarSuccess] = useState(null);
 
   useEffect(() => {
     const fetchData = async () => {
@@ -142,6 +148,20 @@ const PresupuestoDashboard = () => {
       setError('Error al recargar los datos de presupuesto');
     }
     setLoading(false);
+  };
+
+  const handleCerrarMes = async () => {
+    if (!presupuesto?.id) return;
+    if (!window.confirm('¿Estás seguro de que deseas cerrar el mes? Esta acción es irreversible.')) return;
+    setCerrarLoading(true); setCerrarError(null); setCerrarSuccess(null);
+    try {
+      await cerrarMes(presupuesto.id);
+      setCerrarSuccess('¡Mes cerrado correctamente!');
+      await recargarDatos();
+    } catch (e) {
+      setCerrarError('Error al cerrar el mes');
+    }
+    setCerrarLoading(false);
   };
 
   // Handlers para formularios
@@ -235,31 +255,62 @@ const PresupuestoDashboard = () => {
       <div className="presupuesto-dashboard">
         <div className="presupuesto-panel">
           <div>No hay presupuesto para este mes.</div>
-          <button style={{marginTop: 20, background: '#4caf50', color: '#fff', padding: '10px 18px', border: 'none', borderRadius: 6, fontWeight: 600}}
-            onClick={() => setShowCrearPresupuesto(true)}>
-            Crear Presupuesto Mensual
+          <button
+            style={{
+              marginTop: 20,
+              background: 'linear-gradient(90deg,#43a047 80%,#66bb6a 100%)',
+              color: '#fff',
+              padding: '14px 28px',
+              border: 'none',
+              borderRadius: 10,
+              fontWeight: 700,
+              fontSize: '1.1rem',
+              boxShadow: '0 2px 8px #0002',
+              letterSpacing: 1,
+              cursor: 'pointer',
+              transition: 'background 0.2s, transform 0.2s',
+            }}
+            onClick={() => setShowCrearPresupuesto(true)}
+            onMouseOver={e => e.currentTarget.style.background = 'linear-gradient(90deg,#388e3c 80%,#43a047 100%)'}
+            onMouseOut={e => e.currentTarget.style.background = 'linear-gradient(90deg,#43a047 80%,#66bb6a 100%)'}
+          >
+            <span style={{fontSize:'1.3em',marginRight:8}}>＋</span>Crear Presupuesto Mensual
           </button>
           {showCrearPresupuesto && (
             <div className="presupuesto-modal-bg" style={{display: 'flex'}}>
               <div className="presupuesto-modal">
                 <button className="presupuesto-modal-close" onClick={()=>setShowCrearPresupuesto(false)}>×</button>
-                <h3>Crear Presupuesto Mensual</h3>
-                <input
-                  name="montoObjetivo"
-                  type="number"
-                  placeholder="Monto objetivo (CLP)"
-                  value={nuevoPresupuesto.montoObjetivo}
-                  onChange={e => setNuevoPresupuesto({ ...nuevoPresupuesto, montoObjetivo: e.target.value })}
-                  style={{width:'100%',marginBottom:12}}
-                />
-                <input
-                  name="fechaMes"
-                  type="month"
-                  placeholder="Mes"
-                  value={nuevoPresupuesto.fechaMes}
-                  onChange={e => setNuevoPresupuesto({ ...nuevoPresupuesto, fechaMes: e.target.value })}
-                  style={{width:'100%',marginBottom:12}}
-                />
+                <h3 style={{textAlign:'center',marginBottom:18}}>Crear Presupuesto Mensual</h3>
+                <div style={{marginBottom:16}}>
+                  <label style={{fontWeight:600,display:'block',marginBottom:4}}>Monto objetivo (CLP)</label>
+                  <input
+                    name="montoObjetivo"
+                    type="number"
+                    placeholder="Ej: 500000"
+                    value={nuevoPresupuesto.montoObjetivo}
+                    onChange={e => setNuevoPresupuesto({ ...nuevoPresupuesto, montoObjetivo: e.target.value })}
+                    style={{width:'100%',marginBottom:8,padding:10,borderRadius:6,border:'1px solid #ddd',fontSize:'1.1em'}}
+                  />
+                </div>
+                <div style={{marginBottom:18}}>
+                  <label style={{fontWeight:600,display:'block',marginBottom:4}}>Mes</label>
+                  {/* Calendario visual para seleccionar mes y año */}
+                  <ReactDatePicker
+                    selected={nuevoPresupuesto.fechaMes ? new Date(nuevoPresupuesto.fechaMes + '-01') : null}
+                    onChange={date => {
+                      // Guardar como YYYY-MM
+                      const year = date.getFullYear();
+                      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                      setNuevoPresupuesto({ ...nuevoPresupuesto, fechaMes: `${year}-${month}` });
+                    }}
+                    dateFormat="MM/yyyy"
+                    showMonthYearPicker
+                    showFullMonthYearPicker
+                    placeholderText="Selecciona mes y año"
+                    className="react-datepicker__input-text"
+                    style={{width:'100%',marginBottom:8,padding:10,borderRadius:6,border:'1px solid #ddd',fontSize:'1.1em'}}
+                  />
+                </div>
                 <button
                   onClick={async () => {
                     setCrearLoading(true); setCrearError(null);
@@ -280,7 +331,7 @@ const PresupuestoDashboard = () => {
                     setCrearLoading(false);
                   }}
                   disabled={crearLoading || !nuevoPresupuesto.montoObjetivo || !nuevoPresupuesto.fechaMes}
-                  style={{width:'100%',background:'#4caf50',color:'#fff',padding:10,border:'none',borderRadius:6,marginBottom:8}}
+                  style={{width:'100%',background:'linear-gradient(90deg,#43a047 80%,#66bb6a 100%)',color:'#fff',padding:12,border:'none',borderRadius:8,marginBottom:8,fontWeight:700,fontSize:'1.1em',boxShadow:'0 2px 8px #0002',cursor:'pointer'}}
                 >
                   {crearLoading ? 'Creando...' : 'Crear'}
                 </button>
@@ -370,7 +421,34 @@ const PresupuestoDashboard = () => {
       <NavBar />
       <div className="presupuesto-dashboard responsive-dashboard">
         <div className="presupuesto-panel responsive-panel">
-          <h2 style={{marginBottom: 16}}>Presupuesto Familiar - {presupuesto.fechaMes ? presupuesto.fechaMes.slice(0,7) : ''}</h2>
+          <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
+            <h2 style={{margin:0}}>Presupuesto Familiar - {presupuesto.fechaMes ? presupuesto.fechaMes.slice(0,7) : ''}</h2>
+            <button
+              onClick={handleCerrarMes}
+              disabled={cerrarLoading}
+              style={{
+                background: '#607d8b',
+                color: '#fff',
+                padding: '4px 10px', // Más pequeño
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 600,
+                boxShadow: '0 1px 4px #0002',
+                fontSize: '0.92em', // Más pequeño
+                cursor: 'pointer',
+                minWidth: 0,
+                minHeight: 0,
+                lineHeight: 1.2,
+                transition: 'background 0.2s, box-shadow 0.2s',
+                opacity: cerrarLoading ? 0.7 : 1,
+                marginLeft: 8
+              }}
+            >
+              {cerrarLoading ? 'Cerrando...' : 'Cerrar mes'}
+            </button>
+          </div>
+          {cerrarError && <div className="presupuesto-feedback-error">{cerrarError}</div>}
+          {cerrarSuccess && <div className="presupuesto-feedback-success">{cerrarSuccess}</div>}
           <div className="presupuesto-tarjetas responsive-tarjetas">
             <Tarjeta titulo="Aportado" valor={formatoMoneda(totalAportado)} color="#4caf50" clase="tarjeta-aportado" />
             <Tarjeta titulo="Gastado" valor={formatoMoneda(totalGastado)} color="#f44336" clase="tarjeta-gastado" />
@@ -496,7 +574,9 @@ const PresupuestoDashboard = () => {
                 </div>
                 {movimientosOrdenados.length > 3 && (
                   <details style={{marginTop:12}}>
-                    <summary style={{cursor:'pointer',color:'#1976d2',fontWeight:600,fontSize:15}}>Ver más movimientos ({movimientosOrdenados.length - 3} más)</summary>
+                    <summary style={{cursor:'pointer',color:'#1976d2',fontWeight:600,fontSize:15}}>
+                      Ver más movimientos ({movimientosOrdenados.length - 3} más)
+                    </summary>
                     <div style={{display:'flex',flexDirection:'column',gap:10,marginTop:8}}>
                       {movimientosOrdenados.slice(3).map(m => (
                         <div key={m.id} className="movimiento-tarjeta" style={{background:'#f7f9fb',borderRadius:10,padding:12,boxShadow:'0 2px 8px rgba(25,118,210,0.07)'}}>
@@ -511,25 +591,6 @@ const PresupuestoDashboard = () => {
                 )}
               </>
             )}
-          </div>
-
-          {/* Desglose por usuario */}
-          <div className="presupuesto-desglose-usuario responsive-desglose">
-            <h4>Desglose de aportes por usuario</h4>
-            <ul className="presupuesto-lista">
-              {(() => {
-                const resumen = {};
-                aportes.forEach(a => {
-                  const nombre = a.nombreAportador || a.usuarioUsername || 'Sin nombre';
-                  resumen[nombre] = (resumen[nombre] || 0) + parseFloat(a.monto);
-                });
-                const usuarios = Object.keys(resumen);
-                if (usuarios.length === 0) return <li style={{color:'#888'}}>No hay aportes registrados.</li>;
-                return usuarios.map(nombre => (
-                  <li key={nombre}><b>{nombre}:</b> {formatoMoneda(resumen[nombre])}</li>
-                ));
-              })()}
-            </ul>
           </div>
 
           {/* Modales para formularios */}

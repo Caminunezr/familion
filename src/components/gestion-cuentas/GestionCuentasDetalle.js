@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import Modal from '../Modal';
 import PagoForm from '../PagoForm';
+import { getPresupuestos } from '../../services/presupuesto';
 
 const formatoFecha = (fechaISO) => {
   if (!fechaISO) return 'N/A';
@@ -28,6 +29,7 @@ const formatoMoneda = (valor) => {
 const GestionCuentasDetalle = ({ cuenta, pagoInfo, loadingPagoInfo, onCancelar, onEditarCuenta, error, onPagoRegistrado }) => {
   const [showPagoModal, setShowPagoModal] = useState(false);
   const [previewFile, setPreviewFile] = useState(null);
+  const [presupuestosDisponibles, setPresupuestosDisponibles] = useState([]);
 
   const handleEditClick = () => {
     if (onEditarCuenta) {
@@ -39,6 +41,21 @@ const GestionCuentasDetalle = ({ cuenta, pagoInfo, loadingPagoInfo, onCancelar, 
     setShowPagoModal(false);
     if (onPagoRegistrado) onPagoRegistrado(); // Llama al callback del padre
   };
+
+  // Cargar presupuestos al abrir el modal de pago
+  useEffect(() => {
+    if (showPagoModal) {
+      const fetchPresupuestos = async () => {
+        try {
+          const res = await getPresupuestos();
+          setPresupuestosDisponibles(res.data);
+        } catch (err) {
+          setPresupuestosDisponibles([]);
+        }
+      };
+      fetchPresupuestos();
+    }
+  }, [showPagoModal]);
 
   if (!cuenta) return null;
 
@@ -159,7 +176,7 @@ const GestionCuentasDetalle = ({ cuenta, pagoInfo, loadingPagoInfo, onCancelar, 
       </div>
       {showPagoModal && (
         <Modal onClose={() => setShowPagoModal(false)}>
-          <PagoForm cuenta={cuenta} onSuccess={handlePagoSuccess} onCancel={() => setShowPagoModal(false)} />
+          <PagoForm cuenta={cuenta} onSuccess={handlePagoSuccess} onCancel={() => setShowPagoModal(false)} presupuestosDisponibles={presupuestosDisponibles} />
         </Modal>
       )}
       {/* Modal para preview grande de imagen/PDF */}

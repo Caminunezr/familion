@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import axios from 'axios';
 
-const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
+const PagoForm = ({ cuenta, onSuccess, onCancel, presupuestosDisponibles = [] }) => {
   const { currentUser } = useAuth();
   const [montoPagado, setMontoPagado] = useState(Number(cuenta.monto) || 0);
   const [fechaPago, setFechaPago] = useState(() => {
@@ -15,16 +15,16 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
   const [success, setSuccess] = useState(false);
   const [aportes, setAportes] = useState([]);
   const [aporteId, setAporteId] = useState('');
+  const [presupuestoId, setPresupuestoId] = useState(cuenta.presupuesto || cuenta.presupuesto_id || (presupuestosDisponibles[0]?.id || ''));
 
   useEffect(() => {
     // Obtener aportes disponibles para el presupuesto de la cuenta
     const fetchAportes = async () => {
       try {
-        // Se asume que la cuenta tiene un campo presupuesto o presupuesto_id
-        const presupuestoId = cuenta.presupuesto || cuenta.presupuesto_id;
-        if (!presupuestoId) return;
+        const id = presupuestoId;
+        if (!id) { setAportes([]); return; }
         const token = localStorage.getItem('access');
-        const res = await axios.get(`http://localhost:8000/api/aportes/?presupuesto=${presupuestoId}`, {
+        const res = await axios.get(`http://localhost:8000/api/aportes/?presupuesto=${id}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setAportes(res.data);
@@ -33,7 +33,7 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
       }
     };
     fetchAportes();
-  }, [cuenta]);
+  }, [presupuestoId]);
 
   const handleFileChange = (e) => {
     setComprobante(e.target.files[0] || null);
@@ -48,9 +48,9 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
       const token = localStorage.getItem('access');
       if (!token) throw new Error('No autenticado');
       const formData = new FormData();
-      formData.append('cuenta', Number(cuenta.id)); // Aseguramos que sea número
-      formData.append('monto_pagado', Number(montoPagado)); // Aseguramos que sea número
-      formData.append('fecha_pago', fechaPago); // Debe ser YYYY-MM-DD
+      formData.append('cuenta', Number(cuenta.id));
+      formData.append('monto_pagado', Number(montoPagado));
+      formData.append('fecha_pago', fechaPago);
       if (comprobante) formData.append('comprobante', comprobante);
       if (aporteId) formData.append('aporte', aporteId);
       // El usuario se asigna automáticamente en el backend
@@ -63,7 +63,7 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
         let msg = 'Error al registrar el pago';
         try {
           const errorJson = await res.json();
-          console.log('Detalle error backend:', errorJson); // <-- para depuración
+          console.log('Detalle error backend:', errorJson);
           msg += ': ' + JSON.stringify(errorJson);
         } catch {}
         throw new Error(msg);
@@ -83,6 +83,18 @@ const PagoForm = ({ cuenta, onSuccess, onCancel }) => {
       <form onSubmit={handleSubmit} className="pago-form">
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">Pago registrado correctamente.</div>}
+        {/* Si no hay presupuesto asociado, permitir seleccionar uno */}
+        {!cuenta.presupuesto && !cuenta.presupuesto_id && presupuestosDisponibles.length > 0 && (
+          <div className="form-group">
+            <label>Presupuesto *</label>
+            <select value={presupuestoId} onChange={e => setPresupuestoId(e.target.value)} required disabled={loading}>
+              <option value="">-- Selecciona un presupuesto --</option>
+              {presupuestosDisponibles.map(p => (
+                <option key={p.id} value={p.id}>{p.familia} - {p.fecha_mes}</option>
+              ))}
+            </select>
+          </div>
+        )}
         <div className="form-group">
           <label>Monto pagado *</label>
           <input
