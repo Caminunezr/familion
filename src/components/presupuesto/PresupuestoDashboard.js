@@ -71,14 +71,31 @@ const PresupuestoDashboard = () => {
   const [cerrarLoading, setCerrarLoading] = useState(false);
   const [cerrarError, setCerrarError] = useState(null);
   const [cerrarSuccess, setCerrarSuccess] = useState(null);
+  const [mesSeleccionado, setMesSeleccionado] = useState(null);
+  const [presupuestosDisponibles, setPresupuestosDisponibles] = useState([]);
 
+  // Nuevo: cargar todos los presupuestos disponibles al inicio
   useEffect(() => {
+    async function fetchPresupuestosDisponibles() {
+      try {
+        const res = await getPresupuestos();
+        setPresupuestosDisponibles(res.data || []);
+      } catch {
+        setPresupuestosDisponibles([]);
+      }
+    }
+    fetchPresupuestosDisponibles();
+  }, []);
+
+  // Nuevo: cargar datos del presupuesto solo si hay mes seleccionado
+  useEffect(() => {
+    if (!mesSeleccionado) return;
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const mesActual = new Date().toISOString().slice(0, 7) + '-01'; // "2025-05-01"
-        const resPres = await getPresupuestos({ fecha_mes: mesActual });
+        const fechaMes = mesSeleccionado + '-01';
+        const resPres = await getPresupuestos({ fecha_mes: fechaMes });
         const presupuestoActivo = resPres.data[0];
         setPresupuesto(presupuestoActivo);
         if (presupuestoActivo) {
@@ -94,6 +111,12 @@ const PresupuestoDashboard = () => {
           setDeudas(resDeudas.data);
           setAhorros(resAhorros.data);
           setMovimientos(resMov.data);
+        } else {
+          setAportes([]);
+          setGastos([]);
+          setDeudas([]);
+          setAhorros([]);
+          setMovimientos([]);
         }
       } catch (err) {
         setError('Error al cargar los datos de presupuesto');
@@ -101,7 +124,7 @@ const PresupuestoDashboard = () => {
       setLoading(false);
     };
     fetchData();
-  }, []);
+  }, [mesSeleccionado]);
 
   useEffect(() => {
     async function fetchUsuarios() {
@@ -246,6 +269,48 @@ const PresupuestoDashboard = () => {
     } catch (e) { setAccionError('Error al eliminar el gasto'); }
     setAccionLoading(false);
   };
+
+  // Nuevo: pantalla de selección de mes
+  if (!mesSeleccionado) {
+    // Obtener meses únicos de presupuestos existentes
+    const meses = presupuestosDisponibles.map(p => p.fechaMes?.slice(0,7)).filter(Boolean);
+    const mesesUnicos = Array.from(new Set(meses)).sort((a,b) => b.localeCompare(a));
+    const mesActual = new Date().toISOString().slice(0,7);
+
+    return (
+      <>
+        <NavBar />
+        <div className="presupuesto-dashboard">
+          <div className="presupuesto-panel" style={{maxWidth:420,margin:'40px auto',padding:'32px 24px'}}>
+            <h2 style={{textAlign:'center',marginBottom:24}}>Selecciona un mes</h2>
+            <div style={{display:'flex',flexDirection:'column',gap:16,marginBottom:24}}>
+              {mesesUnicos.length === 0 && <div style={{color:'#888',textAlign:'center'}}>No hay presupuestos creados aún.</div>}
+              {mesesUnicos.map(mes => (
+                <button key={mes} onClick={()=>setMesSeleccionado(mes)} style={{padding:'14px 0',borderRadius:8,border:'none',background:'#607d8b',color:'#fff',fontWeight:600,fontSize:'1.1em',boxShadow:'0 1px 4px #0002',cursor:'pointer'}}>
+                  {mes === mesActual ? 'Mes actual: ' : ''}{mes}
+                </button>
+              ))}
+            </div>
+            <div style={{margin:'24px 0 12px',textAlign:'center',color:'#888'}}>O elige otro mes</div>
+            <ReactDatePicker
+              selected={null}
+              onChange={date => {
+                const year = date.getFullYear();
+                const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                setMesSeleccionado(`${year}-${month}`);
+              }}
+              dateFormat="MM/yyyy"
+              showMonthYearPicker
+              showFullMonthYearPicker
+              placeholderText="Selecciona mes y año"
+              className="react-datepicker__input-text"
+              style={{width:'100%',marginBottom:8,padding:10,borderRadius:6,border:'1px solid #ddd',fontSize:'1.1em'}}
+            />
+          </div>
+        </div>
+      </>
+    );
+  }
 
   if (loading) return <><NavBar /><div className="presupuesto-dashboard"><div className="presupuesto-panel">Cargando presupuesto...</div></div></>;
   if (error) return <><NavBar /><div className="presupuesto-dashboard"><div className="presupuesto-panel" style={{ color: 'red' }}>{error}</div></div></>;
@@ -471,6 +536,11 @@ const PresupuestoDashboard = () => {
           </div>
           {accionError && <div className="presupuesto-feedback-error">{accionError}</div>}
           {accionSuccess && <div className="presupuesto-feedback-success">{accionSuccess}</div>}
+
+          {/* Botón para volver a la selección de mes */}
+          <div style={{marginBottom:16}}>
+            <button onClick={()=>setMesSeleccionado(null)} style={{background:'#eee',color:'#607d8b',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:600,cursor:'pointer',fontSize:'0.98em'}}>Cambiar mes</button>
+          </div>
 
           {/* Listados detallados */}
           <div className="presupuesto-listados responsive-listados">
