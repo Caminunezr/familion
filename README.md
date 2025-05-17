@@ -1,5 +1,7 @@
 # Familion
 
+Bienvenido al Proyecto Familion
+
 Familion es una aplicación de gestión familiar que te permite organizar, visualizar y controlar las finanzas, cuentas y documentos de tu grupo familiar de forma centralizada y segura.
 
 ## Características principales
@@ -12,6 +14,14 @@ Familion es una aplicación de gestión familiar que te permite organizar, visua
 - **Presupuestos familiares**
 - **Autenticación segura con JWT**
 - **Soporte multiusuario y grupos familiares**
+
+## Resumen Rápido
+
+- Gestión centralizada de finanzas familiares.
+- Visualización avanzada para una mejor organización.
+- Almacenamiento seguro de documentos importantes.
+- Herramientas de administración y control de usuarios.
+- Soporte para múltiples usuarios y grupos.
 
 ## Tecnologías utilizadas
 
