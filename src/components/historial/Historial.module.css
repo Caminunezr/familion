@@ -980,3 +980,75 @@
      /* display: none; */
   }
 }
+
+/* Comparativa de periodos */
+.comparativa-container {
+  /* Hereda .card */
+  margin-bottom: 24px;
+}
+
+.comparativa-header {
+  display: none; /* Ahora usamos acordeón, no tabla */
+}
+
+.comparativa-fila {
+  display: none; /* Ahora usamos acordeón, no tabla */
+}
+
+/* Mejorar acordeón de comparativa */
+.comparativa-mes-card {
+  border: 1px solid var(--color-borde-suave);
+  border-radius: var(--radio-borde-small);
+  margin-bottom: 16px;
+  overflow: hidden;
+}
+
+.comparativa-mes-header {
+  padding: 16px;
+  background-color: var(--color-fondo-tarjeta-alt);
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: var(--transicion-hover);
+}
+
+.comparativa-mes-header:hover {
+  background-color: var(--color-borde-suave);
+}
+
+.comparativa-mes-info {
+  display: flex;
+  flex-direction: column;
+}
+
+.comparativa-mes-nombre {
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--color-primario);
+}
+
+.comparativa-mes-estadisticas {
+  font-size: 14px;
+  color: var(--color-texto-secundario);
+  margin-top: 4px;
+}
+
+.comparativa-mes-toggle {
+  font-size: 18px;
+  color: var(--color-primario);
+  transition: transform 0.3s ease;
+}
+
+.comparativa-mes-cuentas {
+  padding: 0 16px 16px;
+  background-color: var(--color-fondo-tarjeta);
+}
+
+@media (max-width: 600px) {
+  .comparativa-mes-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 6px;
+  }
+}

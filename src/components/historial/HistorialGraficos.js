@@ -20,9 +20,35 @@ const defaultGraficosData = {
   pagosVsVencimientos: { labels: [], datasets: [{ label: '', data: [], backgroundColor: '' }] }
 };
 
+// Definir colores por categoría igual que en Gestión de Cuentas
+const categoriaColor = {
+  'Luz': '#ffe082', // Amarillo
+  'Agua': '#81d4fa', // Celeste
+  'Gas': '#ffab91', // Naranja
+  'Internet': '#b3e5fc', // Azul claro
+  'Arriendo': '#c8e6c9', // Verde claro
+  'Gasto Común': '#f8bbd0', // Rosa
+  'Utiles de Aseo': '#aed581', // Verde
+  'Otros': '#d1c4e9', // Lila
+};
+
 const HistorialGraficos = ({ graficos = defaultGraficosData, mesSeleccionado }) => {
+  // Si hay labels y no hay backgroundColor, aplicar colores por categoría
+  const datosCategorias = React.useMemo(() => {
+    if (!graficos?.categorias) return defaultGraficosData.categorias;
+    const labels = graficos.categorias.labels || [];
+    const data = graficos.categorias.datasets?.[0]?.data || [];
+    let backgroundColor = graficos.categorias.datasets?.[0]?.backgroundColor;
+    if (!backgroundColor || backgroundColor.length !== labels.length) {
+      backgroundColor = labels.map(cat => categoriaColor[cat] || '#BDBDBD');
+    }
+    return {
+      labels,
+      datasets: [{ data, backgroundColor }]
+    };
+  }, [graficos]);
+
   // Acceso seguro a las propiedades, usando la estructura por defecto si es necesario
-  const datosCategorias = graficos?.categorias || defaultGraficosData.categorias;
   const datosPagosVencimientos = graficos?.pagosVsVencimientos || defaultGraficosData.pagosVsVencimientos;
 
   // Obtener nombre completo del mes seleccionado

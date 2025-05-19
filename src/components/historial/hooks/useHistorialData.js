@@ -1,7 +1,7 @@
 // src/components/historial/hooks/useHistorialData.js
 import { useState, useEffect, useMemo } from 'react';
 import { obtenerHistorialCuentas, obtenerPagosPorCuenta, obtenerCategorias } from '../../../services/historial';
-import { procesarCuentasYPagosHistorial, agruparDatosHistorial } from '../../../utils/historialUtils';
+import { procesarCuentasYPagosHistorial, agruparDatosHistorial, filtrarCuentasHistorial } from '../../../utils/historialUtils';
 
 export function useHistorialData(filtrosIniciales = {}) {
   const [filtros, setFiltros] = useState({
@@ -59,20 +59,26 @@ export function useHistorialData(filtrosIniciales = {}) {
     procesarCuentasYPagosHistorial(cuentas, pagos), 
     [cuentas, pagos]
   );
-  
+
+  // Aplicar filtros en frontend además de backend
+  const cuentasFiltradas = useMemo(() => 
+    filtrarCuentasHistorial(cuentasProcesadas, filtros),
+    [cuentasProcesadas, filtros]
+  );
+
   const datosAgrupados = useMemo(() => 
-    agruparDatosHistorial(cuentasProcesadas, agrupacion, (ym) => {
+    agruparDatosHistorial(cuentasFiltradas, agrupacion, (ym) => {
       if (!ym) return '';
       const [y, m] = ym.split('-');
       const meses = ['Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun', 'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'];
       return `${meses[parseInt(m, 10) - 1]} ${y}`;
     }), 
-    [cuentasProcesadas, agrupacion]
+    [cuentasFiltradas, agrupacion]
   );
   
   // Calcular meses disponibles y seleccionar uno por defecto
   const mesesDisponibles = useMemo(() => {
-    const meses = Array.from(new Set(cuentasProcesadas
+    const meses = Array.from(new Set(cuentasFiltradas
       .map(c => c.fechaVencimiento?.slice(0, 7))
       .filter(Boolean)))
       .sort()
@@ -83,7 +89,7 @@ export function useHistorialData(filtrosIniciales = {}) {
     }
     
     return meses;
-  }, [cuentasProcesadas, mesSeleccionado]);
+  }, [cuentasFiltradas, mesSeleccionado]);
   
   // Calcular resumen para el mes seleccionado
   const resumenMesSeleccionado = useMemo(() => {
@@ -137,7 +143,7 @@ export function useHistorialData(filtrosIniciales = {}) {
     setFiltros,
     agrupacion,
     setAgrupacion,
-    cuentasProcesadas,
+    cuentasProcesadas: cuentasFiltradas, // ahora devuelve las filtradas
     datosAgrupados,
     mesesDisponibles,
     mesSeleccionado,

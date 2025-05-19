@@ -199,9 +199,6 @@ export function agruparDatosHistorial(cuentasFiltradas, modo, formatoMesFunc) {
   return { porMes, porCategoria, porPeriodo };
 }
 
-  return { porMes, porCategoria, porPeriodo };
-}
-
 /**
  * Placeholder para generar opciones de período basadas en fechas.
  * TODO: Implementar la lógica real para extraer años/meses de las fechas.

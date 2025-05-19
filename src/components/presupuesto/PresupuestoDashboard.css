@@ -158,6 +158,31 @@
   font-weight: 500;
 }
 
+/* Nueva sección de selección de mes */
+.presupuesto-mes-selector {
+  background: #fff;
+  border-radius: 18px;
+  box-shadow: 0 4px 24px #0002;
+  padding: 40px 32px;
+  margin: 40px auto;
+  max-width: 440px;
+}
+.presupuesto-mes-selector button {
+  transition: background 0.2s, transform 0.2s;
+}
+.presupuesto-mes-selector button:hover {
+  background: #455a64;
+  transform: scale(1.03);
+}
+.presupuesto-mes-selector .react-datepicker__input-text {
+  width: 180px;
+  padding: 10px;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+  font-size: 1.1em;
+  text-align: center;
+}
+
 @media (max-width: 900px) {
   .presupuesto-dashboard {
     padding: 0 6px;

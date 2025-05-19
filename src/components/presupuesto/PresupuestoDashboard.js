@@ -16,7 +16,8 @@ import {
   deleteAhorro,
   deleteDeuda,
   deleteGasto,
-  cerrarMes
+  cerrarMes,
+  deletePresupuesto
 } from '../../services/presupuesto';
 import { Bar } from 'react-chartjs-2';
 import { Bar as BarChart } from 'react-chartjs-2';
@@ -270,42 +271,74 @@ const PresupuestoDashboard = () => {
     setAccionLoading(false);
   };
 
+  // Handler para eliminar presupuesto
+  const handleEliminarPresupuesto = async () => {
+    if (!presupuesto?.id) return;
+    if (!window.confirm('¿Seguro que deseas eliminar este presupuesto? Esta acción no se puede deshacer.')) return;
+    setLoading(true);
+    setError(null);
+    try {
+      await deletePresupuesto(presupuesto.id);
+      setPresupuesto(null);
+      setMesSeleccionado(null);
+      // Recargar lista de presupuestos disponibles
+      const res = await getPresupuestos();
+      setPresupuestosDisponibles(res.data || []);
+    } catch (e) {
+      setError('Error al eliminar el presupuesto');
+    }
+    setLoading(false);
+  };
+
   // Nuevo: pantalla de selección de mes
   if (!mesSeleccionado) {
     // Obtener meses únicos de presupuestos existentes
     const meses = presupuestosDisponibles.map(p => p.fechaMes?.slice(0,7)).filter(Boolean);
     const mesesUnicos = Array.from(new Set(meses)).sort((a,b) => b.localeCompare(a));
     const mesActual = new Date().toISOString().slice(0,7);
+    const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+    const formatoMes = (ym) => {
+      if (!ym) return '';
+      const [y, m] = ym.split('-');
+      return `${mesesNombres[parseInt(m,10)-1]} ${y}`;
+    };
 
     return (
       <>
         <NavBar />
         <div className="presupuesto-dashboard">
-          <div className="presupuesto-panel" style={{maxWidth:420,margin:'40px auto',padding:'32px 24px'}}>
-            <h2 style={{textAlign:'center',marginBottom:24}}>Selecciona un mes</h2>
-            <div style={{display:'flex',flexDirection:'column',gap:16,marginBottom:24}}>
+          <div className="presupuesto-panel presupuesto-mes-selector" style={{maxWidth:440,margin:'40px auto',padding:'40px 32px',background:'#fff',borderRadius:18,boxShadow:'0 4px 24px #0002'}}>
+            <h2 style={{textAlign:'center',marginBottom:18,fontWeight:800,letterSpacing:0.5}}>Selecciona un mes</h2>
+            <p style={{textAlign:'center',color:'#888',marginBottom:28}}>Consulta o crea tu presupuesto mensual familiar.</p>
+            <div style={{display:'flex',flexDirection:'column',gap:18,marginBottom:28}}>
               {mesesUnicos.length === 0 && <div style={{color:'#888',textAlign:'center'}}>No hay presupuestos creados aún.</div>}
               {mesesUnicos.map(mes => (
-                <button key={mes} onClick={()=>setMesSeleccionado(mes)} style={{padding:'14px 0',borderRadius:8,border:'none',background:'#607d8b',color:'#fff',fontWeight:600,fontSize:'1.1em',boxShadow:'0 1px 4px #0002',cursor:'pointer'}}>
-                  {mes === mesActual ? 'Mes actual: ' : ''}{mes}
+                <button key={mes} onClick={()=>setMesSeleccionado(mes)} style={{padding:'16px 0',borderRadius:10,border:'none',background:'#607d8b',color:'#fff',fontWeight:700,fontSize:'1.15em',boxShadow:'0 2px 8px #0002',cursor:'pointer',display:'flex',alignItems:'center',justifyContent:'center',gap:10,transition:'background 0.2s'}}>
+                  <span style={{fontSize:'1.3em'}}><i className="fas fa-calendar-alt"></i></span>
+                  {mes === mesActual ? <b>Mes actual: {formatoMes(mes)}</b> : formatoMes(mes)}
                 </button>
               ))}
             </div>
-            <div style={{margin:'24px 0 12px',textAlign:'center',color:'#888'}}>O elige otro mes</div>
-            <ReactDatePicker
-              selected={null}
-              onChange={date => {
-                const year = date.getFullYear();
-                const month = (date.getMonth() + 1).toString().padStart(2, '0');
-                setMesSeleccionado(`${year}-${month}`);
-              }}
-              dateFormat="MM/yyyy"
-              showMonthYearPicker
-              showFullMonthYearPicker
-              placeholderText="Selecciona mes y año"
-              className="react-datepicker__input-text"
-              style={{width:'100%',marginBottom:8,padding:10,borderRadius:6,border:'1px solid #ddd',fontSize:'1.1em'}}
-            />
+            <div style={{margin:'24px 0 12px',textAlign:'center',color:'#888',fontWeight:500}}>O elige otro mes</div>
+            <div style={{display:'flex',justifyContent:'center'}}>
+              <ReactDatePicker
+                selected={null}
+                onChange={date => {
+                  const year = date.getFullYear();
+                  const month = (date.getMonth() + 1).toString().padStart(2, '0');
+                  setMesSeleccionado(`${year}-${month}`);
+                }}
+                dateFormat="MM/yyyy"
+                showMonthYearPicker
+                showFullMonthYearPicker
+                placeholderText="Selecciona mes y año"
+                className="react-datepicker__input-text"
+                style={{width:'180px',marginBottom:8,padding:10,borderRadius:8,border:'1px solid #ddd',fontSize:'1.1em',textAlign:'center'}}
+              />
+            </div>
+            <div style={{marginTop:18,textAlign:'center',color:'#bbb',fontSize:13}}>
+              <i className="fas fa-info-circle"></i> Puedes crear un presupuesto para cualquier mes.
+            </div>
           </div>
         </div>
       </>
@@ -488,73 +521,53 @@ const PresupuestoDashboard = () => {
         <div className="presupuesto-panel responsive-panel">
           <div style={{display:'flex',alignItems:'center',justifyContent:'space-between',marginBottom:16}}>
             <h2 style={{margin:0}}>Presupuesto Familiar - {presupuesto.fechaMes ? presupuesto.fechaMes.slice(0,7) : ''}</h2>
-            <button
-              onClick={handleCerrarMes}
-              disabled={cerrarLoading}
-              style={{
-                background: '#607d8b',
-                color: '#fff',
-                padding: '4px 10px', // Más pequeño
-                border: 'none',
-                borderRadius: 6,
-                fontWeight: 600,
-                boxShadow: '0 1px 4px #0002',
-                fontSize: '0.92em', // Más pequeño
-                cursor: 'pointer',
-                minWidth: 0,
-                minHeight: 0,
-                lineHeight: 1.2,
-                transition: 'background 0.2s, box-shadow 0.2s',
-                opacity: cerrarLoading ? 0.7 : 1,
-                marginLeft: 8
-              }}
-            >
-              {cerrarLoading ? 'Cerrando...' : 'Cerrar mes'}
-            </button>
+            <div style={{display:'flex',gap:8}}>
+              <button
+                onClick={handleCerrarMes}
+                disabled={cerrarLoading}
+                style={{
+                  background: '#607d8b',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  boxShadow: '0 1px 4px #0002',
+                  fontSize: '0.92em',
+                  cursor: 'pointer',
+                  minWidth: 0,
+                  minHeight: 0,
+                  lineHeight: 1.2,
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                  opacity: cerrarLoading ? 0.7 : 1,
+                  marginLeft: 8
+                }}
+              >
+                {cerrarLoading ? 'Cerrando...' : 'Cerrar mes'}
+              </button>
+              <button
+                onClick={handleEliminarPresupuesto}
+                style={{
+                  background: '#e53935',
+                  color: '#fff',
+                  padding: '4px 10px',
+                  border: 'none',
+                  borderRadius: 6,
+                  fontWeight: 600,
+                  boxShadow: '0 1px 4px #0002',
+                  fontSize: '0.92em',
+                  cursor: 'pointer',
+                  minWidth: 0,
+                  minHeight: 0,
+                  lineHeight: 1.2,
+                  transition: 'background 0.2s, box-shadow 0.2s',
+                  marginLeft: 8
+                }}
+              >
+                Eliminar presupuesto
+              </button>
+            </div>
           </div>
-          {cerrarError && <div className="presupuesto-feedback-error">{cerrarError}</div>}
-          {cerrarSuccess && <div className="presupuesto-feedback-success">{cerrarSuccess}</div>}
-          <div className="presupuesto-tarjetas responsive-tarjetas">
-            <Tarjeta titulo="Aportado" valor={formatoMoneda(totalAportado)} color="#4caf50" clase="tarjeta-aportado" />
-            <Tarjeta titulo="Gastado" valor={formatoMoneda(totalGastado)} color="#f44336" clase="tarjeta-gastado" />
-            <Tarjeta titulo="Ahorrado" valor={formatoMoneda(totalAhorrado)} color="#2196f3" clase="tarjeta-ahorrado" />
-            <Tarjeta titulo="Deuda activa" valor={formatoMoneda(totalDeuda)} color="#ff9800" clase="tarjeta-deuda" />
-            <Tarjeta titulo="Sobrante" valor={formatoMoneda(saldoAportes)} color="#607d8b" clase="tarjeta-sobrante" />
-          </div>
-          {/* Gráfico de barras en vez de barra de progreso */}
-          <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto 0', width: '100%', overflowX: 'auto'}}>
-            <Bar data={dataBar} options={optionsBar} />
-          </div>
-          {/* Gráfico de aportes por usuario */}
-          <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto', width: '100%', overflowX: 'auto'}}>
-            <BarChart data={dataAportesPorUsuario} options={optionsAportesPorUsuario} />
-          </div>
-          <div className="presupuesto-acciones responsive-acciones">
-            <button style={{background:'#4caf50'}} onClick={()=>setShowAporte(true)}>Agregar Aporte</button>
-            <button style={{background:'#ff9800'}} onClick={()=>setShowDeuda(true)}>Registrar Deuda</button>
-            <button style={{background:'#2196f3'}} onClick={()=>setShowAhorro(true)}>Registrar Ahorro</button>
-          </div>
-          {accionError && <div className="presupuesto-feedback-error">{accionError}</div>}
-          {accionSuccess && <div className="presupuesto-feedback-success">{accionSuccess}</div>}
-
-          {/* Botón para volver a la selección de mes */}
-          <div style={{marginBottom:16}}>
-            <button onClick={()=>setMesSeleccionado(null)} style={{background:'#eee',color:'#607d8b',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:600,cursor:'pointer',fontSize:'0.98em'}}>Cambiar mes</button>
-          </div>
-
-          {/* Listados detallados */}
-          <div className="presupuesto-listados responsive-listados">
-            <div className="presupuesto-listado-col">
-              <h4>Aportes</h4>
-              <ul className="presupuesto-lista">
-                {aportes.length === 0 && <li style={{color:'#888'}}>No hay aportes registrados.</li>}
-                {aportes.map(a => (
-                  <li key={a.id}>
-                    <b>{formatoMoneda(a.monto)}</b> por {a.nombreAportador || a.usuarioUsername || 'Sin nombre'}
-                    {a.comentario && <span style={{color:'#888'}}> — {a.comentario}</span>}
-                    <button style={{marginLeft:8, color:'#fff', background:'#e53935', border:'none', borderRadius:4, padding:'2px 8px', fontSize:'0.95em', cursor:'pointer'}}
-                      onClick={() => handleEliminarAporte(a.id)} disabled={accionLoading}>
-                      Eliminar
                     </button>
                   </li>
                 ))}
