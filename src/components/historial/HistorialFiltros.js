@@ -1,15 +1,25 @@
 import React from 'react';
 import styles from './Historial.module.css';
 
+const obtenerMesNombreCompleto = (ym) => {
+  if (!ym) return '';
+  const [y, m] = ym.split('-');
+  const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+  return `${meses[parseInt(m, 10) - 1]} ${y}`;
+};
+
 const HistorialFiltros = ({
   filtros,
   categorias,
+  mesesDisponibles,
+  mesSeleccionado,
   agrupacion,
   onFilterChange,
   onAgrupacionChange,
+  onMesChange,
   onExport
 }) => {
-  const { filtroFechaInicio, filtroFechaFin, filtroCategoria, filtroEstado } = filtros;
+  const { fechaInicio, fechaFin, categoria, estado } = filtros;
 
   const handleInputChange = (e) => {
     onFilterChange(e.target.name, e.target.value);
@@ -21,57 +31,69 @@ const HistorialFiltros = ({
   return (
     <div className={styles['filtros-container']}>
       <h3 className={styles['filtros-titulo']}>Filtros</h3>
-      <div className={styles['filtros-grid']}>
-        <div className={styles['filtro-group']}>
-          <label htmlFor="fecha-inicio">Desde:</label>
-          <input
-            type="date"
-            id="fecha-inicio"
-            name="filtroFechaInicio"
-            value={filtroFechaInicio}
-            onChange={handleInputChange}
-          />
-        </div>
+      
+      <div className={styles['filtro-group']}>
+        <label htmlFor="fecha-inicio">Desde:</label>
+        <input
+          type="date"
+          id="fecha-inicio"
+          name="fechaInicio"
+          value={fechaInicio}
+          onChange={handleInputChange}
+        />
+      </div>
 
-        <div className={styles['filtro-group']}>
-          <label htmlFor="fecha-fin">Hasta:</label>
-          <input
-            type="date"
-            id="fecha-fin"
-            name="filtroFechaFin"
-            value={filtroFechaFin}
-            onChange={handleInputChange}
-          />
-        </div>
+      <div className={styles['filtro-group']}>
+        <label htmlFor="fecha-fin">Hasta:</label>
+        <input
+          type="date"
+          id="fecha-fin"
+          name="fechaFin"
+          value={fechaFin}
+          onChange={handleInputChange}
+        />
+      </div>
 
-        <div className={styles['filtro-group']}>
-          <label htmlFor="categoria">Categoría:</label>
-          <select
-            id="categoria"
-            name="filtroCategoria"
-            value={filtroCategoria}
-            onChange={handleInputChange}
-          >
-            <option value="todas">Todas las categorías</option>
-            {categoriasOptions.map(cat => (
-              <option key={cat.id || cat.nombre} value={cat.nombre}>{cat.nombre}</option>
-            ))}
-          </select>
-        </div>
+      <div className={styles['filtro-group']}>
+        <label htmlFor="categoria">Categoría:</label>
+        <select
+          id="categoria"
+          name="categoria"
+          value={categoria}
+          onChange={handleInputChange}
+        >
+          <option value="todas">Todas las categorías</option>
+          {categoriasOptions.map(cat => (
+            <option key={cat.id || cat.nombre} value={cat.nombre || cat.id}>{cat.nombre || cat.id}</option>
+          ))}
+        </select>
+      </div>
 
-        <div className={styles['filtro-group']}>
-          <label htmlFor="estado">Estado:</label>
-          <select
-            id="estado"
-            name="filtroEstado"
-            value={filtroEstado}
-            onChange={handleInputChange}
-          >
-            <option value="todos">Todos</option>
-            <option value="pagadas">Pagadas</option>
-            <option value="pendientes">Pendientes</option>
-          </select>
-        </div>
+      <div className={styles['filtro-group']}>
+        <label htmlFor="estado">Estado:</label>
+        <select
+          id="estado"
+          name="estado"
+          value={estado}
+          onChange={handleInputChange}
+        >
+          <option value="todos">Todos</option>
+          <option value="pagadas">Pagadas</option>
+          <option value="pendientes">Pendientes</option>
+        </select>
+      </div>
+      
+      <div className={styles['filtro-group']}>
+        <label htmlFor="mes-seleccionado">Mes:</label>
+        <select
+          id="mes-seleccionado"
+          value={mesSeleccionado}
+          onChange={(e) => onMesChange(e.target.value)}
+        >
+          {mesesDisponibles.map(mes => (
+            <option key={mes} value={mes}>{obtenerMesNombreCompleto(mes)}</option>
+          ))}
+        </select>
       </div>
 
       <div className={styles['agrupacion-container']}>
@@ -79,14 +101,14 @@ const HistorialFiltros = ({
         <div className={styles['agrupacion-buttons']}>
           <button
             type="button"
-            className={agrupacion === 'mes' ? styles.active : ''}
+            className={`${agrupacion === 'mes' ? styles.active : ''}`}
             onClick={() => onAgrupacionChange('mes')}
           >
             Mes
           </button>
           <button
             type="button"
-            className={agrupacion === 'categoria' ? styles.active : ''}
+            className={`${agrupacion === 'categoria' ? styles.active : ''}`}
             onClick={() => onAgrupacionChange('categoria')}
           >
             Categoría
@@ -99,7 +121,7 @@ const HistorialFiltros = ({
         className={styles['export-button']}
         onClick={onExport}
       >
-        Exportar a CSV
+        <i className="fas fa-download"></i> Exportar a CSV
       </button>
     </div>
   );

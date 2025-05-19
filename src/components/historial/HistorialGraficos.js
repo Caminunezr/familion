@@ -10,9 +10,9 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
-// Asegúrate que ChartJS esté registrado (probablemente en Dashboard.js o Historial.js)
+// Asegúrate que ChartJS esté registrado
+ChartJS.register(ArcElement, BarElement, CategoryScale, LinearScale, Tooltip, Legend);
 
 // Definir estructura por defecto más robusta
 const defaultGraficosData = {
@@ -20,10 +20,18 @@ const defaultGraficosData = {
   pagosVsVencimientos: { labels: [], datasets: [{ label: '', data: [], backgroundColor: '' }] }
 };
 
-const HistorialGraficos = ({ graficos = defaultGraficosData }) => {
+const HistorialGraficos = ({ graficos = defaultGraficosData, mesSeleccionado }) => {
   // Acceso seguro a las propiedades, usando la estructura por defecto si es necesario
   const datosCategorias = graficos?.categorias || defaultGraficosData.categorias;
   const datosPagosVencimientos = graficos?.pagosVsVencimientos || defaultGraficosData.pagosVsVencimientos;
+
+  // Obtener nombre completo del mes seleccionado
+  const obtenerMesNombreCompleto = (ym) => {
+    if (!ym) return 'Mes actual';
+    const [y, m] = ym.split('-');
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[parseInt(m, 10) - 1]} ${y}`;
+  };
 
   // Opciones para el gráfico de dona (categorías)
   const doughnutOptions = {
@@ -36,9 +44,9 @@ const HistorialGraficos = ({ graficos = defaultGraficosData }) => {
       },
       title: {
         display: true,
-        text: 'Distribución por Categoría',
+        text: `Distribución por Categoría - ${obtenerMesNombreCompleto(mesSeleccionado)}`,
         color: '#1976d2',
-        font: { family: 'Segoe UI', size: 18, weight: 'bold' }
+        font: { family: 'Segoe UI', size: 16, weight: 'bold' }
       },
       tooltip: {
         callbacks: {
@@ -62,9 +70,9 @@ const HistorialGraficos = ({ graficos = defaultGraficosData }) => {
       legend: { position: 'top', labels: { color: '#1976d2', font: { family: 'Segoe UI', size: 14 } } },
       title: {
         display: true,
-        text: 'Pagos por Mes',
+        text: 'Evolución de Pagos por Mes',
         color: '#1976d2',
-        font: { family: 'Segoe UI', size: 18, weight: 'bold' }
+        font: { family: 'Segoe UI', size: 16, weight: 'bold' }
       },
       tooltip: {
         callbacks: {

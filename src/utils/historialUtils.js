@@ -1,5 +1,3 @@
-// (Importar utilidades necesarias como categoryUtils, formatoFecha, etc.)
-
 // Lista de categorías válidas (podría venir de categoryUtils)
 const CATEGORIAS_VALIDAS = ['Luz', 'Agua', 'Gas', 'Internet', 'Utiles de Aseo', 'Otros'];
 
@@ -26,7 +24,7 @@ function normalizarCategoria(categoriaNombre) {
   }
 }
 
-export function procesarCuentasYPagosHistorial(cuentasArray, pagosArray) {
+export function procesarCuentasYPagosHistorial(cuentasArray = [], pagosArray = []) {
   console.log("Procesando cuentas y pagos (historialUtils):", cuentasArray.length, pagosArray.length);
   // Adaptar para aceptar pagos con campo 'cuenta' o 'cuentaId', y monto 'monto_pagado' o 'montoPagado'
   const pagosPorCuenta = pagosArray.reduce((acc, pago) => {
@@ -60,46 +58,44 @@ export function procesarCuentasYPagosHistorial(cuentasArray, pagosArray) {
       ...cuenta,
       totalPagado,
       estaPagada,
+      pagosCuenta,
       porcentajePagado: montoCuenta > 0 ? Math.min(100, Math.round((totalPagado / montoCuenta) * 100)) : 0,
       fechaUltimoPago: fechaUltimoPago ? fechaUltimoPago.toISOString() : null,
-      pagosCuenta,
       categoria: categoriaNormalizada
     };
   });
 }
 
 export function filtrarCuentasHistorial(cuentasProcesadas, filtros) {
-  const { filtroFechaInicio, filtroFechaFin, filtroCategoria, filtroEstado } = filtros;
+  const { fechaInicio, fechaFin, categoria, estado } = filtros;
   console.log("Filtrando cuentas (historialUtils):", cuentasProcesadas.length);
 
   return cuentasProcesadas.filter(cuenta => {
     const categoriaLowerCase = cuenta.categoria.toLowerCase();
-    const filtroCatLowerCase = filtroCategoria.toLowerCase();
+    const filtroCatLowerCase = categoria ? categoria.toLowerCase() : '';
 
     // Filtro por fechas
-    if (filtroFechaInicio && cuenta.fechaVencimiento) {
-      const fechaInicio = new Date(filtroFechaInicio);
-      const fechaVencimiento = new Date(cuenta.fechaVencimiento);
-      fechaInicio.setHours(0,0,0,0);
-      fechaVencimiento.setHours(0,0,0,0);
-      if (fechaVencimiento < fechaInicio) return false;
+    if (fechaInicio && cuenta.fechaVencimiento) {
+      const fechaInicioObj = new Date(fechaInicio);
+      const fechaVencimientoObj = new Date(cuenta.fechaVencimiento);
+      fechaInicioObj.setHours(0,0,0,0);
+      fechaVencimientoObj.setHours(0,0,0,0);
+      if (fechaVencimientoObj < fechaInicioObj) return false;
     }
-    if (filtroFechaFin && cuenta.fechaVencimiento) {
-      const fechaFin = new Date(filtroFechaFin);
-      const fechaVencimiento = new Date(cuenta.fechaVencimiento);
-      fechaFin.setHours(23,59,59,999);
-      // Asegurarse que la fecha de vencimiento también tenga hora para comparar correctamente
-      const fechaVencimientoConHora = new Date(fechaVencimiento);
-      fechaVencimientoConHora.setHours(23,59,59,999);
-      if (fechaVencimientoConHora > fechaFin) return false;
+    if (fechaFin && cuenta.fechaVencimiento) {
+      const fechaFinObj = new Date(fechaFin);
+      const fechaVencimientoObj = new Date(cuenta.fechaVencimiento);
+      fechaFinObj.setHours(23,59,59,999);
+      fechaVencimientoObj.setHours(23,59,59,999);
+      if (fechaVencimientoObj > fechaFinObj) return false;
     }
     // Filtro por categoría
-    if (filtroCategoria !== 'todas' && categoriaLowerCase !== filtroCatLowerCase) {
+    if (categoria && categoria !== 'todas' && categoriaLowerCase !== filtroCatLowerCase) {
       return false;
     }
     // Filtro por estado
-    if (filtroEstado === 'pagadas' && !cuenta.estaPagada) return false;
-    if (filtroEstado === 'pendientes' && cuenta.estaPagada) return false;
+    if (estado === 'pagadas' && !cuenta.estaPagada) return false;
+    if (estado === 'pendientes' && cuenta.estaPagada) return false;
 
     return true;
   });
@@ -123,7 +119,7 @@ export function agruparDatosHistorial(cuentasFiltradas, modo, formatoMesFunc) {
     if (!acc[periodoKey]) {
       acc[periodoKey] = {
         periodo: periodoKey,
-        etiqueta: formatoMesFunc(periodoKey), // Usar la función pasada como argumento
+        etiqueta: formatoMesFunc ? formatoMesFunc(periodoKey) : periodoKey,
         totalCuentas: 0,
         totalMonto: 0,
         cuentasPagadas: 0,
@@ -199,6 +195,9 @@ export function agruparDatosHistorial(cuentasFiltradas, modo, formatoMesFunc) {
   } else if (modo === 'categoria') {
     porPeriodo.push(...porCategoria);
   }
+
+  return { porMes, porCategoria, porPeriodo };
+}
 
   return { porMes, porCategoria, porPeriodo };
 }

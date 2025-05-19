@@ -16,6 +16,9 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from django_filters.rest_framework import DjangoFilterBackend
 from django.db import transaction
 from django.contrib.auth.models import User
+import csv
+from django.http import HttpResponse
+from datetime import datetime
 
 class CuentaViewSet(viewsets.ModelViewSet):
     queryset = Cuenta.objects.all()
@@ -322,3 +325,81 @@ class UsuariosListView(APIView):
             for p in perfiles
         ]
         return Response(data)
+
+class ExportarCuentasCSVView(APIView):
+    permission_classes = [IsAuthenticated]
+    
+    def get(self, request):
+        # Obtener parámetros de filtrado
+        fecha_desde = request.query_params.get('fecha_desde')
+        fecha_hasta = request.query_params.get('fecha_hasta')
+        categoria = request.query_params.get('categoria')
+        estado = request.query_params.get('estado')
+        
+        # Filtrar cuentas según parámetros
+        cuentas = Cuenta.objects.all().select_related('proveedor', 'creador')
+        
+        if fecha_desde:
+            cuentas = cuentas.filter(fecha_vencimiento__gte=fecha_desde)
+        if fecha_hasta:
+            cuentas = cuentas.filter(fecha_vencimiento__lte=fecha_hasta)
+        if categoria:
+            cuentas = cuentas.filter(categoria=categoria)
+        if estado:
+            if estado == 'pagada':
+                cuentas = cuentas.filter(pagos__isnull=False).distinct()
+            elif estado == 'pendiente':
+                # Subconsulta para obtener cuentas sin pagos o con pagos parciales
+                from django.db.models import Sum, F, Q
+                cuentas_con_pagos_completos = Cuenta.objects.annotate(
+                    total_pagado=Sum('pagos__monto_pagado')
+                ).filter(total_pagado__gte=F('monto'))
+                cuentas = cuentas.exclude(id__in=cuentas_con_pagos_completos)
+        
+        # Crear respuesta HTTP con contenido CSV
+        response = HttpResponse(content_type='text/csv')
+        response['Content-Disposition'] = f'attachment; filename="historial-cuentas-{datetime.now().strftime("%Y%m%d")}.csv"'
+        
+        # Configurar escritor CSV
+        writer = csv.writer(response)
+        
+        # Escribir encabezados
+        writer.writerow([
+            'ID', 'Nombre', 'Monto', 'Proveedor', 'Categoría', 
+            'Fecha Emisión', 'Fecha Vencimiento', 'Descripción',
+            'Creador', 'Fecha Creación', 'Estado', 'Monto Pagado', 
+            'Fecha Último Pago'
+        ])
+        
+        # Iterar sobre las cuentas y escribir filas
+        for cuenta in cuentas:
+            # Calcular estado y monto pagado
+            pagos = Pago.objects.filter(cuenta=cuenta)
+            monto_pagado = sum(pago.monto_pagado for pago in pagos)
+            ultimo_pago = pagos.order_by('-fecha_pago').first()
+            
+            if monto_pagado >= cuenta.monto:
+                estado_cuenta = 'Pagada'
+            elif monto_pagado > 0:
+                estado_cuenta = 'Pago Parcial'
+            else:
+                estado_cuenta = 'Pendiente'
+                
+            # Escribir datos de la cuenta
+            writer.writerow([
+                cuenta.id,
+                cuenta.nombre,
+                cuenta.monto,
+                cuenta.proveedor.nombre if cuenta.proveedor else '',
+                cuenta.categoria,
+                cuenta.fecha_emision.strftime('%Y-%m-%d') if cuenta.fecha_emision else '',
+                cuenta.fecha_vencimiento.strftime('%Y-%m-%d'),
+                cuenta.descripcion.replace('\n', ' '),
+                cuenta.creador.username,
+                cuenta.fecha_creacion.strftime('%Y-%m-%d %H:%M'),
+                estado_cuenta,
+                monto_pagado,
+                ultimo_pago.fecha_pago.strftime('%Y-%m-%d') if ultimo_pago else ''
+            ])
+        
+        return response
