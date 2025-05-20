@@ -2,7 +2,7 @@ from rest_framework import routers
 from .views import (
     CuentaViewSet, PagoViewSet, profile_view, ProveedoresPorCategoriaView, TransferirSobranteView, CerrarMesView,
     PresupuestoMensualViewSet, AporteViewSet, GastoPresupuestoViewSet, DeudaPresupuestoViewSet, AhorroPresupuestoViewSet, MovimientoPresupuestoViewSet,
-    UsuariosListView, ExportarCuentasCSVView
+    UsuariosListView, ExportarCuentasCSVView, PagoDeudaPresupuestoViewSet
 )
 from django.urls import path
 
@@ -15,6 +15,7 @@ router.register(r'gastos-presupuesto', GastoPresupuestoViewSet)
 router.register(r'deudas-presupuesto', DeudaPresupuestoViewSet)
 router.register(r'ahorros-presupuesto', AhorroPresupuestoViewSet)
 router.register(r'movimientos-presupuesto', MovimientoPresupuestoViewSet)
+router.register(r'pagos-deuda', PagoDeudaPresupuestoViewSet)
 
 urlpatterns = router.urls + [
     path('profile/', profile_view, name='profile'),

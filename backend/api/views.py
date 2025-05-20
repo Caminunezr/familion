@@ -3,10 +3,10 @@ from rest_framework import viewsets, permissions, status, serializers
 from rest_framework.response import Response
 import os
 from django.conf import settings
-from .models import Cuenta, Pago, Profile, Proveedor, PresupuestoMensual, Aporte, GastoPresupuesto, DeudaPresupuesto, AhorroPresupuesto, MovimientoPresupuesto
+from .models import Cuenta, Pago, Profile, Proveedor, PresupuestoMensual, Aporte, GastoPresupuesto, DeudaPresupuesto, AhorroPresupuesto, MovimientoPresupuesto, PagoDeudaPresupuesto
 from .serializers import (
     CuentaSerializer, PagoSerializer, ProfileSerializer, ProveedorSerializer,
-    PresupuestoMensualSerializer, AporteSerializer, GastoPresupuestoSerializer, DeudaPresupuestoSerializer, AhorroPresupuestoSerializer, MovimientoPresupuestoSerializer
+    PresupuestoMensualSerializer, AporteSerializer, GastoPresupuestoSerializer, DeudaPresupuestoSerializer, AhorroPresupuestoSerializer, MovimientoPresupuestoSerializer, PagoDeudaPresupuestoSerializer
 )
 from collections import defaultdict
 from rest_framework.views import APIView
@@ -403,3 +403,27 @@ class ExportarCuentasCSVView(APIView):
             ])
         
         return response
+
+class PagoDeudaPresupuestoViewSet(viewsets.ModelViewSet):
+    queryset = PagoDeudaPresupuesto.objects.all()
+    serializer_class = PagoDeudaPresupuestoSerializer
+    permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['deuda']
+
+    def perform_create(self, serializer):
+        pago = serializer.save()
+        deuda = pago.deuda
+        deuda.cuotas_pagadas = deuda.pagos.count()
+        if deuda.cuotas_totales == 1:
+            # Deuda de pago manual: sumar todos los pagos
+            total_pagado = sum(p.monto_pagado for p in deuda.pagos.all())
+            if total_pagado >= deuda.monto:
+                deuda.pagado = True
+                deuda.fecha_pago = pago.fecha_pago
+        else:
+            # Deuda en cuotas: lógica original
+            if deuda.cuotas_pagadas >= deuda.cuotas_totales:
+                deuda.pagado = True
+                deuda.fecha_pago = pago.fecha_pago
+        deuda.save()

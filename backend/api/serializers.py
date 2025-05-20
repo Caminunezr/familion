@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User  # Import User model
-from .models import Cuenta, Pago, Profile, Proveedor, PresupuestoMensual, Aporte, GastoPresupuesto, DeudaPresupuesto, AhorroPresupuesto, MovimientoPresupuesto
+from .models import Cuenta, Pago, Profile, Proveedor, PresupuestoMensual, Aporte, GastoPresupuesto, DeudaPresupuesto, AhorroPresupuesto, MovimientoPresupuesto, PagoDeudaPresupuesto
 
 def to_camel_case(s):
     parts = s.split('_')
@@ -68,13 +68,30 @@ class GastoPresupuestoSerializer(CamelCaseModelSerializer):
     def get_cuenta_nombre(self, obj):
         return str(obj.cuenta) if obj.cuenta else None
 
+class PagoDeudaPresupuestoSerializer(CamelCaseModelSerializer):
+    class Meta:
+        model = PagoDeudaPresupuesto
+        fields = '__all__'
+
 class DeudaPresupuestoSerializer(CamelCaseModelSerializer):
     cuenta_origen_nombre = serializers.SerializerMethodField()
+    pagos = PagoDeudaPresupuestoSerializer(many=True, read_only=True)
+    porcentaje_pagado_cuotas = serializers.SerializerMethodField()
+    porcentaje_pagado_monto = serializers.SerializerMethodField()
     class Meta:
         model = DeudaPresupuesto
         fields = '__all__'
     def get_cuenta_origen_nombre(self, obj):
         return str(obj.cuenta_origen) if obj.cuenta_origen else None
+    def get_porcentaje_pagado_cuotas(self, obj):
+        if obj.cuotas_totales:
+            return round(100 * obj.cuotas_pagadas / obj.cuotas_totales, 2)
+        return 0.0
+    def get_porcentaje_pagado_monto(self, obj):
+        total_pagado = sum([p.monto_pagado for p in obj.pagos.all()])
+        if obj.monto:
+            return round(100 * float(total_pagado) / float(obj.monto), 2)
+        return 0.0
 
 class AhorroPresupuestoSerializer(CamelCaseModelSerializer):
     cuenta_destino_nombre = serializers.SerializerMethodField()

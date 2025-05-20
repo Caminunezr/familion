@@ -24,8 +24,28 @@ export const deleteGasto = (id) => axios.delete(`${API_BASE}/gastos-presupuesto/
 
 // Deudas
 export const getDeudas = (params) => axios.get(`${API_BASE}/deudas-presupuesto/`, { params });
-export const createDeuda = (data) => axios.post(`${API_BASE}/deudas-presupuesto/`, data);
-export const updateDeuda = (id, data) => axios.put(`${API_BASE}/deudas-presupuesto/${id}/`, data);
+export const createDeuda = (data) => {
+  // Si hay archivo, usar FormData
+  if (data && data.documento instanceof File) {
+    const formData = new FormData();
+    Object.entries(data).forEach(([key, value]) => {
+      if (value !== undefined && value !== null) {
+        // Si es un objeto tipo Date, convertir a string ISO
+        if (value instanceof Date) {
+          formData.append(key, value.toISOString().split('T')[0]);
+        } else {
+          formData.append(key, value);
+        }
+      }
+    });
+    return axios.post(`${API_BASE}/deudas-presupuesto/`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    });
+  } else {
+    return axios.post(`${API_BASE}/deudas-presupuesto/`, data);
+  }
+};
+export const updateDeuda = (id, data) => axios.patch(`${API_BASE}/deudas-presupuesto/${id}/`, data);
 export const deleteDeuda = (id) => axios.delete(`${API_BASE}/deudas-presupuesto/${id}/`);
 
 // Ahorros
@@ -42,3 +62,16 @@ export const transferirSobrante = (presupuestoId) => axios.post(`${API_BASE}/pre
 
 // Cerrar mes
 export const cerrarMes = (presupuestoId) => axios.post(`${API_BASE}/presupuesto/${presupuestoId}/cerrar-mes/`);
+
+// Pagos de deuda (cuotas)
+export const getPagosDeuda = (params) => axios.get(`${API_BASE}/pagos-deuda/`, { params });
+export const createPagoDeuda = (data) => {
+  const token = localStorage.getItem('access');
+  return axios.post(`${API_BASE}/pagos-deuda/`, data, {
+    headers: { Authorization: `Bearer ${token}` }
+  });
+};
+export const deletePagoDeuda = (id) => axios.delete(`${API_BASE}/pagos-deuda/${id}/`);
+
+// Cuentas (para selector de cuenta_origen en deudas)
+export const getCuentas = (params) => axios.get(`${API_BASE}/cuentas/`, { params });

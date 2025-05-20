@@ -77,6 +77,15 @@ const PagoForm = ({ cuenta, onSuccess, onCancel, presupuestosDisponibles = [] })
     }
   };
 
+  // Utilidad para mostrar mes y año legible
+  const obtenerMesNombreCompleto = (fechaMes) => {
+    if (!fechaMes) return '';
+    // fechaMes puede venir como '2025-05-01' o '2025-05'
+    const [y, m] = fechaMes.split('-');
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    return `${meses[parseInt(m, 10) - 1]} ${y}`;
+  };
+
   return (
     <div className="pago-form-container">
       <h3>Registrar Pago</h3>
@@ -90,7 +99,9 @@ const PagoForm = ({ cuenta, onSuccess, onCancel, presupuestosDisponibles = [] })
             <select value={presupuestoId} onChange={e => setPresupuestoId(e.target.value)} required disabled={loading}>
               <option value="">-- Selecciona un presupuesto --</option>
               {presupuestosDisponibles.map(p => (
-                <option key={p.id} value={p.id}>{p.familia} - {p.fecha_mes}</option>
+                <option key={p.id} value={p.id}>
+                  {obtenerMesNombreCompleto(p.fecha_mes || p.fechaMes)}
+                </option>
               ))}
             </select>
           </div>

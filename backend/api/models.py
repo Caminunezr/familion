@@ -103,9 +103,43 @@ class DeudaPresupuesto(models.Model):
     fecha_pago = models.DateTimeField(null=True, blank=True)
     comentario = models.TextField(blank=True)
     cuenta_origen = models.ForeignKey('Cuenta', on_delete=models.SET_NULL, null=True, blank=True)
+    # NUEVO: gestión avanzada de deudas
+    cuotas_totales = models.PositiveIntegerField(default=1, help_text="Número total de cuotas")
+    cuotas_pagadas = models.PositiveIntegerField(default=0, help_text="Cuotas pagadas")
+    frecuencia = models.CharField(max_length=20, default='mensual', choices=[('mensual','Mensual'),('quincenal','Quincenal'),('semanal','Semanal')])
+    fecha_inicio = models.DateField(null=True, blank=True)
+    fecha_fin_estimado = models.DateField(null=True, blank=True)
+    documento = models.FileField(upload_to='documentos_deuda/', null=True, blank=True)
+    categoria = models.CharField(max_length=100, blank=True)
+
+    def calcular_fecha_fin(self):
+        # Calcula la fecha estimada de término según cuotas y frecuencia
+        from datetime import timedelta
+        if not self.fecha_inicio or not self.cuotas_totales:
+            return None
+        if self.frecuencia == 'mensual':
+            meses = self.cuotas_totales - 1
+            return self.fecha_inicio.replace(month=self.fecha_inicio.month + meses)
+        elif self.frecuencia == 'quincenal':
+            dias = (self.cuotas_totales - 1) * 15
+            return self.fecha_inicio + timedelta(days=dias)
+        elif self.frecuencia == 'semanal':
+            dias = (self.cuotas_totales - 1) * 7
+            return self.fecha_inicio + timedelta(days=dias)
+        return None
 
     def __str__(self):
-        return f"Deuda {self.monto} - {self.motivo}"
+        return f"Deuda {self.monto} - {self.motivo} ({self.cuotas_pagadas}/{self.cuotas_totales} cuotas)"
+
+class PagoDeudaPresupuesto(models.Model):
+    deuda = models.ForeignKey(DeudaPresupuesto, on_delete=models.CASCADE, related_name='pagos')
+    fecha_pago = models.DateField(auto_now_add=True)
+    monto_pagado = models.DecimalField(max_digits=10, decimal_places=2)
+    comentario = models.TextField(blank=True)
+    comprobante = models.FileField(upload_to='comprobantes_deuda/', null=True, blank=True)
+
+    def __str__(self):
+        return f"Pago {self.monto_pagado} de {self.deuda}"
 
 class AhorroPresupuesto(models.Model):
     presupuesto = models.ForeignKey(PresupuestoMensual, on_delete=models.CASCADE, related_name='ahorros')
