@@ -221,8 +221,23 @@ const PresupuestoDashboard = () => {
     try {
       let payload = { ...form, presupuesto: presupuesto.id };
       // Si hay archivo, el servicio lo detecta y arma FormData
-      await createDeuda(payload);
-      setShowDeuda(false); setForm(initialForm); setAccionSuccess('Deuda registrada');
+      const response = await createDeuda(payload);
+      setShowDeuda(false); setForm(initialForm);
+      // --- NUEVO: mostrar mensaje con los meses afectados ---
+      let msg = 'Deuda registrada';
+      if (response?.data && response.data.presupuestos_afectados) {
+        const lista = response.data.presupuestos_afectados.map(p => {
+          const fecha = p.fecha_mes || p.fechaMes;
+          if (!fecha) return '';
+          const [y, m] = fecha.split('-');
+          const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+          return `${mesesNombres[parseInt(m,10)-1]} ${y}`;
+        }).filter(Boolean);
+        if (lista.length > 0) {
+          msg += `. Se crearon o actualizaron presupuestos para: ${lista.join(', ')}`;
+        }
+      }
+      setAccionSuccess(msg);
       await recargarDatos();
     } catch (e) {
       // Mostrar el error real del backend si existe
@@ -500,27 +515,57 @@ const PresupuestoDashboard = () => {
     },
   };
 
-  // El gráfico solo muestra aportes restantes vs. gastados en cuentas
-  const dataBar = {
-    labels: ['Aportes Restantes', 'Aportes Ocupados (pagos de cuentas)'],
+  // --- NUEVO: Gráfico de Estado de los Aportes (barras apiladas horizontal) ---
+  const dataEstadoAportes = {
+    labels: ['Estado de los Aportes'],
     datasets: [
       {
-        label: 'CLP',
-        data: [saldoAportes, totalGastado],
-        backgroundColor: ['#4caf50', '#f44336'],
-        borderRadius: 6,
+        label: 'Gastado',
+        data: [totalGastado],
+        backgroundColor: '#f44336',
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Deuda activa',
+        data: [totalDeuda],
+        backgroundColor: '#ff9800',
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Ahorrado',
+        data: [totalAhorrado],
+        backgroundColor: '#2196f3',
+        stack: 'Stack 0',
+      },
+      {
+        label: 'Sobrante',
+        data: [saldoAportes],
+        backgroundColor: '#4caf50',
+        stack: 'Stack 0',
       },
     ],
   };
-  const optionsBar = {
+  const optionsEstadoAportes = {
+    indexAxis: 'y',
     responsive: true,
     plugins: {
-      legend: { display: false },
-      title: { display: true, text: 'Estado de los Aportes' },
+      legend: { position: 'top' },
+      title: { display: true, text: 'Estado de los Aportes (Distribución total)' },
+      tooltip: {
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: ${formatoMoneda(context.parsed.x)}`;
+          }
+        }
+      }
     },
     scales: {
-      y: { beginAtZero: true, ticks: { callback: v => formatoMoneda(v) } },
-      x: { grid: { display: false } },
+      x: {
+        stacked: true,
+        beginAtZero: true,
+        ticks: { callback: v => formatoMoneda(v) }
+      },
+      y: { stacked: true }
     },
   };
 
@@ -630,13 +675,13 @@ const PresupuestoDashboard = () => {
             <Tarjeta titulo="Deuda activa" valor={formatoMoneda(totalDeuda)} color="#ff9800" clase="tarjeta-deuda" />
             <Tarjeta titulo="Sobrante" valor={formatoMoneda(saldoAportes)} color="#607d8b" clase="tarjeta-sobrante" />
           </div>
-          {/* Gráfico de barras en vez de barra de progreso */}
-          <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto 0', width: '100%', overflowX: 'auto'}}>
-            <Bar data={dataBar} options={optionsBar} />
-          </div>
           {/* Gráfico de aportes por usuario */}
           <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto', width: '100%', overflowX: 'auto'}}>
             <BarChart data={dataAportesPorUsuario} options={optionsAportesPorUsuario} />
+          </div>
+          {/* Gráfico de barras apiladas horizontal para estado de los aportes */}
+          <div className="responsive-chart-container" style={{maxWidth: 520, margin: '24px auto 0', width: '100%', overflowX: 'auto'}}>
+            <Bar data={dataEstadoAportes} options={optionsEstadoAportes} />
           </div>
           <div className="presupuesto-acciones responsive-acciones">
             <button style={{background:'#4caf50'}} onClick={()=>setShowAporte(true)}>Agregar Aporte</button>
@@ -650,7 +695,60 @@ const PresupuestoDashboard = () => {
           <div style={{marginBottom:16}}>
             <button onClick={()=>setMesSeleccionado(null)} style={{background:'#eee',color:'#607d8b',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:600,cursor:'pointer',fontSize:'0.98em'}}>Cambiar mes</button>
           </div>
-
+          {/* Pseudo carrusel de meses */}
+          {presupuestosDisponibles.length > 1 && (
+            <div style={{display:'flex',justifyContent:'center',alignItems:'center',gap:8,marginBottom:24}}>
+              {(() => {
+                // Obtener meses únicos ordenados ascendente
+                const meses = presupuestosDisponibles.map(p => p.fechaMes?.slice(0,7)).filter(Boolean);
+                const mesesUnicos = Array.from(new Set(meses)).sort();
+                const idx = mesesUnicos.indexOf(presupuesto.fechaMes?.slice(0,7));
+                // Mostrar hasta 2 antes y 2 después del actual
+                const start = Math.max(0, idx-2);
+                const end = Math.min(mesesUnicos.length, idx+3);
+                const mesesCarrusel = mesesUnicos.slice(start, end);
+                const mesesNombres = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+                const formatoMes = (ym) => {
+                  if (!ym) return '';
+                  const [y, m] = ym.split('-');
+                  return `${mesesNombres[parseInt(m,10)-1]} ${y}`;
+                };
+                return (
+                  <>
+                    {start > 0 && (
+                      <button onClick={()=>setMesSeleccionado(mesesUnicos[start-1])} style={{background:'none',border:'none',color:'#607d8b',fontSize:22,cursor:'pointer',padding:'0 8px'}}>‹</button>
+                    )}
+                    {mesesCarrusel.map((mes, i) => (
+                      <button
+                        key={mes}
+                        onClick={()=>setMesSeleccionado(mes)}
+                        disabled={mes === presupuesto.fechaMes?.slice(0,7)}
+                        style={{
+                          background: mes === presupuesto.fechaMes?.slice(0,7) ? '#607d8b' : '#f5f5f5',
+                          color: mes === presupuesto.fechaMes?.slice(0,7) ? '#fff' : '#607d8b',
+                          border: mes === presupuesto.fechaMes?.slice(0,7) ? '2px solid #607d8b' : '1px solid #ccc',
+                          borderRadius: 8,
+                          fontWeight: mes === presupuesto.fechaMes?.slice(0,7) ? 800 : 600,
+                          fontSize: mes === presupuesto.fechaMes?.slice(0,7) ? '1.13em' : '1em',
+                          padding: '7px 16px',
+                          margin: '0 2px',
+                          opacity: mes === presupuesto.fechaMes?.slice(0,7) ? 1 : 0.8,
+                          cursor: mes === presupuesto.fechaMes?.slice(0,7) ? 'default' : 'pointer',
+                          boxShadow: mes === presupuesto.fechaMes?.slice(0,7) ? '0 2px 8px #0002' : 'none',
+                          transition: 'all 0.2s',
+                        }}
+                      >
+                        {formatoMes(mes)}
+                      </button>
+                    ))}
+                    {end < mesesUnicos.length && (
+                      <button onClick={()=>setMesSeleccionado(mesesUnicos[end])} style={{background:'none',border:'none',color:'#607d8b',fontSize:22,cursor:'pointer',padding:'0 8px'}}>›</button>
+                    )}
+                  </>
+                );
+              })()}
+            </div>
+          )}
           {/* Listados detallados */}
           <div className="presupuesto-listados responsive-listados">
             <div className="presupuesto-listado-col">

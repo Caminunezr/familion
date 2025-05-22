@@ -276,6 +276,7 @@ class DeudaPresupuestoViewSet(viewsets.ModelViewSet):
     filterset_fields = ['presupuesto', 'pagado']
 
     def perform_create(self, serializer):
+        from datetime import timedelta, date
         deuda = serializer.save()
         MovimientoPresupuesto.objects.create(
             presupuesto=deuda.presupuesto,
@@ -285,6 +286,68 @@ class DeudaPresupuestoViewSet(viewsets.ModelViewSet):
             descripcion=f'Deuda: {deuda.motivo}',
             referencia_id=deuda.id
         )
+
+        presupuestos_afectados = [deuda.presupuesto]
+        # --- Lógica para crear presupuestos futuros y asociar deuda remanente ---
+        if deuda.cuotas_totales > 1 or (deuda.fecha_inicio and deuda.fecha_inicio.month != deuda.presupuesto.fecha_mes.month):
+            meses_futuros = []
+            fecha_inicio = deuda.fecha_inicio or deuda.presupuesto.fecha_mes
+            cuotas = deuda.cuotas_totales
+            frecuencia = deuda.frecuencia or 'mensual'
+            familia = deuda.presupuesto.familia
+            monto_cuota = deuda.monto / deuda.cuotas_totales if deuda.cuotas_totales > 1 else deuda.monto
+            fechas_cuotas = []
+            actual = fecha_inicio
+            for i in range(cuotas):
+                if frecuencia == 'mensual':
+                    mes = (actual.month + i - 1) % 12 + 1
+                    year = actual.year + ((actual.month + i - 1) // 12)
+                    fechas_cuotas.append(date(year, mes, 1))
+                elif frecuencia == 'quincenal':
+                    fechas_cuotas.append(actual + timedelta(days=15*i))
+                elif frecuencia == 'semanal':
+                    fechas_cuotas.append(actual + timedelta(days=7*i))
+                else:
+                    fechas_cuotas.append(actual)
+            for fecha_cuota in fechas_cuotas:
+                presupuesto, creado = PresupuestoMensual.objects.get_or_create(
+                    familia=familia,
+                    fecha_mes=date(fecha_cuota.year, fecha_cuota.month, 1),
+                    defaults={'monto_objetivo': 0, 'creado_por': self.request.user}
+                )
+                if presupuesto.id != deuda.presupuesto.id:
+                    if not DeudaPresupuesto.objects.filter(
+                        presupuesto=presupuesto,
+                        motivo=deuda.motivo,
+                        monto=monto_cuota,
+                        cuotas_totales=1,
+                        pagado=False
+                    ).exists():
+                        DeudaPresupuesto.objects.create(
+                            presupuesto=presupuesto,
+                            monto=monto_cuota,
+                            motivo=deuda.motivo,
+                            pagado=False,
+                            comentario=f'Deuda remanente de cuota generada automáticamente',
+                            cuenta_origen=deuda.cuenta_origen,
+                            cuotas_totales=1,
+                            cuotas_pagadas=0,
+                            frecuencia='mensual',
+                            fecha_inicio=fecha_cuota,
+                            categoria=deuda.categoria
+                        )
+                    presupuestos_afectados.append(presupuesto)
+        # Guardar en la instancia para usar en create()
+        self.presupuestos_afectados = presupuestos_afectados
+
+    def create(self, request, *args, **kwargs):
+        response = super().create(request, *args, **kwargs)
+        # Agregar info de presupuestos afectados si existe
+        presupuestos_afectados = getattr(self, 'presupuestos_afectados', None)
+        if presupuestos_afectados:
+            from .serializers import PresupuestoMensualSerializer
+            response.data['presupuestos_afectados'] = PresupuestoMensualSerializer(presupuestos_afectados, many=True).data
+        return response
 
 class AhorroPresupuestoViewSet(viewsets.ModelViewSet):
     queryset = AhorroPresupuesto.objects.all()
