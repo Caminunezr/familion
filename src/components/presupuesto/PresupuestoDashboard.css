@@ -183,6 +183,45 @@
   text-align: center;
 }
 
+/* Estilos para diseño compacto */
+.presupuesto-tarjetas-compactas {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  margin-bottom: 10px;
+}
+.presupuesto-tarjeta-compacta {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border-radius: 10px;
+  padding: 8px 14px;
+  min-width: 80px;
+  font-size: 13px;
+  box-shadow: 0 1px 4px #0001;
+  font-weight: 600;
+  color: #fff;
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.presupuesto-tarjeta-compacta .titulo {
+  font-size: 0.98em;
+  opacity: 0.85;
+  margin-bottom: 2px;
+}
+.presupuesto-tarjeta-compacta .valor {
+  font-size: 1.15em;
+  font-weight: 700;
+  margin-top: 0;
+}
+.presupuesto-sobrante-compacto {
+  text-align: center;
+  font-size: 1.08em;
+  margin-bottom: 18px;
+  color: #607d8b;
+  font-weight: 600;
+}
+
 @media (max-width: 900px) {
   .presupuesto-dashboard {
     padding: 0 6px;

@@ -61,7 +61,14 @@ export function procesarCuentasYPagosHistorial(cuentasArray = [], pagosArray = [
       pagosCuenta,
       porcentajePagado: montoCuenta > 0 ? Math.min(100, Math.round((totalPagado / montoCuenta) * 100)) : 0,
       fechaUltimoPago: fechaUltimoPago ? fechaUltimoPago.toISOString() : null,
-      categoria: categoriaNormalizada
+      categoria: categoriaNormalizada,
+      // Alias para compatibilidad en el modal y otros componentes
+      fecha_vencimiento: cuenta.fecha_vencimiento || cuenta.fechaVencimiento || '',
+      fechaVencimiento: cuenta.fecha_vencimiento || cuenta.fechaVencimiento || '',
+      fecha_creacion: cuenta.fecha_creacion || cuenta.fechaCreacion || '',
+      fechaCreacion: cuenta.fecha_creacion || cuenta.fechaCreacion || '',
+      creador_username: cuenta.creador_username || cuenta.creadorUsername || cuenta.creador || '',
+      creadorUsername: cuenta.creador_username || cuenta.creadorUsername || cuenta.creador || '',
     };
   });
 }

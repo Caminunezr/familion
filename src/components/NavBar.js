@@ -120,7 +120,6 @@ const NavBar = () => {
 
         {/* Enlaces de Navegación - Ocultos en móvil por defecto, mostrados en escritorio */}
         <div className={`nav-links ${isMobileMenuOpen ? 'mobile-active' : ''}`}>
-          <NavLink to="/dashboard" className="nav-link" onClick={handleLinkClick}>Dashboard</NavLink>
           <NavLink to="/gestion-cuentas" className="nav-link" onClick={handleLinkClick}>Cuentas</NavLink>
           <NavLink to="/presupuesto" className="nav-link" onClick={handleLinkClick}>Presupuesto</NavLink>
           <NavLink to="/historial" className="nav-link" onClick={handleLinkClick}>Historial</NavLink>

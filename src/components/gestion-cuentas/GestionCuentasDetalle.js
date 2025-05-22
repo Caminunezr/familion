@@ -92,7 +92,7 @@ const GestionCuentasDetalle = ({ cuenta, pagoInfo, loadingPagoInfo, onCancelar, 
     <div className="form-area-gc detalle-panel">
       <div className="panel-header">
         <h3>Detalles de la Cuenta</h3>
-        <button onClick={onCancelar} className="close-panel-btn" aria-label="Cerrar panel">&times;</button>
+        {/* Eliminada la X de cerrar, ya la provee el Modal */}
       </div>
       <div className="panel-content">
         {error && <div className="error-message detalle-error">{error}</div>}

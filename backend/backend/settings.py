@@ -27,7 +27,7 @@ SECRET_KEY = 'django-insecure-d!*7gkv(9*=41t0#+-u^^zz7wi^e$i^hh5)*nyf!hl13_u*(-3
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '[::1]', '0.0.0.0', '192.168.1.10', '192.168.1.255', '*']  # Agrega aquí la IP de tu servidor y/o '*' para pruebas en red local
 
 
 # Application definition
@@ -55,7 +55,13 @@ MIDDLEWARE = [
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 ]
 
-CORS_ALLOW_ALL_ORIGINS = True
+# CORS
+CORS_ALLOW_ALL_ORIGINS = True  # Para desarrollo, permite cualquier origen
+# Si quieres restringir, usa:
+# CORS_ALLOWED_ORIGINS = [
+#     'http://localhost:3000',
+#     'http://192.168.1.10:3000',
+# ]
 
 ROOT_URLCONF = 'backend.urls'
 
@@ -143,3 +149,11 @@ SIMPLE_JWT = {
     'REFRESH_TOKEN_LIFETIME': timedelta(days=30),
     # ...otros parámetros si los necesitas...
 }
+
+# CSRF para permitir peticiones desde la red local (solo si usas cookies y CSRF)
+CSRF_TRUSTED_ORIGINS = [
+    'http://localhost:3000',
+    'http://127.0.0.1:3000',
+    'http://192.168.1.10:3000',
+    'http://192.168.1.255:3000',
+]

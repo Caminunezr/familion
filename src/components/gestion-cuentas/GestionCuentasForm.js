@@ -46,7 +46,7 @@ const GestionCuentasForm = ({
     <div className="form-area-gc">
       <div className="form-header">
         <h3>{isEditing ? 'Editar Cuenta' : 'Nueva Cuenta'}</h3>
-        <button onClick={onCancelar} className="close-form-btn" aria-label="Cerrar formulario">&times;</button>
+        {/* Eliminada la X de cerrar, ya la provee el Modal */}
       </div>
       <form onSubmit={handleSubmit} className="form-container">
         <div className="panel-content">

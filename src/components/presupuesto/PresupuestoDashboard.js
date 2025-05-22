@@ -38,10 +38,10 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 
 const formatoMoneda = valor => valor?.toLocaleString('es-CL', { style: 'currency', currency: 'CLP' });
 
-const Tarjeta = ({ titulo, valor, color, clase }) => (
-  <div className={`presupuesto-tarjeta ${clase || ''}`} style={{ background: color }}>
-    <div>{titulo}</div>
-    <div className="valor">{valor}</div>
+const TarjetaCompacta = ({ titulo, valor, color, clase }) => (
+  <div className={`presupuesto-tarjeta-compacta ${clase || ''}`} style={{ background: color }}>
+    <span className="titulo">{titulo}</span>
+    <span className="valor">{valor}</span>
   </div>
 );
 
@@ -621,29 +621,6 @@ const PresupuestoDashboard = () => {
             <h2 style={{margin:0}}>Presupuesto Familiar - {presupuesto.fechaMes ? presupuesto.fechaMes.slice(0,7) : ''}</h2>
             <div style={{display:'flex',gap:8}}>
               <button
-                onClick={handleCerrarMes}
-                disabled={cerrarLoading}
-                style={{
-                  background: '#607d8b',
-                  color: '#fff',
-                  padding: '4px 10px',
-                  border: 'none',
-                  borderRadius: 6,
-                  fontWeight: 600,
-                  boxShadow: '0 1px 4px #0002',
-                  fontSize: '0.92em',
-                  cursor: 'pointer',
-                  minWidth: 0,
-                  minHeight: 0,
-                  lineHeight: 1.2,
-                  transition: 'background 0.2s, box-shadow 0.2s',
-                  opacity: cerrarLoading ? 0.7 : 1,
-                  marginLeft: 8
-                }}
-              >
-                {cerrarLoading ? 'Cerrando...' : 'Cerrar mes'}
-              </button>
-              <button
                 onClick={handleEliminarPresupuesto}
                 style={{
                   background: '#e53935',
@@ -659,7 +636,6 @@ const PresupuestoDashboard = () => {
                   minHeight: 0,
                   lineHeight: 1.2,
                   transition: 'background 0.2s, box-shadow 0.2s',
-                  marginLeft: 8
                 }}
               >
                 Eliminar presupuesto
@@ -668,12 +644,14 @@ const PresupuestoDashboard = () => {
           </div>
           {cerrarError && <div className="presupuesto-feedback-error">{cerrarError}</div>}
           {cerrarSuccess && <div className="presupuesto-feedback-success">{cerrarSuccess}</div>}
-          <div className="presupuesto-tarjetas responsive-tarjetas">
-            <Tarjeta titulo="Aportado" valor={formatoMoneda(totalAportado)} color="#4caf50" clase="tarjeta-aportado" />
-            <Tarjeta titulo="Gastado" valor={formatoMoneda(totalGastado)} color="#f44336" clase="tarjeta-gastado" />
-            <Tarjeta titulo="Ahorrado" valor={formatoMoneda(totalAhorrado)} color="#2196f3" clase="tarjeta-ahorrado" />
-            <Tarjeta titulo="Deuda activa" valor={formatoMoneda(totalDeuda)} color="#ff9800" clase="tarjeta-deuda" />
-            <Tarjeta titulo="Sobrante" valor={formatoMoneda(saldoAportes)} color="#607d8b" clase="tarjeta-sobrante" />
+          <div className="presupuesto-tarjetas-compactas responsive-tarjetas">
+            <TarjetaCompacta titulo="Aportado" valor={formatoMoneda(totalAportado)} color="#4caf50" clase="tarjeta-aportado" />
+            <TarjetaCompacta titulo="Gastado" valor={formatoMoneda(totalGastado)} color="#f44336" clase="tarjeta-gastado" />
+            <TarjetaCompacta titulo="Ahorrado" valor={formatoMoneda(totalAhorrado)} color="#2196f3" clase="tarjeta-ahorrado" />
+            <TarjetaCompacta titulo="Deuda" valor={formatoMoneda(totalDeuda)} color="#ff9800" clase="tarjeta-deuda" />
+          </div>
+          <div className="presupuesto-sobrante-compacto">
+            <span>Sobrante: <b style={{color:'#607d8b'}}>{formatoMoneda(saldoAportes)}</b></span>
           </div>
           {/* Gráfico de aportes por usuario */}
           <div className="responsive-chart-container" style={{maxWidth: 480, margin: '24px auto', width: '100%', overflowX: 'auto'}}>
@@ -691,9 +669,29 @@ const PresupuestoDashboard = () => {
           {accionError && <div className="presupuesto-feedback-error">{accionError}</div>}
           {accionSuccess && <div className="presupuesto-feedback-success">{accionSuccess}</div>}
 
-          {/* Botón para volver a la selección de mes */}
-          <div style={{marginBottom:16}}>
+          {/* Botón para volver a la selección de mes y cerrar mes */}
+          <div style={{marginBottom:16, display:'flex', gap:10, alignItems:'center', justifyContent:'flex-start'}}>
             <button onClick={()=>setMesSeleccionado(null)} style={{background:'#eee',color:'#607d8b',border:'none',borderRadius:6,padding:'6px 16px',fontWeight:600,cursor:'pointer',fontSize:'0.98em'}}>Cambiar mes</button>
+            <button
+              onClick={handleCerrarMes}
+              disabled={cerrarLoading}
+              style={{
+                background: '#f3f4f6', // gris muy suave
+                color: '#607d8b',
+                border: 'none',
+                borderRadius: 6,
+                fontWeight: 600,
+                fontSize: '0.98em',
+                padding: '6px 16px',
+                cursor: cerrarLoading ? 'not-allowed' : 'pointer',
+                opacity: cerrarLoading ? 0.7 : 1,
+                boxShadow: 'none',
+                marginLeft: 0,
+                transition: 'background 0.2s, color 0.2s',
+              }}
+            >
+              {cerrarLoading ? 'Cerrando...' : 'Cerrar mes'}
+            </button>
           </div>
           {/* Pseudo carrusel de meses */}
           {presupuestosDisponibles.length > 1 && (

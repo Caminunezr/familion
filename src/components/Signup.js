@@ -27,7 +27,8 @@ export default function Signup() {
       setError('');
       setLoading(true);
       await signup(emailRef.current.value, passwordRef.current.value, nameRef.current.value);
-      navigate('/dashboard');
+      // Redirigir a /gestion-cuentas en vez de /dashboard
+      navigate('/gestion-cuentas');
     } catch (err) {
       console.error("Error en Signup:", err);
       let friendlyError = "Falló al crear la cuenta.";

@@ -17,7 +17,8 @@ const ProtectedRoute = ({ children, requireAdmin = false }) => {
 
   if (requireAdmin && !currentUser.isAdmin) {
     console.warn('[ProtectedRoute] Acceso denegado a ruta admin para usuario no admin.');
-    return <Navigate to="/dashboard" replace />;
+    // Redirigir a /gestion-cuentas en vez de /dashboard
+    return <Navigate to="/gestion-cuentas" replace />;
   }
 
   return children;

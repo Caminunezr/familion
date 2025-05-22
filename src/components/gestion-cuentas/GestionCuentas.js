@@ -342,7 +342,7 @@ const GestionCuentas = () => {
         setLoading(false);
       }
     }
-  }, [currentUser, fetchAPI, cargarCuentas, cuentaSeleccionada?.id]);
+  }, [currentUser, fetchAPI, cargarCuentas, cuentaSeleccionada?.id, handleCancelar]);
 
   const recargarPagosCuentaSeleccionada = useCallback(async () => {
     if (!cuentaSeleccionada?.id) return;
@@ -364,7 +364,7 @@ const GestionCuentas = () => {
     if (showDetalleModal && cuentaSeleccionada?.id) {
       recargarPagosCuentaSeleccionada();
     }
-  }, [showDetalleModal, cuentaSeleccionada]);
+  }, [showDetalleModal, cuentaSeleccionada, recargarPagosCuentaSeleccionada]);
 
   // --- NUEVO: cerrar modal y recargar cuentas al registrar pago ---
   const handlePagoRegistrado = useCallback(async () => {
@@ -382,60 +382,65 @@ const GestionCuentas = () => {
     <div className="gestion-cuentas-page">
       <NavBar />
       <div className="gestion-cuentas-container">
-        <GestionCuentasHeader onAbrirFormularioNuevo={handleAbrirFormularioNuevo} />
+        <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:24}}>
+          {/* Encabezado y botón */}
+          <GestionCuentasHeader onAbrirFormularioNuevo={handleAbrirFormularioNuevo} />
 
-        <GestionCuentasFiltros
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          sortCriteria={sortCriteria}
-          onSortChange={handleSortChange}
-          sortDirection={sortDirection}
-          onToggleSortDirection={toggleSortDirection}
-        />
+          {/* Filtros y búsqueda */}
+          <GestionCuentasFiltros
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            sortCriteria={sortCriteria}
+            onSortChange={handleSortChange}
+            sortDirection={sortDirection}
+            onToggleSortDirection={toggleSortDirection}
+          />
 
-        <div className={`main-content-gc ${showForm || showDetalleModal ? 'panel-visible' : ''}`}>
-          <div className="cuentas-list-area">
-            {!currentUser && !loading && <p className="error-message">Debes iniciar sesión.</p>}
-            {error && <p className="error-message">{error}</p>}
-            <GestionCuentasListado
-              loading={loading}
-              cuentas={filteredCuentas}
-              onAbrirPanel={handleAbrirPanelDetalle}
-              onEliminarCuenta={handleEliminarCuenta}
-            />
+          {/* Tabla/cuadrícula de cuentas */}
+          <div className={`main-content-gc ${showForm || showDetalleModal ? 'panel-visible' : ''}`}> 
+            <div className="cuentas-list-area">
+              {!currentUser && !loading && <p className="error-message">Debes iniciar sesión.</p>}
+              {error && <p className="error-message">{error}</p>}
+              <GestionCuentasListado
+                loading={loading}
+                cuentas={filteredCuentas}
+                onAbrirPanel={handleAbrirPanelDetalle}
+                onEliminarCuenta={handleEliminarCuenta}
+              />
+            </div>
+            {showDetalleModal && cuentaSeleccionada && (
+              <Modal onClose={handleCancelar}>
+                <GestionCuentasDetalle
+                  cuenta={cuentaSeleccionada}
+                  pagoInfo={pagoInfo}
+                  loadingPagoInfo={detailLoading}
+                  onCancelar={handleCancelar}
+                  onEditarCuenta={() => handleEditarDesdeDetalle(cuentaSeleccionada)}
+                  error={detalleError}
+                  onPagoRegistrado={handlePagoRegistrado}
+                  esModal
+                />
+              </Modal>
+            )}
+            {showForm && (
+              <Modal onClose={handleCancelar}>
+                <GestionCuentasForm
+                  formData={formData}
+                  onInputChange={handleInputChange}
+                  onFileChange={handleFileChange}
+                  onEliminarFacturaChange={handleEliminarFacturaChange}
+                  onGuardarCuenta={handleGuardarCuenta}
+                  onCancelar={handleCancelar}
+                  categorias={categorias}
+                  proveedores={proveedores}
+                  formLoading={formLoading}
+                  error={formError}
+                  isEditing={!!formData.id}
+                  cuentaActual={cuentaSeleccionada}
+                />
+              </Modal>
+            )}
           </div>
-          {showDetalleModal && cuentaSeleccionada && (
-            <Modal onClose={handleCancelar}>
-              <GestionCuentasDetalle
-                cuenta={cuentaSeleccionada}
-                pagoInfo={pagoInfo}
-                loadingPagoInfo={detailLoading}
-                onCancelar={handleCancelar}
-                onEditarCuenta={() => handleEditarDesdeDetalle(cuentaSeleccionada)}
-                error={detalleError}
-                onPagoRegistrado={handlePagoRegistrado}
-                esModal
-              />
-            </Modal>
-          )}
-          {showForm && (
-            <Modal onClose={handleCancelar}>
-              <GestionCuentasForm
-                formData={formData}
-                onInputChange={handleInputChange}
-                onFileChange={handleFileChange}
-                onEliminarFacturaChange={handleEliminarFacturaChange}
-                onGuardarCuenta={handleGuardarCuenta}
-                onCancelar={handleCancelar}
-                categorias={categorias}
-                proveedores={proveedores}
-                formLoading={formLoading}
-                error={formError}
-                isEditing={!!formData.id}
-                cuentaActual={cuentaSeleccionada}
-              />
-            </Modal>
-          )}
         </div>
       </div>
     </div>

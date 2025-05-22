@@ -9,11 +9,11 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  // Si ya hay token, redirigir automáticamente al dashboard
+  // Si ya hay token, redirigir automáticamente a cuentas
   useEffect(() => {
     const token = localStorage.getItem('access');
     if (token) {
-      navigate('/dashboard');
+      navigate('/gestion-cuentas');
     }
   }, [navigate]);
 
@@ -33,7 +33,7 @@ const Login = () => {
       const data = await response.json();
       localStorage.setItem('access', data.access);
       localStorage.setItem('refresh', data.refresh);
-      navigate('/dashboard');
+      navigate('/gestion-cuentas');
     } catch (err) {
       setError('Usuario o contraseña incorrectos. Si tienes problemas, contacta al administrador.');
     } finally {

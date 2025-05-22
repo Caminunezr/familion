@@ -87,12 +87,19 @@
 }
 
 .pago-button {
-  background-color: #4CAF50;
+  background-color: #198754;
   color: white;
+  border: none;
+  border-radius: 6px;
+  padding: 10px 18px;
+  font-size: 15px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s;
 }
 
 .pago-button:hover {
-  background-color: #45a049;
+  background-color: #157347;
 }
 
 @media (max-width: 768px) {

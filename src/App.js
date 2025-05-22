@@ -4,12 +4,10 @@ import { AuthProvider } from './contexts/AuthContext';
 import { useAuth } from './contexts/AuthContext';
 import Login from './login/login';
 import Signup from './components/Signup';
-import Dashboard from './components/dashboard/Dashboard';
 import GestionCuentas from './components/gestion-cuentas/GestionCuentas';
 import PresupuestoDashboard from './components/presupuesto/PresupuestoDashboard';
 import Historial from './components/historial/Historial';
 import ProtectedRoute from './components/ProtectedRoute';
-import AdminPage from './components/admin/AdminPage'; // Importar AdminPage
 import Admin from './components/Admin'; // Importar el componente Admin
 import './App.css';
 
@@ -29,8 +27,7 @@ function App() {
             <Route path="/signup" element={<Signup />} />
 
             {/* Rutas Protegidas */}
-            <Route path="/" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/" element={<ProtectedRoute><GestionCuentas /></ProtectedRoute>} />
             <Route path="/gestion-cuentas" element={<ProtectedRoute><GestionCuentas /></ProtectedRoute>} />
             <Route path="/presupuesto" element={<ProtectedRoute><PresupuestoDashboard /></ProtectedRoute>} />
             <Route path="/historial" element={<ProtectedRoute><Historial /></ProtectedRoute>} />
