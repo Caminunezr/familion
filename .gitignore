@@ -18,10 +18,13 @@
 .env.test.local
 .env.production.local
 
-# media (facturas, boletas, comprobantes de pago)
-backend/media/facturas/
-backend/media/boletas/
-backend/media/comprobantes/
+# media (archivos de base de datos: facturas, boletas, comprobantes de pago, documentos de deuda)
+backend/media/
+# En caso de querer ignorar carpetas específicas y no toda la estructura media, usar:
+# backend/media/facturas/
+# backend/media/boletas/
+# backend/media/comprobantes/
+# backend/media/documentos_deuda/
 
 npm-debug.log*
 yarn-debug.log*
