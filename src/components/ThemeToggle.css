@@ -18,7 +18,7 @@
 }
 
 .theme-toggle:focus {
-  outline: 2px solid #4caf50;
+  outline: 2px solid var(--theme-success);
   outline-offset: 2px;
 }
 
@@ -34,11 +34,11 @@
 
 /* Iconos del toggle */
 .theme-toggle.light .theme-toggle-icon {
-  color: #ffa000; /* Color dorado para el sol */
+  color: var(--theme-warning);
 }
 
 .theme-toggle.dark .theme-toggle-icon {
-  color: #64b5f6; /* Color azul claro para la luna */
+  color: var(--theme-primary);
 }
 
 /* Animación de rotación */
@@ -99,7 +99,7 @@
 
 /* Variaciones para diferentes temas */
 [data-theme="light"] .theme-toggle {
-  color: #333;
+  color: var(--theme-text-primary);
 }
 
 [data-theme="light"] .theme-toggle:hover {
@@ -107,7 +107,7 @@
 }
 
 [data-theme="dark"] .theme-toggle {
-  color: #fff;
+  color: var(--theme-text-primary);
 }
 
 [data-theme="dark"] .theme-toggle:hover {
@@ -116,5 +116,5 @@
 
 [data-theme="dark"] .theme-toggle-tooltip {
   background-color: rgba(255, 255, 255, 0.9);
-  color: #333;
+  color: var(--theme-text-primary);
 }

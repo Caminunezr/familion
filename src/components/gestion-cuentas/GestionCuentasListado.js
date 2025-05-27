@@ -129,10 +129,12 @@ function ResumenAnual({ meses, anioActivo }) {
   const resumen = getResumenAnualPorCategoria(meses);
   const data = resumen[anioActivo] || [];
   const labels = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic'];
+  
   // Obtener todas las categorías presentes en el año
   const categorias = Array.from(new Set(
     data.flatMap(m => Object.keys(m))
   ));
+  
   // Colores por categoría (usar los definidos antes)
   const categoriaColor = {
     'Luz': '#FFEB3B',
@@ -144,6 +146,71 @@ function ResumenAnual({ meses, anioActivo }) {
     'Gasto Común': '#BA68C8',
     'Otros': '#BDBDBD',
   };
+
+  // Detectar si estamos en modo nocturno
+  const isDarkMode = document.querySelector('[data-theme="dark"]');
+  
+  // Configuración adaptable para modo nocturno
+  const chartOptions = {
+    responsive: true,
+    plugins: {
+      legend: { 
+        position: 'top',
+        labels: {
+          color: isDarkMode ? '#e0e0e0' : '#333',
+          font: {
+            family: 'Segoe UI, -apple-system, BlinkMacSystemFont, sans-serif',
+            size: 12
+          }
+        }
+      },
+      title: { display: false },
+      tooltip: {
+        backgroundColor: isDarkMode ? 'rgba(66, 66, 66, 0.95)' : 'rgba(0, 0, 0, 0.8)',
+        titleColor: isDarkMode ? '#ffffff' : '#ffffff',
+        bodyColor: isDarkMode ? '#e0e0e0' : '#ffffff',
+        borderColor: isDarkMode ? '#555' : '#ddd',
+        borderWidth: 1,
+        callbacks: {
+          label: function(context) {
+            return `${context.dataset.label}: $${context.parsed.y.toLocaleString()}`;
+          }
+        }
+      }
+    },
+    scales: {
+      x: { 
+        stacked: true, 
+        grid: { display: false },
+        ticks: {
+          color: isDarkMode ? '#b0b0b0' : '#666',
+          font: { size: 11 }
+        }
+      },
+      y: { 
+        stacked: true, 
+        beginAtZero: true, 
+        grid: { 
+          color: isDarkMode ? '#404040' : '#eee',
+          lineWidth: 1
+        },
+        ticks: {
+          color: isDarkMode ? '#b0b0b0' : '#666',
+          font: { size: 11 },
+          callback: function(value) {
+            return '$' + value.toLocaleString();
+          }
+        }
+      }
+    },
+    maintainAspectRatio: false,
+    aspectRatio: 2.5,
+    animation: {
+      duration: 750,
+      easing: 'easeOutQuart'
+    }
+  };
+
   const chartData = {
     labels,
     datasets: categorias.map(cat => ({
@@ -151,35 +218,58 @@ function ResumenAnual({ meses, anioActivo }) {
       data: data.map(m => m[cat] || 0),
       backgroundColor: categoriaColor[cat] || '#BDBDBD',
       borderRadius: 6,
-      maxBarThickness: 32
+      maxBarThickness: 32,
+      // Añadir una sombra sutil en modo nocturno
+      borderColor: isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'transparent',
+      borderWidth: isDarkMode ? 1 : 0
     }))
   };
+  
   // Totales
   const totalCuentas = meses.filter(m=>m.periodo.startsWith(anioActivo)).reduce((sum, m) => sum + m.cuentas.length, 0);
   const totalMonto = meses.filter(m=>m.periodo.startsWith(anioActivo)).reduce((sum, m) => sum + m.cuentas.reduce((s, c) => s + (parseFloat(c.monto)||0), 0), 0);
+  
   return (
-    <div style={{background:'#fff',borderRadius:16,padding:'18px 10px 10px 10px',margin:'0 0 18px 0',boxShadow:'0 2px 8px rgba(25,118,210,0.07)',display:'flex',flexDirection:'column',alignItems:'center',gap:10}}>
+    <div style={{
+      background: isDarkMode ? 'var(--theme-bg-card)' : '#fff',
+      borderRadius: 16,
+      padding: '18px 10px 10px 10px',
+      margin: '0 0 18px 0',
+      boxShadow: isDarkMode 
+        ? '0 4px 20px rgba(100, 181, 246, 0.15)' 
+        : '0 2px 8px rgba(25,118,210,0.07)',
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      gap: 10,
+      border: isDarkMode ? '1px solid var(--theme-border-color)' : 'none',
+      transition: 'all 0.3s ease'
+    }}>
       <div style={{display:'flex',flexWrap:'wrap',gap:18,justifyContent:'center',alignItems:'center',width:'100%'}}>
-        <div style={{fontWeight:700,fontSize:18,color:'#1976d2'}}>Resumen {anioActivo}</div>
-        <div style={{fontSize:15}}><strong>Total cuentas:</strong> {totalCuentas}</div>
-        <div style={{fontSize:15,color:'#1976d2'}}><strong>Total monto:</strong> ${totalMonto.toLocaleString()}</div>
+        <div style={{
+          fontWeight: 700,
+          fontSize: 18,
+          color: isDarkMode ? 'var(--theme-accent-primary)' : '#1976d2'
+        }}>
+          Resumen {anioActivo}
+        </div>
+        <div style={{
+          fontSize: 15,
+          color: isDarkMode ? 'var(--theme-text-secondary)' : '#333'
+        }}>
+          <strong>Total cuentas:</strong> {totalCuentas}
+        </div>
+        <div style={{
+          fontSize: 15,
+          color: isDarkMode ? 'var(--theme-accent-primary)' : '#1976d2'
+        }}>
+          <strong>Total monto:</strong> ${totalMonto.toLocaleString()}
+        </div>
       </div>
       <div style={{width:'100%',maxWidth:600,minWidth:0}}>
         <Bar
           data={chartData}
-          options={{
-            responsive: true,
-            plugins: {
-              legend: { position: 'top' },
-              title: { display: false }
-            },
-            scales: {
-              x: { stacked: true, grid: {display:false} },
-              y: { stacked: true, beginAtZero:true, grid: {color:'#eee'} }
-            },
-            maintainAspectRatio: false,
-            aspectRatio: 2.5,
-          }}
+          options={chartOptions}
           height={220}
         />
       </div>
@@ -259,6 +349,9 @@ const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => {
 };
 
 const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaClass, onAbrirPanel, onEliminarCuenta, onAbrirPagoDesdeTarjeta, filtro, setFiltro, busqueda, setBusqueda, colorFondo }) => {
+  // Detectar modo nocturno
+  const isDarkMode = document.querySelector('[data-theme="dark"]');
+  
   // Filtrado por estado/categoría/búsqueda
   const cuentasFiltradas = useMemo(() => {
     return cuentas.filter(c => {
@@ -279,10 +372,43 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
   }, [cuentas, filtro, busqueda, getEstadoCuenta]);
 
   return (
-    <div style={{ position: 'relative', padding: '32px 0 32px 40px', background: colorFondo, borderRadius: 18, transition: 'background 0.4s' }}>
+    <div style={{ 
+      position: 'relative', 
+      padding: '32px 0 32px 40px', 
+      background: isDarkMode ? 'var(--theme-bg-secondary)' : colorFondo, 
+      borderRadius: 18, 
+      transition: 'background 0.4s',
+      border: isDarkMode ? '1px solid var(--theme-border-color)' : 'none'
+    }}>
       <div style={{marginBottom: 18, display:'flex', gap:12, alignItems:'center'}}>
-        <input type="text" placeholder="Buscar..." value={busqueda} onChange={e=>setBusqueda(e.target.value)} style={{padding:'6px 12px', borderRadius:6, border:'1px solid #ccc', fontSize:15}} />
-        <select value={filtro} onChange={e=>setFiltro(e.target.value)} style={{padding:'6px 10px', borderRadius:6, border:'1px solid #ccc', fontSize:15}}>
+        <input 
+          type="text" 
+          placeholder="Buscar..." 
+          value={busqueda} 
+          onChange={e=>setBusqueda(e.target.value)} 
+          style={{
+            padding:'6px 12px', 
+            borderRadius:6, 
+            border: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #ccc', 
+            fontSize:15,
+            background: isDarkMode ? 'var(--theme-bg-tertiary)' : '#fff',
+            color: isDarkMode ? 'var(--theme-text-primary)' : '#333',
+            transition: 'all 0.3s ease'
+          }} 
+        />
+        <select 
+          value={filtro} 
+          onChange={e=>setFiltro(e.target.value)} 
+          style={{
+            padding:'6px 10px', 
+            borderRadius:6, 
+            border: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #ccc', 
+            fontSize:15,
+            background: isDarkMode ? 'var(--theme-bg-tertiary)' : '#fff',
+            color: isDarkMode ? 'var(--theme-text-primary)' : '#333',
+            transition: 'all 0.3s ease'
+          }}
+        >
           <option value="todas">Todas</option>
           <option value="pagada">Pagadas</option>
           <option value="pendiente">Pendientes</option>
@@ -292,7 +418,16 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
         </select>
       </div>
       {/* Línea vertical */}
-      <div style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 4, background: '#e0e0e0', borderRadius: 2 }} />
+      <div style={{ 
+        position: 'absolute', 
+        left: 12, 
+        top: 0, 
+        bottom: 0, 
+        width: 4, 
+        background: isDarkMode ? 'var(--theme-border-color)' : '#e0e0e0', 
+        borderRadius: 2,
+        transition: 'background 0.3s ease'
+      }} />
       {/* Grid de tarjetas rediseñado */}
       <div style={{
         display: 'grid',
@@ -324,7 +459,7 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                 top: 22, 
                 width: 24, 
                 height: 24, 
-                background: '#fff', 
+                background: isDarkMode ? 'var(--theme-bg-card)' : '#fff', 
                 border: `3px solid ${clase === 'pagada' ? '#4caf50' : clase === 'vencida' ? '#f44336' : '#ff9800'}`, 
                 borderRadius: '50%', 
                 zIndex: 3, 
@@ -332,9 +467,10 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                 alignItems: 'center', 
                 justifyContent: 'center', 
                 fontSize: 10, 
-                color: '#333', 
+                color: isDarkMode ? 'var(--theme-text-primary)' : '#333', 
                 fontWeight: 700,
-                boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+                boxShadow: isDarkMode ? '0 2px 6px rgba(100, 181, 246, 0.25)' : '0 2px 6px rgba(0,0,0,0.12)',
+                transition: 'all 0.3s ease'
               }}>
                 {idx + 1}
               </div>
@@ -345,31 +481,37 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                 style={{
                   width: '100%',
                   minHeight: 160,
-                  background: '#ffffff',
+                  background: isDarkMode ? 'var(--theme-bg-card)' : '#ffffff',
                   borderRadius: 12,
                   marginLeft: 16,
                   position: 'relative',
                   cursor: 'pointer',
                   overflow: 'hidden',
                   transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
-                  boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
-                  border: '1px solid #f0f0f0'
+                  boxShadow: isDarkMode ? '0 4px 20px rgba(100, 181, 246, 0.1)' : '0 2px 10px rgba(0,0,0,0.06)',
+                  border: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #f0f0f0'
                 }}
                 onClick={() => onAbrirPanel && onAbrirPanel(cuenta)}
                 onMouseEnter={e => {
                   e.currentTarget.style.transform = 'translateY(-3px)';
-                  e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.12)';
+                  e.currentTarget.style.boxShadow = isDarkMode 
+                    ? '0 8px 32px rgba(100, 181, 246, 0.2)' 
+                    : '0 6px 25px rgba(0,0,0,0.12)';
                 }}
                 onMouseLeave={e => {
                   e.currentTarget.style.transform = 'translateY(0)';
-                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)';
+                  e.currentTarget.style.boxShadow = isDarkMode 
+                    ? '0 4px 20px rgba(100, 181, 246, 0.1)' 
+                    : '0 2px 10px rgba(0,0,0,0.06)';
                 }}
               >
                 {/* Header simplificado */}
                 <div style={{
-                  background: `linear-gradient(90deg, ${categoriaColorValue}12, ${categoriaColorValue}05)`,
+                  background: isDarkMode 
+                    ? `linear-gradient(90deg, ${categoriaColorValue}20, ${categoriaColorValue}08)` 
+                    : `linear-gradient(90deg, ${categoriaColorValue}12, ${categoriaColorValue}05)`,
                   padding: '14px 16px',
-                  borderBottom: '1px solid #f5f5f5',
+                  borderBottom: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #f5f5f5',
                   position: 'relative'
                 }}>
                   {/* Badge de estado minimalista */}
@@ -380,11 +522,14 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                     fontSize: 9,
                     padding: '3px 8px',
                     borderRadius: 10,
-                    background: clase === 'pagada' ? '#e8f5e9' : clase === 'vencida' ? '#ffebee' : '#fff8e1',
-                    color: clase === 'pagada' ? '#2e7d32' : clase === 'vencida' ? '#d32f2f' : '#f57c00',
+                    background: isDarkMode
+                      ? (clase === 'pagada' ? 'rgba(76, 175, 80, 0.25)' : clase === 'vencida' ? 'rgba(244, 67, 54, 0.25)' : 'rgba(255, 152, 0, 0.25)')
+                      : (clase === 'pagada' ? '#e8f5e9' : clase === 'vencida' ? '#ffebee' : '#fff8e1'),
+                    color: clase === 'pagada' ? '#4caf50' : clase === 'vencida' ? '#f44336' : '#ff9800',
                     fontWeight: 600,
                     textTransform: 'uppercase',
-                    letterSpacing: '0.3px'
+                    letterSpacing: '0.3px',
+                    border: isDarkMode ? `1px solid ${clase === 'pagada' ? '#4caf50' : clase === 'vencida' ? '#f44336' : '#ff9800'}40` : 'none'
                   }}>
                     {estado}
                   </span>
@@ -394,20 +539,21 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                     <span style={{
                       fontSize: '1.4rem',
                       padding: '4px',
-                      background: `${categoriaColorValue}15`,
+                      background: isDarkMode ? `${categoriaColorValue}25` : `${categoriaColorValue}15`,
                       borderRadius: '6px',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
                       minWidth: 32,
-                      height: 32
+                      height: 32,
+                      border: isDarkMode ? `1px solid ${categoriaColorValue}40` : 'none'
                     }}>{icono}</span>
                     <div style={{flex: 1, minWidth: 0}}>
                       <h4 style={{
                         margin: 0,
                         fontSize: 14,
                         fontWeight: 700,
-                        color: '#1a1a1a',
+                        color: isDarkMode ? 'var(--theme-text-primary)' : '#1a1a1a',
                         lineHeight: 1.3,
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
@@ -417,7 +563,7 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                       </h4>
                       <span style={{
                         fontSize: 11,
-                        color: '#666',
+                        color: isDarkMode ? 'var(--theme-text-secondary)' : '#666',
                         fontWeight: 500
                       }}>
                         {cuenta.categoria}
@@ -432,14 +578,14 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                   <div style={{
                     textAlign: 'center',
                     padding: '10px 0',
-                    background: '#fafbfc',
+                    background: isDarkMode ? 'var(--theme-bg-tertiary)' : '#fafbfc',
                     borderRadius: 8,
-                    border: '1px solid #e8eaed'
+                    border: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #e8eaed'
                   }}>
                     <div style={{
                       fontSize: 20,
                       fontWeight: 800,
-                      color: '#1976d2',
+                      color: isDarkMode ? 'var(--theme-accent-primary)' : '#1976d2',
                       lineHeight: 1
                     }}>
                       {Number(cuenta.monto || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
@@ -449,16 +595,16 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                   {/* Información en filas compactas */}
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                     <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                      <span style={{fontSize: 11, color: '#888', minWidth: 16}}>📅</span>
-                      <span style={{fontSize: 12, color: '#555'}}>
+                      <span style={{fontSize: 11, color: isDarkMode ? 'var(--theme-text-muted)' : '#888', minWidth: 16}}>📅</span>
+                      <span style={{fontSize: 12, color: isDarkMode ? 'var(--theme-text-secondary)' : '#555'}}>
                         Vence: {cuenta.fecha_vencimiento ? new Date(cuenta.fecha_vencimiento).toLocaleDateString('es-CL') : 'Sin fecha'}
                       </span>
                     </div>
                     
                     {proveedorDisplay !== tituloPrincipal && proveedorDisplay !== 'N/A' && (
                       <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                        <span style={{fontSize: 11, color: '#888', minWidth: 16}}>🏢</span>
-                        <span style={{fontSize: 12, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                        <span style={{fontSize: 11, color: isDarkMode ? 'var(--theme-text-muted)' : '#888', minWidth: 16}}>🏢</span>
+                        <span style={{fontSize: 12, color: isDarkMode ? 'var(--theme-text-secondary)' : '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
                           {proveedorDisplay}
                         </span>
                       </div>
@@ -466,7 +612,7 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                     
                     {cuenta.factura && (
                       <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
-                        <span style={{fontSize: 11, color: '#888', minWidth: 16}}>📄</span>
+                        <span style={{fontSize: 11, color: isDarkMode ? 'var(--theme-text-muted)' : '#888', minWidth: 16}}>📄</span>
                         <span style={{fontSize: 12, color: '#4caf50', fontWeight: 500}}>Factura adjunta</span>
                       </div>
                     )}
@@ -476,8 +622,8 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                 {/* Footer con acciones */}
                 <div style={{ 
                   padding: '10px 16px', 
-                  borderTop: '1px solid #f5f5f5',
-                  background: '#fafbfc',
+                  borderTop: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #f5f5f5',
+                  background: isDarkMode ? 'var(--theme-bg-tertiary)' : '#fafbfc',
                   display: 'flex', 
                   justifyContent: 'flex-end', 
                   gap: 6
@@ -493,7 +639,8 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                         fontSize: 11,
                         fontWeight: 600,
                         cursor: 'pointer',
-                        transition: 'background 0.2s'
+                        transition: 'background 0.2s',
+                        boxShadow: isDarkMode ? '0 2px 8px rgba(67, 160, 71, 0.3)' : 'none'
                       }}
                       onClick={e => { e.stopPropagation(); onAbrirPagoDesdeTarjeta(cuenta); }}
                       onMouseEnter={e => e.target.style.background = '#388e3c'}
@@ -504,7 +651,7 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                   )}
                   <button 
                     style={{
-                      background: '#1976d2',
+                      background: isDarkMode ? 'var(--theme-accent-primary)' : '#1976d2',
                       color: 'white',
                       border: 'none',
                       borderRadius: 6,
@@ -512,11 +659,12 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                       fontSize: 11,
                       fontWeight: 600,
                       cursor: 'pointer',
-                      transition: 'background 0.2s'
+                      transition: 'background 0.2s',
+                      boxShadow: isDarkMode ? '0 2px 8px rgba(100, 181, 246, 0.3)' : 'none'
                     }}
                     onClick={e => { e.stopPropagation(); onAbrirPanel(cuenta); }}
-                    onMouseEnter={e => e.target.style.background = '#1565c0'}
-                    onMouseLeave={e => e.target.style.background = '#1976d2'}
+                    onMouseEnter={e => e.target.style.background = isDarkMode ? '#42a5f5' : '#1565c0'}
+                    onMouseLeave={e => e.target.style.background = isDarkMode ? 'var(--theme-accent-primary)' : '#1976d2'}
                   >
                     Editar
                   </button>
@@ -531,7 +679,8 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
                         fontSize: 11,
                         fontWeight: 600,
                         cursor: 'pointer',
-                        transition: 'background 0.2s'
+                        transition: 'background 0.2s',
+                        boxShadow: isDarkMode ? '0 2px 8px rgba(244, 67, 54, 0.3)' : 'none'
                       }}
                       onClick={e => { e.stopPropagation(); onEliminarCuenta(cuenta.id); }}
                       onMouseEnter={e => e.target.style.background = '#d32f2f'}
@@ -545,7 +694,20 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
             </div>
           );
         })}
-        {cuentasFiltradas.length === 0 && <div style={{color:'#888', fontSize:15, marginTop:18}}>No hay cuentas que coincidan con el filtro.</div>}
+        {cuentasFiltradas.length === 0 && (
+          <div style={{
+            color: isDarkMode ? 'var(--theme-text-muted)' : '#888', 
+            fontSize: 15, 
+            marginTop: 18,
+            textAlign: 'center',
+            padding: '20px',
+            background: isDarkMode ? 'var(--theme-bg-tertiary)' : '#f9f9f9',
+            borderRadius: 8,
+            border: isDarkMode ? '1px solid var(--theme-border-color)' : '1px solid #eee'
+          }}>
+            No hay cuentas que coincidan con el filtro.
+          </div>
+        )}
       </div>
     </div>
   );

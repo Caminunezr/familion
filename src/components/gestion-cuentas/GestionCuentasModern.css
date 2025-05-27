@@ -1,21 +1,22 @@
 /*
   GestionCuentasModern.css
   Estilos modernos y limpios para la gestión de cuentas y pagos
-  Puedes ajustar colores y detalles visuales según tu preferencia
+  Adaptado para usar el sistema de variables de temas globales
 */
 :root {
-  --color-bg: #f7f9fb;
-  --color-panel: #fff;
-  --color-primary: #1976d2;
-  --color-primary-light: #e3f0fd;
-  --color-success: #43a047;
-  --color-danger: #e53935;
-  --color-warning: #fbc02d;
-  --color-text: #222;
-  --color-muted: #888;
-  --color-border: #e0e0e0;
+  /* Variables locales que referencian el sistema de temas global */
+  --color-bg: var(--theme-bg-primary);
+  --color-panel: var(--theme-bg-card);
+  --color-primary: var(--theme-primary);
+  --color-primary-light: var(--theme-primary-10);
+  --color-success: var(--theme-success);
+  --color-danger: var(--theme-danger);
+  --color-warning: var(--theme-warning);
+  --color-text: var(--theme-text-primary);
+  --color-muted: var(--theme-text-muted);
+  --color-border: var(--theme-border);
   --radius: 12px;
-  --shadow: 0 2px 12px rgba(0,0,0,0.07);
+  --shadow: var(--theme-shadow-sm);
 }
 
 body, .gestion-cuentas-page {
@@ -77,7 +78,7 @@ body, .gestion-cuentas-page {
   font-size: 0.9rem;
   padding: 2px 10px;
   border-radius: 8px;
-  color: #fff;
+  color: var(--theme-text-inverse);
   background: var(--color-warning);
   font-weight: 500;
 }
@@ -104,7 +105,7 @@ body, .gestion-cuentas-page {
 }
 .cuenta-card-actions button {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 6px;
   padding: 6px 16px;
@@ -185,7 +186,7 @@ body, .gestion-cuentas-page {
   gap: 10px;
 }
 .pago-item-detalle {
-  background: #f1f8e9;
+  background: var(--theme-success-10);
   border-left: 4px solid var(--color-success);
   border-radius: 8px;
   padding: 8px 12px;
@@ -197,7 +198,7 @@ body, .gestion-cuentas-page {
 }
 .pago-item-detalle .btn-ver-comprobante {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border-radius: 5px;
   padding: 2px 10px;
   font-size: 0.93rem;
@@ -207,7 +208,7 @@ body, .gestion-cuentas-page {
 /* Factura/boleta y comprobante */
 .btn-ver-archivo {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border-radius: 5px;
   padding: 2px 10px;
   font-size: 0.93rem;
@@ -216,7 +217,7 @@ body, .gestion-cuentas-page {
   transition: background 0.2s;
 }
 .btn-ver-archivo:hover {
-  background: #125ea7;
+  background: var(--theme-primary-dark);
 }
 .factura-indicator {
   color: var(--color-primary);
@@ -243,7 +244,8 @@ body, .gestion-cuentas-page {
   border-radius: 6px;
   padding: 7px 10px;
   font-size: 1rem;
-  background: #f9f9f9;
+  background: var(--theme-bg-tertiary, #f9f9f9);
+  color: var(--theme-text-primary);
   transition: border 0.2s;
 }
 .pago-form input:focus, .form-container input:focus, .form-container select:focus, .form-container textarea:focus {
@@ -257,7 +259,7 @@ body, .gestion-cuentas-page {
 }
 .form-buttons button {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 6px;
   padding: 7px 18px;
@@ -275,7 +277,7 @@ body, .gestion-cuentas-page {
 
 /* Mensajes */
 .error-message {
-  background: #ffebee;
+  background: var(--theme-status-error-bg);
   color: var(--color-danger);
   border-left: 4px solid var(--color-danger);
   padding: 7px 12px;
@@ -284,7 +286,7 @@ body, .gestion-cuentas-page {
   font-size: 0.98rem;
 }
 .success-message {
-  background: #e8f5e9;
+  background: var(--theme-success-10);
   color: var(--color-success);
   border-left: 4px solid var(--color-success);
   padding: 7px 12px;

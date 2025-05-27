@@ -7,9 +7,9 @@
 }
 
 .cuenta-card {
-  background: linear-gradient(135deg, #f7f9fb 70%, #e3f0ff 100%);
+  background: var(--theme-bg-card);
   border-radius: 24px;
-  box-shadow: 0 8px 32px rgba(25,118,210,0.13);
+  box-shadow: var(--theme-shadow-card);
   position: relative;
   display: flex;
   flex-direction: column;
@@ -17,13 +17,14 @@
   padding: 0;
   border-left-width: 12px;
   border-left-style: solid;
+  border: var(--theme-border);
   transition: transform 0.22s, box-shadow 0.22s, background 0.3s;
   overflow: hidden;
 }
 .cuenta-card:hover {
   transform: translateY(-8px) scale(1.035);
-  box-shadow: 0 16px 40px rgba(25,118,210,0.22);
-  background: linear-gradient(135deg, #e3f0ff 60%, #f7f9fb 100%);
+  box-shadow: var(--theme-shadow-lg);
+  background: var(--theme-bg-card-hover);
 }
 
 .cuenta-card-content {
@@ -42,12 +43,12 @@
 }
 .categoria-icon-grande {
   font-size: 2.7em;
-  background: #fff;
+  background: var(--theme-bg-secondary);
   border-radius: 50%;
-  box-shadow: 0 2px 8px #1976d222;
+  box-shadow: var(--theme-shadow-sm);
   padding: 10px 18px;
-  color: #1976d2;
-  border: 2.5px solid #e3f0ff;
+  color: var(--theme-primary);
+  border: 2.5px solid var(--theme-border-color);
 }
 
 .cuenta-header {
@@ -60,7 +61,7 @@
 .cuenta-header h3 {
   margin: 0;
   font-size: 1.25rem;
-  color: #1976d2;
+  color: var(--theme-primary);
   font-weight: 700;
   display: flex;
   align-items: center;
@@ -76,7 +77,7 @@
 .cuenta-header.mejorada h3 {
   margin: 0;
   font-size: 1.35rem;
-  color: #1976d2;
+  color: var(--theme-primary);
   font-weight: 800;
   letter-spacing: 0.5px;
 }
@@ -111,7 +112,7 @@
   border-radius: 12px;
   font-weight: 700;
   margin-bottom: 2px;
-  box-shadow: 0 2px 8px #1976d211;
+  box-shadow: var(--theme-shadow-sm);
   display: inline-block;
   letter-spacing: 0.5px;
 }
@@ -136,20 +137,20 @@
 }
 
 /* Colores por categoría */
-.cuenta-card.luz { border-left-color: #ffe082; }
-.cuenta-categoria.luz { background: #ffe082; color: #b58900; }
-.cuenta-card.agua { border-left-color: #81d4fa; }
-.cuenta-categoria.agua { background: #81d4fa; color: #01579b; }
-.cuenta-card.gas { border-left-color: #ffab91; }
-.cuenta-categoria.gas { background: #ffab91; color: #bf360c; }
-.cuenta-card.internet { border-left-color: #b3e5fc; }
-.cuenta-categoria.internet { background: #b3e5fc; color: #0277bd; }
-.cuenta-card.arriendo { border-left-color: #c8e6c9; }
-.cuenta-categoria.arriendo { background: #c8e6c9; color: #388e3c; }
-.cuenta-card.gasto-comun { border-left-color: #f8bbd0; }
-.cuenta-categoria.gasto-comun { background: #f8bbd0; color: #ad1457; }
-.cuenta-card.otros { border-left-color: #d1c4e9; }
-.cuenta-categoria.otros { background: #d1c4e9; color: #512da8; }
+.cuenta-card.luz { border-left-color: var(--theme-cat-luz); }
+.cuenta-categoria.luz { background: var(--theme-cat-luz); color: var(--theme-cat-luz-text); }
+.cuenta-card.agua { border-left-color: var(--theme-cat-agua); }
+.cuenta-categoria.agua { background: var(--theme-cat-agua); color: var(--theme-cat-agua-text); }
+.cuenta-card.gas { border-left-color: var(--theme-cat-gas); }
+.cuenta-categoria.gas { background: var(--theme-cat-gas); color: var(--theme-cat-gas-text); }
+.cuenta-card.internet { border-left-color: var(--theme-cat-internet); }
+.cuenta-categoria.internet { background: var(--theme-cat-internet); color: var(--theme-cat-internet-text); }
+.cuenta-card.arriendo { border-left-color: var(--theme-cat-aseo); }
+.cuenta-categoria.arriendo { background: var(--theme-cat-aseo); color: var(--theme-cat-aseo-text); }
+.cuenta-card.gasto-comun { border-left-color: var(--theme-cat-otros); }
+.cuenta-categoria.gasto-comun { background: var(--theme-cat-otros); color: var(--theme-cat-otros-text); }
+.cuenta-card.otros { border-left-color: var(--theme-cat-otros); }
+.cuenta-categoria.otros { background: var(--theme-cat-otros); color: var(--theme-cat-otros-text); }
 
 /* Colores por estado */
 .cuenta-estado.estado-pagado { background: #e8f5e9; color: #388e3c; border: 1.5px solid #43a047; }
@@ -161,7 +162,7 @@
   flex-wrap: wrap;
   gap: 10px 24px;
   font-size: 1.05rem;
-  color: #555;
+  color: var(--theme-text-secondary);
   margin-bottom: 0;
 }
 
@@ -170,20 +171,20 @@
   flex-wrap: wrap;
   gap: 10px 28px;
   font-size: 1.09rem;
-  color: #444;
+  color: var(--theme-text-primary);
   margin-bottom: 0;
   justify-content: flex-start;
 }
 
 .cuenta-amount {
   font-weight: 700;
-  color: #1976d2;
+  color: var(--theme-primary);
   font-size: 1.18rem;
 }
 
 .cuenta-amount-grande {
   font-weight: 800;
-  color: #1976d2;
+  color: var(--theme-primary);
   font-size: 1.25rem;
   margin-bottom: 2px;
 }
@@ -199,7 +200,7 @@
   display: flex;
   align-items: center;
   font-size: 1.01rem;
-  color: #1976d2;
+  color: var(--theme-primary);
   margin-top: 6px;
 }
 
@@ -207,7 +208,7 @@
   display: flex;
   align-items: center;
   font-size: 1.08rem;
-  color: #1976d2;
+  color: var(--theme-primary);
   margin-top: 8px;
   font-weight: 600;
 }
@@ -220,14 +221,14 @@
 .factura-icon.mejorada {
   margin-right: 7px;
   font-size: 1.25em;
-  color: #1976d2;
+  color: var(--theme-primary);
 }
 
 .cuenta-creator {
   display: flex;
   justify-content: flex-end;
   font-size: 0.97rem;
-  color: #888;
+  color: var(--theme-text-muted);
   margin-top: 10px;
 }
 
@@ -235,7 +236,7 @@
   display: flex;
   justify-content: flex-end;
   font-size: 1.01rem;
-  color: #888;
+  color: var(--theme-text-muted);
   margin-top: 12px;
   font-style: italic;
 }
@@ -246,7 +247,7 @@
   right: 18px;
   background-color: transparent;
   border: none;
-  color: #aaa;
+  color: var(--theme-text-muted);
   font-size: 20px;
   cursor: pointer;
   padding: 7px;
@@ -264,12 +265,12 @@
   opacity: 1;
 }
 .cuenta-delete-button:hover {
-  background-color: rgba(231, 76, 60, 0.15);
-  color: #e74c3c;
+  background-color: var(--theme-status-overdue);
+  color: var(--theme-status-overdue-text);
   opacity: 1;
 }
 .cuenta-delete-button:active {
-  background-color: rgba(231, 76, 60, 0.25);
+  background-color: var(--theme-danger);
   transform: scale(0.95);
 }
 

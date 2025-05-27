@@ -1,21 +1,21 @@
 /* Historial.module.css - Diseño moderno e innovador */
 
-/* Variables CSS */
+/* Variables CSS - usando sistema global de temas */
 :root {
-  --color-primario: #1976d2; /* Azul principal */
-  --color-secundario: #43a047; /* Verde para éxito/pagado */
-  --color-advertencia: #e64a19; /* Naranja para pendiente/alerta */
-  --color-neutral: #607d8b;
-  --color-fondo-pagina: linear-gradient(145deg, #f8fbff 0%, #f0f5ff 100%);
-  --color-fondo-tarjeta: #ffffff;
-  --color-fondo-tarjeta-alt: #f5f9ff;
-  --color-fondo-tarjeta-hover: #f0f5ff;
-  --color-texto-principal: #2c3e50;
-  --color-texto-secundario: #546e7a;
-  --color-texto-claro: #78909c;
-  --color-borde-suave: #e0e9f5;
-  --color-borde-activo: var(--color-primario);
-  --sombra-tarjeta: 0 6px 16px rgba(33, 150, 243, 0.08);
+  --color-primario: var(--theme-primary);
+  --color-secundario: var(--theme-success);
+  --color-advertencia: var(--theme-warning);
+  --color-neutral: var(--theme-text-muted);
+  --color-fondo-pagina: var(--theme-bg-gradient);
+  --color-fondo-tarjeta: var(--theme-bg-card);
+  --color-fondo-tarjeta-alt: var(--theme-bg-secondary);
+  --color-fondo-tarjeta-hover: var(--theme-bg-card-hover);
+  --color-texto-principal: var(--theme-text-primary);
+  --color-texto-secundario: var(--theme-text-secondary);
+  --color-texto-claro: var(--theme-text-muted);
+  --color-borde-suave: var(--theme-border-color);
+  --color-borde-activo: var(--theme-primary);
+  --sombra-tarjeta: var(--theme-shadow-card);
   --radio-borde: 16px;
   --radio-borde-small: 8px;
   --fuente-principal: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -293,7 +293,7 @@
 }
 
 .btn-detalles:hover {
-  background-color: #1565c0;
+  background-color: var(--theme-primary-dark);
 }
 
 /* Resumen de datos */
@@ -412,7 +412,7 @@
 }
 
 .export-button:hover {
-  background-color: #1565c0;
+  background-color: var(--theme-primary-dark);
 }
 
 /* Estados */
@@ -427,7 +427,7 @@
 }
 
 .text-warning {
-  color: #ff9800;
+  color: var(--theme-warning);
   font-weight: 600;
 }
 
@@ -456,9 +456,9 @@
 
 .error-message {
   padding: 16px;
-  background-color: #ffebee;
-  color: #c62828;
-  border: 1px solid #ffcdd2;
+  background-color: var(--theme-status-error-bg);
+  color: var(--theme-status-error-text);
+  border: 1px solid var(--theme-status-error-border);
   border-radius: var(--radio-borde-small);
   margin-bottom: 16px;
   text-align: center;
@@ -619,7 +619,7 @@
 }
 
 .agrupacion-buttons button:not(.active):hover {
-  background-color: #e3f2fd;
+  background-color: var(--theme-primary-10);
   border-color: var(--color-borde-activo);
   color: var(--color-primario);
 }
@@ -637,7 +637,7 @@
 }
 
 .export-button:hover {
-  background-color: #388e3c; /* Verde más oscuro */
+  background-color: var(--theme-success-dark);
 }
 
 .export-button:active {
@@ -828,7 +828,7 @@
 }
 
 .historial-mes-header:hover {
-  background-color: #e3f2fd; /* Azul claro al pasar */
+  background-color: var(--theme-primary-10);
 }
 
 .historial-mes-body {
@@ -855,12 +855,12 @@
 
 .historial-cuenta-item.pagada {
   border-left-color: var(--color-secundario);
-  background: #e8f5e9; /* Verde muy claro */
+  background: var(--theme-success-10);
 }
 
 .historial-cuenta-item.pendiente {
   border-left-color: var(--color-advertencia);
-  background: #fff3e0; /* Naranja muy claro */
+  background: var(--theme-warning-10);
 }
 
 .historial-cuenta-item:hover {
@@ -893,7 +893,7 @@
   font-size: .75em;
   font-weight: 700;
   line-height: 1;
-  color: #fff;
+  color: var(--theme-text-inverse);
   text-align: center;
   white-space: nowrap;
   vertical-align: baseline;
@@ -901,7 +901,7 @@
 }
 
 .bg-secondary {
-  background-color: #6c757d !important;
+  background-color: var(--theme-secondary) !important;
 }
 
 .ms-2 {

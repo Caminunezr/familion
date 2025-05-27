@@ -1,20 +1,23 @@
 .navbar {
-  background-color: #333; /* Fondo oscuro */
-  color: white;
+  background-color: var(--theme-bg-navbar);
+  color: var(--theme-text-inverse);
   padding: 10px 20px; /* Padding horizontal */
-  box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+  box-shadow: var(--theme-shadow-md);
+  position: -webkit-sticky; /* Safari iOS 7+ */
   position: sticky; /* Fijar la barra */
   top: 0;
   z-index: 1000;
 }
 
 .navbar-container {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   display: flex;
   align-items: center;
-  justify-content: space-between; /* Asegura espacio entre elementos principales */
-  flex-wrap: nowrap; /* Evitar que los elementos principales se envuelvan en escritorio */
+  justify-content: space-between;
+  flex-wrap: nowrap;
+  padding: 0 20px;
+  min-height: 64px;
 }
 
 .nav-brand {
@@ -22,14 +25,14 @@
   align-items: center;
   gap: 10px;
   text-decoration: none;
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .logo {
   width: 35px;
   height: 35px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--theme-success);
+  color: var(--theme-text-inverse);
   border-radius: 8px;
   display: flex;
   align-items: center;
@@ -45,15 +48,18 @@
 
 /* --- Estilos base para nav-links (escritorio) --- */
 .nav-links {
-  display: flex; /* Mostrar como flex en escritorio */
+  display: flex;
   align-items: center;
-  gap: 15px; /* Espacio entre enlaces */
-  margin: 0 auto; /* Centrar los enlaces horizontalmente */
-  padding: 0 20px; /* Añadir padding para evitar que toquen los bordes */
+  gap: 20px;
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  justify-content: center;
+  max-width: 600px;
 }
 
 .nav-link {
-  color: #eee;
+  color: var(--theme-text-secondary);
   text-decoration: none;
   padding: 8px 12px;
   border-radius: 4px;
@@ -65,11 +71,11 @@
 
 .nav-link:hover {
   background-color: rgba(255, 255, 255, 0.1);
-  color: white;
+  color: var(--theme-text-inverse);
 }
 
 .nav-link.active {
-  color: white;
+  color: var(--theme-text-inverse);
   font-weight: 600;
 }
 
@@ -80,15 +86,15 @@
   left: 10%;
   right: 10%;
   height: 2px;
-  background-color: #4CAF50;
+  background-color: var(--theme-success);
 }
 
 .user-info {
   display: flex;
   align-items: center;
-  gap: 15px;
-  margin-left: auto; /* Empujar a la derecha, asegurando que no choque con links */
-  flex-shrink: 0; /* Evitar que se encoja */
+  gap: 12px;
+  flex-shrink: 0;
+  min-width: max-content;
 }
 
 .user-info span {
@@ -96,8 +102,8 @@
 }
 
 .logout-button {
-  background-color: #f44336;
-  color: white;
+  background-color: var(--theme-danger);
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 4px;
   padding: 6px 12px;
@@ -107,7 +113,8 @@
 }
 
 .logout-button:hover {
-  background-color: #d32f2f;
+  background-color: var(--theme-danger);
+  filter: brightness(0.9);
 }
 
 /* --- Botón Hamburguesa (Oculto en escritorio) --- */
@@ -117,22 +124,22 @@
   border: none;
   font-size: 28px;
   cursor: pointer;
-  color: white; /* Color blanco para el icono */
+  color: var(--theme-text-inverse);
   padding: 5px;
   line-height: 1;
 }
 
 /* --- Badge de usuario --- */
 .user-name-badge {
-  background: linear-gradient(90deg, #1976d2 60%, #43a047 100%);
-  color: white;
+  background: linear-gradient(90deg, var(--theme-primary) 60%, var(--theme-secondary) 100%);
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 50px;
   padding: 7px 18px 7px 14px;
   font-weight: 600;
   font-size: 1rem;
   margin-right: 10px;
-  box-shadow: 0 2px 8px rgba(25,118,210,0.10);
+  box-shadow: var(--theme-shadow-sm);
   cursor: default;
   letter-spacing: 0.5px;
   display: flex;
@@ -140,7 +147,7 @@
   gap: 8px;
   transition: box-shadow 0.2s, background 0.2s;
   outline: none;
-  border: 2px solid #fff2;
+  border: 2px solid rgba(255, 255, 255, 0.2);
 }
 
 .user-name-badge:disabled {
@@ -153,69 +160,96 @@
 }
 
 /* --- Media Query para pantallas pequeñas --- */
-@media (max-width: 992px) { /* Ajustar breakpoint si es necesario */
+@media (max-width: 1200px) {
   .nav-links {
-     /* Reducir gap o padding si empiezan a apretarse antes del breakpoint móvil */
-     gap: 10px;
-     padding: 0 10px;
+     gap: 16px;
+     max-width: 500px;
+  }
+}
+
+@media (max-width: 992px) {
+  .nav-links {
+     gap: 12px;
+     max-width: 400px;
+  }
+  
+  .user-info {
+    gap: 8px;
+  }
+  
+  .user-name-badge {
+    font-size: 0.9rem;
+    padding: 6px 12px;
   }
 }
 
 @media (max-width: 768px) { /* Breakpoint para menú móvil */
 
   .navbar-container {
-    flex-wrap: wrap; /* Permitir envolver en móvil */
-    position: relative; /* Para el menú absoluto */
+    flex-wrap: wrap;
+    position: relative;
   }
 
-  .mobile-menu-button {
-    display: block; /* Mostrar el botón hamburguesa */
-    order: 3; /* Orden visual */
-    margin-left: 10px;
+  .nav-brand {
+    order: 1;
+    flex: 1;
   }
 
   .nav-links {
-    display: none; /* Ocultar enlaces normales */
+    display: none;
     flex-direction: column;
     position: absolute;
-    top: 100%; /* Debajo de la barra */
+    top: 100%;
     left: 0;
     right: 0;
-    background-color: #444; /* Fondo ligeramente más claro para el menú */
-    box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+    background-color: var(--theme-bg-tertiary);
+    box-shadow: var(--theme-shadow-md);
     padding: 10px 0;
-    z-index: 999; /* Debajo de la barra principal */
-    border-top: 1px solid #555;
+    z-index: 999;
+    border-top: 1px solid var(--theme-border-color);
     align-items: stretch;
     gap: 0;
-    margin: 0; /* Resetear margen */
+    margin: 0;
+    order: 4;
+    width: 100%;
   }
 
   .nav-links.mobile-active {
-    display: flex; /* Mostrar menú cuando esté activo */
+    display: flex;
+  }
+
+  .user-info {
+    order: 2;
+    gap: 8px;
+  }
+
+  .mobile-menu-button {
+    display: block;
+    order: 3;
+    margin-left: 10px;
   }
 
   .nav-link {
     padding: 12px 20px;
     text-align: left;
-    border-bottom: 1px solid #555;
+    border-bottom: 1px solid var(--theme-border-color);
     width: 100%;
     border-radius: 0;
     font-size: 1rem;
-    color: #eee; /* Color de texto en menú móvil */
+    color: var(--theme-text-secondary);
   }
   .nav-link:last-child {
     border-bottom: none;
   }
 
   .nav-link:hover {
-     background-color: #555; /* Hover en menú móvil */
-     color: white;
+     background-color: var(--theme-bg-card-hover);
+     color: var(--theme-text-primary);
   }
 
   .nav-link.active {
-    background-color: #4CAF50; /* Activo en menú móvil */
-    color: white;
+    background-color: var(--theme-success);
+    color: var(--theme-text-inverse);
     font-weight: bold;
   }
   .nav-link.active::after {
@@ -223,34 +257,34 @@
   }
 
   .user-info {
-    order: 2; /* User info antes del botón hamburguesa */
-    margin-left: auto; /* Mantener a la derecha si cabe */
-    gap: 10px; /* Reducir gap */
+    order: 2;
+    gap: 8px;
   }
+  
   .user-info span {
-     font-size: 0.9rem; /* Reducir fuente si es necesario */
+     font-size: 0.9rem;
   }
+  
   .logout-button {
      padding: 5px 10px;
      font-size: 0.85rem;
   }
 
   .user-name-badge {
-    font-size: 0.95rem;
+    font-size: 0.9rem;
     padding: 6px 12px 6px 10px;
     margin-right: 6px;
-  }
-
-  .nav-brand {
-     order: 1;
-     /* Ajustar tamaño si es necesario */
-     /* font-size: 20px; */
   }
 }
 
 @media (max-width: 480px) {
+   .navbar-container {
+     padding: 0 12px;
+     min-height: 60px;
+   }
+
    .nav-brand h1 {
-      font-size: 18px; /* Más pequeño en pantallas muy chicas */
+      font-size: 18px;
    }
    .logo {
       width: 30px;
@@ -258,84 +292,56 @@
       font-size: 18px;
    }
    .user-info {
-      gap: 8px;
+      gap: 6px;
    }
    .user-info span {
-      max-width: 100px; /* Limitar ancho del nombre */
+      max-width: 100px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
    }
    .user-name-badge {
-      font-size: 0.88rem;
-      padding: 5px 8px 5px 8px;
-      margin-right: 3px;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      margin-right: 4px;
       max-width: 110px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
    }
+   .logout-button {
+     padding: 4px 8px;
+     font-size: 0.8rem;
+   }
+   .mobile-menu-button {
+     font-size: 24px;
+     padding: 4px;
+   }
+   .nav-link {
+     padding: 12px 16px;
+     font-size: 0.95rem;
+   }
 }
 
-/* Dark Mode Support */
-[data-theme="dark"] .navbar {
-  background-color: var(--theme-bg-navbar);
-  color: var(--theme-text-inverse);
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
-}
+/* Dark Mode Support - Variables CSS automáticas */
+/* Los estilos ya usan variables CSS que se adaptan automáticamente */
 
-[data-theme="light"] .navbar {
-  background-color: #4caf50;
-  color: white;
-}
-
-[data-theme="dark"] .nav-brand {
-  color: var(--theme-text-inverse);
-}
-
-[data-theme="dark"] .logo {
-  background-color: var(--theme-primary);
-  color: var(--theme-text-inverse);
-}
-
+/* Ajustes específicos para mejor contraste en modo oscuro */
 [data-theme="dark"] .nav-link {
-  color: var(--theme-text-inverse);
+  color: var(--theme-text-secondary) !important;
+  font-weight: 500;
 }
 
 [data-theme="dark"] .nav-link:hover {
-  color: var(--theme-primary);
-  background-color: rgba(100, 181, 246, 0.1);
+  color: var(--theme-primary) !important;
+  background-color: rgba(100, 181, 246, 0.15);
+  transform: translateY(-1px);
 }
 
 [data-theme="dark"] .nav-link.active {
-  color: var(--theme-primary);
-  background-color: rgba(100, 181, 246, 0.15);
-}
-
-[data-theme="dark"] .user-name-badge {
-  background: var(--theme-primary) !important;
-  color: var(--theme-text-inverse) !important;
-  border-color: var(--theme-primary) !important;
-}
-
-[data-theme="dark"] .logout-button {
-  background-color: var(--theme-danger);
-  color: var(--theme-text-inverse);
-  border-color: var(--theme-danger);
-}
-
-[data-theme="dark"] .logout-button:hover {
-  background-color: #d32f2f;
-}
-
-[data-theme="dark"] .mobile-menu-button {
-  background-color: var(--theme-bg-tertiary);
-  color: var(--theme-text-inverse);
-  border-color: var(--theme-border-color);
-}
-
-[data-theme="dark"] .mobile-menu-button:hover {
-  background-color: var(--theme-bg-card-hover);
+  color: var(--theme-primary) !important;
+  background-color: rgba(100, 181, 246, 0.2);
+  font-weight: 600;
 }
 
 /* Responsive adjustments for theme toggle */

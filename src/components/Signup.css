@@ -1,12 +1,12 @@
 .signup-container {
   min-height: 100vh;
-  background-color: #f5f8fa;
+  background-color: var(--theme-bg-secondary);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   padding: 20px;
-  background-image: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  background-image: var(--theme-bg-gradient);
 }
 
 .login-brand {
@@ -19,27 +19,27 @@
 .logo {
   width: 50px;
   height: 50px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--theme-success);
+  color: var(--theme-text-inverse);
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 28px;
   font-weight: bold;
-  box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+  box-shadow: var(--theme-shadow-md);
 }
 
 .login-brand h1 {
   margin: 0;
   font-size: 28px;
-  color: #333;
+  color: var(--theme-text-primary);
 }
 
 .signup-card {
-  background-color: white;
+  background-color: var(--theme-bg-card);
   border-radius: 15px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+  box-shadow: var(--theme-shadow-lg);
   padding: 30px;
   width: 100%;
   max-width: 400px;
@@ -55,7 +55,7 @@
 .signup-card h2 {
   text-align: center;
   margin-bottom: 25px;
-  color: #333;
+  color: var(--theme-text-primary);
   font-size: 24px;
 }
 
@@ -67,7 +67,7 @@
   display: block;
   margin-bottom: 8px;
   font-weight: 600;
-  color: #555;
+  color: var(--theme-text-secondary);
   font-size: 14px;
 }
 
@@ -82,33 +82,33 @@
 .form-group input {
   width: 100%;
   padding: 12px; /* Quitar el padding izquierdo extra */
-  border: 1px solid #ddd;
+  border: var(--theme-border);
   border-radius: 8px;
   font-size: 16px;
   transition: all 0.3s ease;
-  background-color: #f9f9f9;
-  color: #333;
+  background-color: var(--theme-bg-secondary);
+  color: var(--theme-text-primary);
   position: relative;
   z-index: 2;
 }
 
 .form-group input:focus {
   outline: none;
-  border-color: #4CAF50;
+  border-color: var(--theme-success);
   box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.2);
-  background-color: white;
-  color: #333; /* Mantener el color consistente */
+  background-color: var(--theme-bg-primary);
+  color: var(--theme-text-primary); /* Mantener el color consistente */
 }
 
 .form-group input::placeholder {
-  color: #bbb;
+  color: var(--theme-text-muted);
 }
 
 .primary-button {
   width: 100%;
   padding: 14px;
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--theme-success);
+  color: var(--theme-text-inverse);
   border: none;
   border-radius: 8px;
   cursor: pointer;
@@ -122,13 +122,14 @@
 }
 
 .primary-button:hover {
-  background-color: #388E3C;
+  background-color: var(--theme-success);
+  filter: brightness(0.9);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  box-shadow: var(--theme-shadow-sm);
 }
 
 .primary-button:disabled {
-  background-color: #cccccc;
+  background-color: var(--theme-text-muted);
   cursor: not-allowed;
   transform: none;
   box-shadow: none;
@@ -138,11 +139,11 @@
   text-align: center;
   margin-top: 25px;
   font-size: 15px;
-  color: #555;
+  color: var(--theme-text-secondary);
 }
 
 .login-link a {
-  color: #4CAF50;
+  color: var(--theme-success);
   text-decoration: none;
   font-weight: 600;
   transition: color 0.2s;
@@ -150,7 +151,7 @@
 
 .login-link a:hover {
   text-decoration: underline;
-  color: #388E3C;
+  color: var(--theme-success);
 }
 
 .alert {
@@ -162,9 +163,9 @@
 }
 
 .alert-danger {
-  background-color: #ffebee;
-  color: #e53935;
-  border-left: 4px solid #e53935;
+  background-color: var(--theme-status-error-bg);
+  color: var(--theme-status-error-text);
+  border-left: 4px solid var(--theme-danger);
 }
 
 .loading-spinner {
@@ -213,7 +214,7 @@
 
 /* Dark mode support using CSS variables */
 [data-theme="dark"] .signup-container {
-  background-image: linear-gradient(135deg, #1a1a1a 0%, #2c3e50 100%);
+  background-image: var(--theme-bg-gradient);
 }
 
 [data-theme="dark"] .login-brand h1 {

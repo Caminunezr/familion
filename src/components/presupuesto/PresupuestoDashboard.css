@@ -2,9 +2,9 @@
   max-width: 1100px;
   margin: 32px auto 0 auto;
   padding: 0 18px;
-  background: #f7f9fb;
+  background: var(--theme-bg-secondary);
   border-radius: 18px;
-  box-shadow: 0 4px 24px #0002;
+  box-shadow: var(--theme-shadow-lg);
   min-height: 80vh;
   display: flex;
   flex-direction: column;
@@ -20,22 +20,24 @@
 }
 
 .presupuesto-tarjeta {
-  background: #fff;
+  background: var(--theme-bg-card);
   border-radius: 14px;
   padding: 22px 28px;
   min-width: 180px;
   text-align: center;
   margin: 0;
-  box-shadow: 0 2px 8px #0001;
+  box-shadow: var(--theme-shadow-sm);
   font-size: 16px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 8px;
   transition: box-shadow 0.2s, transform 0.2s;
+  color: var(--theme-text-primary);
+  border: var(--theme-border);
 }
 .presupuesto-tarjeta:hover {
-  box-shadow: 0 6px 18px #0002;
+  box-shadow: var(--theme-shadow-md);
   transform: translateY(-3px) scale(1.03);
 }
 .presupuesto-tarjeta .valor {
@@ -43,27 +45,27 @@
   font-weight: 700;
   margin-top: 4px;
 }
-.tarjeta-aportado { background: linear-gradient(90deg,#4caf50 80%,#81c784 100%); color: #fff; }
-.tarjeta-gastado { background: linear-gradient(90deg,#f44336 80%,#e57373 100%); color: #fff; }
-.tarjeta-ahorrado { background: linear-gradient(90deg,#2196f3 80%,#64b5f6 100%); color: #fff; }
-.tarjeta-deuda { background: linear-gradient(90deg,#ff9800 80%,#ffd54f 100%); color: #fff; }
-.tarjeta-sobrante { background: linear-gradient(90deg,#607d8b 80%,#b0bec5 100%); color: #fff; }
+.tarjeta-aportado { background: linear-gradient(90deg, var(--theme-success) 80%, var(--theme-secondary) 100%); color: var(--theme-text-inverse); }
+.tarjeta-gastado { background: linear-gradient(90deg, var(--theme-danger) 80%, #e57373 100%); color: var(--theme-text-inverse); }
+.tarjeta-ahorrado { background: linear-gradient(90deg, var(--theme-info) 80%, var(--theme-primary) 100%); color: var(--theme-text-inverse); }
+.tarjeta-deuda { background: linear-gradient(90deg, var(--theme-warning) 80%, #ffd54f 100%); color: var(--theme-text-inverse); }
+.tarjeta-sobrante { background: linear-gradient(90deg, var(--theme-text-muted) 80%, #b0bec5 100%); color: var(--theme-text-inverse); }
 
 .progreso-container {
   margin: 24px 0;
-  background: #fff;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   padding: 22px 18px;
-  box-shadow: 0 2px 8px #0001;
+  box-shadow: var(--theme-shadow-sm);
 }
 .progreso-label {
   font-weight: 500;
   margin-bottom: 10px;
-  color: #1976d2;
+  color: var(--theme-primary);
 }
 .progreso-barra {
   height: 18px;
-  background: #e0e0e0;
+  background: var(--theme-bg-tertiary);
   border-radius: 9px;
   overflow: hidden;
   margin-top: 4px;
@@ -88,13 +90,13 @@
   font-weight: 600;
   cursor: pointer;
   font-size: 1em;
-  background: #1976d2;
-  color: #fff;
-  box-shadow: 0 2px 8px #1976d220;
+  background: var(--theme-primary);
+  color: var(--theme-text-inverse);
+  box-shadow: var(--theme-shadow-sm);
   transition: background 0.2s, transform 0.2s;
 }
 .presupuesto-acciones button:hover {
-  background: #125ea7;
+  background: var(--theme-primary-dark);
   transform: translateY(-2px) scale(1.04);
 }
 
@@ -102,23 +104,24 @@
 .presupuesto-modal-bg {
   position: fixed;
   top: 0; left: 0; width: 100vw; height: 100vh;
-  background: #0008;
+  background: var(--theme-modal-backdrop, rgba(0, 0, 0, 0.5));
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 .presupuesto-modal {
-  background: #fff;
+  background: var(--theme-bg-card);
   border-radius: 12px;
   padding: 36px 28px 28px 28px;
   min-width: 320px;
   max-width: 400px;
-  box-shadow: 0 6px 32px #0003;
+  box-shadow: var(--theme-modal-shadow, 0 6px 32px #0003);
   position: relative;
   display: flex;
   flex-direction: column;
   gap: 12px;
+  color: var(--theme-text-primary);
 }
 .presupuesto-modal-close {
   position: absolute;
@@ -128,19 +131,26 @@
   background: none;
   border: none;
   cursor: pointer;
-  color: #888;
+  color: var(--theme-text-muted);
   transition: color 0.2s;
 }
 .presupuesto-modal-close:hover {
-  color: #f44336;
+  color: var(--theme-error, #f44336);
 }
 .presupuesto-modal input {
   padding: 10px 12px;
-  border: 1.5px solid #ced4da;
+  border: 1.5px solid var(--theme-border-color);
   border-radius: 6px;
   font-size: 1rem;
-  background: #f9f9f9;
+  background: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
   margin-bottom: 8px;
+  transition: border-color 0.2s ease;
+}
+.presupuesto-modal input:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
 }
 .presupuesto-modal button {
   margin-top: 8px;

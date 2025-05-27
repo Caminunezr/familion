@@ -13,8 +13,8 @@ body {
 /* Estilos globales para toda la aplicación */
 .App {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
-  background-color: #f5f5f5;
+  color: var(--theme-text-primary);
+  background-color: var(--theme-bg-secondary);
   min-height: 100vh;
   overflow-x: hidden; /* Evitar scroll horizontal */
 }
@@ -31,18 +31,18 @@ body {
 }
 
 .App-header {
-  background-color: #282c34;
+  background-color: var(--theme-bg-tertiary);
   min-height: 100vh;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
   font-size: calc(10px + 2vmin);
-  color: white;
+  color: var(--theme-text-primary);
 }
 
 .App-link {
-  color: #61dafb;
+  color: var(--theme-primary);
 }
 
 @keyframes App-logo-spin {
@@ -93,13 +93,15 @@ textarea {
 }
 
 .card {
-  background-color: white;
+  background-color: var(--theme-bg-card);
   border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: var(--theme-shadow-card);
   padding: 20px;
   margin-bottom: 15px;
   width: 100%;
   box-sizing: border-box;
+  color: var(--theme-text-primary);
+  border: var(--theme-border);
 }
 
 .mb-10 {

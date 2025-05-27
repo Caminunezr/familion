@@ -109,15 +109,10 @@ const NavBar = () => {
   return (
     <nav className="navbar" ref={navRef}>
       <div className="navbar-container">
-        <div className="nav-brand">
+        <NavLink to="/gestion-cuentas" className="nav-brand">
           <span className="logo">F</span>
           <h1>Familion</h1>
-        </div>
-
-        {/* Botón Hamburguesa - visible solo en móvil */}
-        <button className="mobile-menu-button" onClick={toggleMobileMenu}>
-          {isMobileMenuOpen ? '✕' : '☰'} {/* Icono cambia */}
-        </button>
+        </NavLink>
 
         {/* Enlaces de Navegación - Ocultos en móvil por defecto, mostrados en escritorio */}
         <div className={`nav-links ${isMobileMenuOpen ? 'mobile-active' : ''}`}>
@@ -140,13 +135,14 @@ const NavBar = () => {
                 padding: '6px 16px',
                 fontWeight: 600,
                 fontSize: '1rem',
-                marginRight: 10,
+                marginRight: 8,
                 boxShadow: '0 2px 6px rgba(25,118,210,0.10)',
                 cursor: 'pointer',
                 letterSpacing: '0.5px',
                 display: 'flex',
                 alignItems: 'center',
-                gap: 8
+                gap: 8,
+                whiteSpace: 'nowrap'
               }}
               onClick={()=>setShowProfile(true)}
               title="Editar perfil"
@@ -166,6 +162,11 @@ const NavBar = () => {
             )}
           </div>
         )}
+
+        {/* Botón Hamburguesa - visible solo en móvil */}
+        <button className="mobile-menu-button" onClick={toggleMobileMenu}>
+          {isMobileMenuOpen ? '✕' : '☰'}
+        </button>
       </div>
     </nav>
   );

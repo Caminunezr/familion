@@ -1,19 +1,20 @@
 .pago-form {
   display: flex;
   flex-direction: column;
-  background-color: white;
+  background-color: var(--theme-bg-card);
   padding: 20px;
   border-radius: 8px;
-  box-shadow: 0 0 10px rgba(0,0,0,0.1);
+  box-shadow: var(--theme-shadow-card);
   max-width: 500px;
   margin: 0 auto;
+  color: var(--theme-text-primary);
 }
 
 .pago-form h3 {
   margin-top: 0;
   margin-bottom: 20px;
-  color: #333;
-  border-bottom: 1px solid #eee;
+  color: var(--theme-text-primary);
+  border-bottom: 1px solid var(--theme-border-color);
   padding-bottom: 10px;
   text-align: center;
 }
@@ -26,16 +27,26 @@
   display: block;
   margin-bottom: 5px;
   font-weight: 500;
-  color: #333;
+  color: var(--theme-text-secondary);
 }
 
 .form-group input,
 .form-group select {
   width: 100%;
   padding: 10px;
-  border: 1px solid #ddd;
+  border: 1px solid var(--theme-border-color);
   border-radius: 4px;
   font-size: 16px;
+  background-color: var(--theme-bg-tertiary);
+  color: var(--theme-text-primary);
+  transition: border-color 0.2s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus {
+  outline: none;
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 2px rgba(100, 181, 246, 0.2);
 }
 
 .form-buttons {
@@ -53,33 +64,33 @@
 }
 
 .cancel-button {
-  background-color: #f44336;
-  color: white;
+  background-color: var(--theme-danger);
+  color: var(--theme-text-inverse);
 }
 
 .cancel-button:hover {
-  background-color: #d32f2f;
+  background-color: var(--theme-danger-dark);
 }
 
 .submit-button {
-  background-color: #4CAF50;
-  color: white;
+  background-color: var(--theme-success);
+  color: var(--theme-text-inverse);
 }
 
 .submit-button:hover {
-  background-color: #45a049;
+  background-color: var(--theme-success-dark);
 }
 
 .error-message {
-  background-color: #f8d7da;
-  color: #721c24;
+  background-color: var(--theme-status-error-bg);
+  color: var(--theme-status-error-text);
   padding: 10px;
   border-radius: 4px;
   margin-bottom: 15px;
 }
 
 button:disabled {
-  background-color: #cccccc;
+  background-color: var(--theme-disabled);
   cursor: not-allowed;
 }
 
@@ -100,17 +111,17 @@ button:disabled {
 }
 
 .presupuesto-section {
-  background-color: #f8f9fa;
+  background-color: var(--theme-bg-secondary);
   border-radius: 4px;
   padding: 15px;
   margin-bottom: 20px;
-  border-left: 3px solid #3498db;
+  border-left: 3px solid var(--theme-info);
 }
 
 .no-presupuesto-warning {
-  background-color: #fff3cd;
-  border: 1px solid #ffeeba;
-  color: #856404;
+  background-color: var(--theme-warning-10);
+  border: 1px solid var(--theme-warning);
+  color: var(--theme-warning-text);
   padding: 10px;
   border-radius: 4px;
   margin-top: 10px;
@@ -118,6 +129,6 @@ button:disabled {
 }
 
 .no-presupuesto-warning a {
-  color: #0056b3;
+  color: var(--theme-link);
   text-decoration: underline;
 }

@@ -26,10 +26,12 @@
   --theme-text-secondary: #546e7a;
   --theme-text-muted: #718096;
   --theme-text-inverse: #ffffff;
+  --theme-text-disabled: #dee2e6;
   
   /* Bordes */
   --theme-border-color: #e0e9f5;
   --theme-border-color-hover: #1976d2;
+  --theme-border: 1px solid #e0e9f5;
   --theme-divider: #e9ecef;
   
   /* Sombras */
@@ -37,6 +39,12 @@
   --theme-shadow-md: 0 6px 16px rgba(33, 150, 243, 0.08);
   --theme-shadow-lg: 0 10px 25px rgba(33, 150, 243, 0.12);
   --theme-shadow-card: 0 4px 12px rgba(0, 0, 0, 0.08);
+  --theme-shadow-focus: 0 0 0 0.18rem rgba(25, 118, 210, 0.18);
+  
+  /* Modal específicos */
+  --theme-modal-backdrop: rgba(30, 42, 60, 0.35);
+  --theme-modal-shadow: 0 8px 32px rgba(0, 0, 0, 0.18);
+  --theme-error: #e53935;
   
   /* Estados específicos */
   --theme-status-paid: #e8f5e9;
@@ -45,6 +53,18 @@
   --theme-status-pending-text: #f57c00;
   --theme-status-overdue: #ffebee;
   --theme-status-overdue-text: #d32f2f;
+  
+  /* Variantes de color para diferentes intensidades */
+  --theme-primary-10: rgba(25, 118, 210, 0.1);
+  --theme-primary-dark: #1565c0;
+  --theme-success-10: rgba(76, 175, 80, 0.1);
+  --theme-success-dark: #388e3c;
+  --theme-warning-10: rgba(255, 193, 7, 0.1);
+  
+  /* Estados de error */
+  --theme-status-error-bg: #ffebee;
+  --theme-status-error-text: #c62828;
+  --theme-status-error-border: #ffcdd2;
   
   /* Timeline sidebar específicos */
   --timeline-bg-year: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -56,6 +76,34 @@
   --timeline-text-month-active: #ffffff;
   --timeline-border-month: rgba(102, 126, 234, 0.2);
   --timeline-shadow-month: 0 2px 8px rgba(102, 126, 234, 0.1);
+  
+  /* Loading estados */
+  --theme-bg-loading-1: #f0f0f0;
+  --theme-bg-loading-2: #e0e0e0;
+  --theme-bg-loading-dark-1: #333333;
+  --theme-bg-loading-dark-2: #444444;
+  
+  /* Categorías de cuentas */
+  --theme-cat-luz: #ffd600;
+  --theme-cat-agua: #00bcd4;
+  --theme-cat-gas: #ff7043;
+  --theme-cat-internet: #1976d2;
+  --theme-cat-aseo: #43a047;
+  --theme-cat-otros: #8e24aa;
+  
+  /* Colores de texto para categorías - tema claro */
+  --theme-cat-luz-text: #b58900;
+  --theme-cat-agua-text: #01579b;
+  --theme-cat-gas-text: #bf360c;
+  --theme-cat-internet-text: #0277bd;
+  --theme-cat-aseo-text: #388e3c;
+  --theme-cat-otros-text: #512da8;
+  
+  /* Colores de botones y controles */
+  --theme-danger-dark: #d32f2f;
+  --theme-disabled: #cccccc;
+  --theme-warning-text: #856404;
+  --theme-link: #0056b3;
 }
 
 /* Variables CSS para tema oscuro */
@@ -83,10 +131,12 @@
   --theme-text-secondary: #b0b0b0;
   --theme-text-muted: #888888;
   --theme-text-inverse: #121212;
+  --theme-text-disabled: #424242;
   
   /* Bordes */
   --theme-border-color: #333333;
   --theme-border-color-hover: #64b5f6;
+  --theme-border: 1px solid #333333;
   --theme-divider: #333333;
   
   /* Sombras - más sutiles en dark mode */
@@ -94,6 +144,12 @@
   --theme-shadow-md: 0 6px 16px rgba(0, 0, 0, 0.4);
   --theme-shadow-lg: 0 10px 25px rgba(0, 0, 0, 0.5);
   --theme-shadow-card: 0 4px 12px rgba(0, 0, 0, 0.3);
+  --theme-shadow-focus: 0 0 0 0.18rem rgba(100, 181, 246, 0.25);
+  
+  /* Modal específicos */
+  --theme-modal-backdrop: rgba(0, 0, 0, 0.7);
+  --theme-modal-shadow: 0 8px 32px rgba(100, 181, 246, 0.15);
+  --theme-error: #ef5350;
   
   /* Estados específicos - colores más oscuros */
   --theme-status-paid: #1b5e20;
@@ -102,6 +158,18 @@
   --theme-status-pending-text: #ffb74d;
   --theme-status-overdue: #c62828;
   --theme-status-overdue-text: #ef5350;
+  
+  /* Variantes de color para diferentes intensidades */
+  --theme-primary-10: rgba(100, 181, 246, 0.1);
+  --theme-primary-dark: #1976d2;
+  --theme-success-10: rgba(102, 187, 106, 0.1);
+  --theme-success-dark: #4caf50;
+  --theme-warning-10: rgba(255, 183, 77, 0.1);
+  
+  /* Estados de error - adaptados para tema oscuro */
+  --theme-status-error-bg: rgba(244, 67, 54, 0.1);
+  --theme-status-error-text: #ff5252;
+  --theme-status-error-border: rgba(244, 67, 54, 0.3);
   
   /* Timeline sidebar específicos */
   --timeline-bg-year: linear-gradient(135deg, #424242 0%, #616161 100%);
@@ -113,6 +181,34 @@
   --timeline-text-month-active: #121212;
   --timeline-border-month: rgba(100, 181, 246, 0.3);
   --timeline-shadow-month: 0 2px 8px rgba(0, 0, 0, 0.3);
+  
+  /* Loading estados - modo oscuro */
+  --theme-bg-loading-1: #333333;
+  --theme-bg-loading-2: #444444;
+  --theme-bg-loading-dark-1: #333333;
+  --theme-bg-loading-dark-2: #444444;
+  
+  /* Categorías de cuentas - ajustadas para modo oscuro */
+  --theme-cat-luz: #ffd54f;
+  --theme-cat-agua: #4dd0e1;
+  --theme-cat-gas: #ff8a65;
+  --theme-cat-internet: #42a5f5;
+  --theme-cat-aseo: #66bb6a;
+  --theme-cat-otros: #ab47bc;
+  
+  /* Colores de texto para categorías - tema oscuro */
+  --theme-cat-luz-text: #2c2c2c;
+  --theme-cat-agua-text: #2c2c2c;
+  --theme-cat-gas-text: #2c2c2c;
+  --theme-cat-internet-text: #2c2c2c;
+  --theme-cat-aseo-text: #2c2c2c;
+  --theme-cat-otros-text: #2c2c2c;
+  
+  /* Colores de botones y controles - tema oscuro */
+  --theme-danger-dark: #f44336;
+  --theme-disabled: #424242;
+  --theme-warning-text: #ffcc80;
+  --theme-link: #90caf9;
 }
 
 /* Clases globales de utilidad para temas */
@@ -146,7 +242,7 @@
 [data-theme="dark"] input,
 [data-theme="dark"] select,
 [data-theme="dark"] textarea {
-  background-color: var(--theme-bg-tertiary);
+  background-color: var(--theme-bg-terciary);
   color: var(--theme-text-primary);
   border-color: var(--theme-border-color);
 }
@@ -179,7 +275,7 @@
 
 /* Ajustes para botones en modo oscuro */
 [data-theme="dark"] button:not(.primary-button):not(.theme-toggle) {
-  background-color: var(--theme-bg-tertiary);
+  background-color: var(--theme-bg-terciary);
   color: var(--theme-text-primary);
   border-color: var(--theme-border-color);
 }
@@ -214,7 +310,7 @@
 
 /* Ajustes para alertas y notificaciones */
 [data-theme="dark"] .alert {
-  background-color: var(--theme-bg-tertiary);
+  background-color: var(--theme-bg-terciary);
   border-color: var(--theme-border-color);
   color: var(--theme-text-primary);
 }

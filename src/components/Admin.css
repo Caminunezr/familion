@@ -32,7 +32,12 @@
 
 /* --- Estilos para el botón Cambiar Rol --- */
 .btn-toggle-admin {
-  /* Estilo base */
+  padding: 6px 12px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.9rem;
+  transition: background-color 0.2s;
 }
 
 .btn-toggle-admin.is-admin {
@@ -78,7 +83,8 @@
 /* --- Estilos para la página de administración --- */
 .admin-page {
   min-height: 100vh;
-  background-color: #f5f5f5;
+  background-color: var(--theme-bg-primary);
+  color: var(--theme-text-primary);
 }
 
 .admin-container {
@@ -91,13 +97,13 @@
 .admin-container h2 {
   text-align: center;
   margin-bottom: 30px;
-  color: #333;
+  color: var(--theme-text-primary);
 }
 
 .admin-container.loading,
 .admin-container.error {
   text-align: center;
-  color: #666;
+  color: var(--theme-text-secondary);
   font-size: 1.2em;
   padding: 40px;
 }
@@ -106,16 +112,17 @@
 }
 
 .card { /* Reutilizando estilo si existe globalmente */
-  background-color: white;
+  background-color: var(--theme-bg-card);
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.08);
+  box-shadow: var(--theme-shadow-card);
   padding: 25px;
   margin-bottom: 25px;
+  color: var(--theme-text-primary);
 }
 
 .error-message {
-  color: #d32f2f;
-  background-color: #ffebee;
+  color: var(--theme-danger);
+  background-color: var(--theme-status-overdue);
   padding: 10px 15px;
   border-radius: 4px;
   margin-bottom: 20px;
