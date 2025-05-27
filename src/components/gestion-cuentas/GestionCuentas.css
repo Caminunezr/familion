@@ -102,7 +102,62 @@
     padding: 10px 6px;
   }
   .form-area-gc, .panel-container {
+    width: 100%;
+    max-width: 100%;
+    height: 100%; /* O 100vh */
     border-radius: 0;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    border-left: none; /* Eliminar borde específico si existía */
+    /* La animación slideInRight existente debería funcionar, o se puede cambiar */
+  }
+}
+
+@media (max-width: 480px) {
+  .gestion-cuentas-container {
+    padding: 12px 8px;
+    gap: 12px;
+  }
+
+  .gestion-header h2 {
+    font-size: 1.3rem;
+  }
+
+  .crear-cuenta-btn {
+    padding: 10px 20px;
+    font-size: 1rem;
+  }
+
+  .resumen-cards-gc {
+    gap: 12px; /* Reducir más el gap */
+    grid-template-columns: 1fr; /* Apilar tarjetas en una columna */
+  }
+
+  .cuenta-card-info {
+    padding: 10px 8px; /* Reducir más el padding */
+  }
+
+  .cuenta-nombre {
+    font-size: 14px; /* Original: 16px */
+  }
+
+  .cuenta-card-details {
+    font-size: 12px; /* Original: 14px */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    padding: 10px 8px; /* Ajustar padding */
+    font-size: 0.9rem; /* Ajustar tamaño de fuente */
+    width: 100%; /* Ancho completo */
+    margin-bottom: 8px; /* Margen inferior para apilamiento */
+  }
+
+  .cuenta-card-actions .btn-editar:last-child,
+  .cuenta-card-actions .btn-ver-detalles:last-child {
+    margin-bottom: 0; /* Eliminar margen del último botón */
   }
 }
 
@@ -317,6 +372,26 @@
   .gestion-cuentas-listado-area {
     padding: 16px 8px;
   }
+
+  .resumen-cards-gc {
+    gap: 20px; /* Original: 32px */
+  }
+
+  .cuenta-card-info { /* Asumiendo que es parte de .cuenta-card-gc desde la línea 680 */
+    padding: 12px; /* Original: 15px */
+  }
+
+  .cuenta-card-actions {
+    padding: 8px 12px; /* Original: 10px 15px */
+    flex-wrap: wrap; /* Permitir que los botones se envuelvan */
+    gap: 8px; /* Espacio si los botones se envuelven */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    flex-grow: 1; /* Permitir que los botones crezcan */
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -332,6 +407,36 @@
   .crear-cuenta-btn {
     padding: 10px 20px;
     font-size: 1rem;
+  }
+
+  .resumen-cards-gc {
+    gap: 12px; /* Reducir más el gap */
+    grid-template-columns: 1fr; /* Apilar tarjetas en una columna */
+  }
+
+  .cuenta-card-info {
+    padding: 10px 8px; /* Reducir más el padding */
+  }
+
+  .cuenta-nombre {
+    font-size: 14px; /* Original: 16px */
+  }
+
+  .cuenta-card-details {
+    font-size: 12px; /* Original: 14px */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    padding: 10px 8px; /* Ajustar padding */
+    font-size: 0.9rem; /* Ajustar tamaño de fuente */
+    width: 100%; /* Ancho completo */
+    margin-bottom: 8px; /* Margen inferior para apilamiento */
+  }
+
+  .cuenta-card-actions .btn-editar:last-child,
+  .cuenta-card-actions .btn-ver-detalles:last-child {
+    margin-bottom: 0; /* Eliminar margen del último botón */
   }
 }
 
@@ -534,6 +639,38 @@
     width: 30px;
     height: 30px;
     font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .resumen-cards-gc {
+    gap: 12px; /* Reducir más el gap */
+    grid-template-columns: 1fr; /* Apilar tarjetas en una columna */
+  }
+
+  .cuenta-card-info {
+    padding: 10px 8px; /* Reducir más el padding */
+  }
+
+  .cuenta-nombre {
+    font-size: 14px; /* Original: 16px */
+  }
+
+  .cuenta-card-details {
+    font-size: 12px; /* Original: 14px */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    padding: 10px 8px; /* Ajustar padding */
+    font-size: 0.9rem; /* Ajustar tamaño de fuente */
+    width: 100%; /* Ancho completo */
+    margin-bottom: 8px; /* Margen inferior para apilamiento */
+  }
+
+  .cuenta-card-actions .btn-editar:last-child,
+  .cuenta-card-actions .btn-ver-detalles:last-child {
+    margin-bottom: 0; /* Eliminar margen del último botón */
   }
 }
 
@@ -743,6 +880,26 @@
     flex: 1;
     min-width: 120px;
   }
+
+  .resumen-cards-gc {
+    gap: 20px; /* Original: 32px */
+  }
+
+  .cuenta-card-info { /* Asumiendo que es parte de .cuenta-card-gc desde la línea 680 */
+    padding: 12px; /* Original: 15px */
+  }
+
+  .cuenta-card-actions {
+    padding: 8px 12px; /* Original: 10px 15px */
+    flex-wrap: wrap; /* Permitir que los botones se envuelvan */
+    gap: 8px; /* Espacio si los botones se envuelven */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    flex-grow: 1; /* Permitir que los botones crezcan */
+    text-align: center;
+  }
 }
 
 @media (max-width: 480px) {
@@ -762,6 +919,36 @@
   .sort-direction-btn {
     width: 100%;
     max-width: 280px;
+  }
+
+  .resumen-cards-gc {
+    gap: 12px; /* Reducir más el gap */
+    grid-template-columns: 1fr; /* Apilar tarjetas en una columna */
+  }
+
+  .cuenta-card-info {
+    padding: 10px 8px; /* Reducir más el padding */
+  }
+
+  .cuenta-nombre {
+    font-size: 14px; /* Original: 16px */
+  }
+
+  .cuenta-card-details {
+    font-size: 12px; /* Original: 14px */
+  }
+
+  .cuenta-card-actions .btn-editar,
+  .cuenta-card-actions .btn-ver-detalles {
+    padding: 10px 8px; /* Ajustar padding */
+    font-size: 0.9rem; /* Ajustar tamaño de fuente */
+    width: 100%; /* Ancho completo */
+    margin-bottom: 8px; /* Margen inferior para apilamiento */
+  }
+
+  .cuenta-card-actions .btn-editar:last-child,
+  .cuenta-card-actions .btn-ver-detalles:last-child {
+    margin-bottom: 0; /* Eliminar margen del último botón */
   }
 }
 
@@ -1409,7 +1596,7 @@ h1, h2, h3, h4, h5, h6 {
 [data-theme="dark"] .form-group input,
 [data-theme="dark"] .form-group select,
 [data-theme="dark"] .form-group textarea {
-  background: var(--theme-bg-tertiary);
+  background: var(--theme-bg-terciario);
   border-color: var(--theme-border-color);
   color: var(--theme-text-primary);
 }
@@ -1431,7 +1618,7 @@ h1, h2, h3, h4, h5, h6 {
 }
 
 [data-theme="dark"] .btn-secondary {
-  background: var(--theme-bg-tertiary);
+  background: var(--theme-bg-terciario);
   border-color: var(--theme-border-color);
   color: var(--theme-text-primary);
 }
@@ -1519,7 +1706,7 @@ h1, h2, h3, h4, h5, h6 {
 
 /* Estilos de modo nocturno para la barra de filtros */
 [data-theme="dark"] .filtros-bar-gc {
-  background: linear-gradient(135deg, var(--theme-bg-card) 0%, var(--theme-bg-tertiary) 100%);
+  background: linear-gradient(135deg, var(--theme-bg-card) 0%, var(--theme-bg-terciario) 100%);
   border-color: var(--theme-border-color);
   box-shadow: 0 4px 20px rgba(100, 181, 246, 0.12);
   color: var(--theme-text-primary);
