@@ -20,6 +20,9 @@
 
 # media (archivos de base de datos: facturas, boletas, comprobantes de pago, documentos de deuda)
 backend/media/
+# Permitir archivos .gitkeep para mantener estructura de directorios
+!backend/media/.gitkeep
+!backend/media/*/.gitkeep
 # En caso de querer ignorar carpetas específicas y no toda la estructura media, usar:
 # backend/media/facturas/
 # backend/media/boletas/
