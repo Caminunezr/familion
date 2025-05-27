@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import ThemeToggle from './ThemeToggle';
 import './NavBar.css';
 
 const COLOR_PALETTE = [
@@ -128,6 +129,7 @@ const NavBar = () => {
 
         {currentUser && (
           <div className="user-info">
+            <ThemeToggle />
             <button
               className="user-name-badge"
               style={{

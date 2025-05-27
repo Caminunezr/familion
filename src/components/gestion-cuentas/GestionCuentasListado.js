@@ -1,6 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { agruparDatosHistorial } from '../../utils/historialUtils';
 import { Bar } from 'react-chartjs-2';
+import './TimelineSidebar.css';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -206,46 +207,46 @@ const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => {
   });
 
   return (
-    <div style={{ minWidth: 210, borderRight: '2px solid #e0e0e0', padding: '18px 0', background: '#f7f9fb', height: '100%', overflowY: 'auto' }}>
+    <div className="timeline-sidebar">
       {orderedYears.map(anio => (
-        <div key={anio} style={{marginBottom: 18}}>
+        <div key={anio} className="year-group">
           <div
-            style={{fontWeight: 700, fontSize: 17, color: '#1976d2', margin: '0 0 8px 18px', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 8}}
+            className="year-header"
             onClick={() => toggleYear(anio)}
           >
             <span>{anio}</span>
-            <span style={{fontSize: 15, color: '#888'}}>{expandedYears.includes(anio) ? '▼' : '▶'}</span>
+            <span className={`year-toggle-icon ${expandedYears.includes(anio) ? 'expanded' : ''}`}>
+              ▶
+            </span>
           </div>
           {expandedYears.includes(anio) && (
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0 }}>
+            <div className="months-container">
               {aniosMeses[anio].map(mes => {
                 const resumen = getResumenMes(mes);
+                const isActive = mes.periodo === mesActivo;
+                
+                // Determinar estado visual
+                let statusClass = '';
+                if (resumen.porcentajePagado >= 80) statusClass = 'status-success';
+                else if (resumen.porcentajePagado > 0) statusClass = 'status-warning';
+                else statusClass = 'status-danger';
+                
                 return (
                   <div
                     key={mes.periodo}
                     onClick={() => onSelectMes(mes.periodo)}
-                    style={{
-                      cursor: 'pointer',
-                      padding: '10px 18px 10px 24px',
-                      fontWeight: mes.periodo === mesActivo ? 700 : 400,
-                      color: mes.periodo === mesActivo ? '#1976d2' : '#555',
-                      background: mes.periodo === mesActivo ? '#e3f0fd' : 'transparent',
-                      borderRight: mes.periodo === mesActivo ? '4px solid #1976d2' : '4px solid transparent',
-                      borderRadius: '18px 0 0 18px',
-                      marginBottom: 2,
-                      position: 'relative',
-                      transition: 'background 0.2s, color 0.2s',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'space-between',
-                      gap: 8
-                    }}
+                    className={`month-item ${isActive ? 'active' : ''} ${statusClass}`}
                   >
-                    <span style={{ fontSize: 15 }}>{mes.etiqueta}</span>
-                    <span style={{marginLeft: 8, fontSize: 18}}>{resumen.icono}</span>
-                    <span style={{fontSize: 12, color: '#888', marginLeft: 8}}>
-                      {resumen.totalCuentas} cuentas | ${resumen.totalPagado.toLocaleString()} pagado | ${resumen.totalPendiente.toLocaleString()} pendiente
-                    </span>
+                    <div className="month-content">
+                      <div className="month-name">{mes.etiqueta}</div>
+                      <div className="month-summary">
+                        {resumen.totalCuentas} cuentas | ${resumen.totalPagado.toLocaleString()} pagado
+                        {resumen.totalPendiente !== 0 && (
+                          <> | ${Math.abs(resumen.totalPendiente).toLocaleString()} pendiente</>
+                        )}
+                      </div>
+                    </div>
+                    <span className="month-status-icon">{resumen.icono}</span>
                   </div>
                 );
               })}
@@ -257,7 +258,7 @@ const TimelineSidebar = ({ aniosMeses, mesActivo, onSelectMes }) => {
   );
 };
 
-const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaClass, onAbrirPanel, onEliminarCuenta, filtro, setFiltro, busqueda, setBusqueda, colorFondo }) => {
+const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaClass, onAbrirPanel, onEliminarCuenta, onAbrirPagoDesdeTarjeta, filtro, setFiltro, busqueda, setBusqueda, colorFondo }) => {
   // Filtrado por estado/categoría/búsqueda
   const cuentasFiltradas = useMemo(() => {
     return cuentas.filter(c => {
@@ -275,7 +276,7 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
       }
       return true;
     });
-  }, [cuentas, filtro, busqueda]);
+  }, [cuentas, filtro, busqueda, getEstadoCuenta]);
 
   return (
     <div style={{ position: 'relative', padding: '32px 0 32px 40px', background: colorFondo, borderRadius: 18, transition: 'background 0.4s' }}>
@@ -292,86 +293,252 @@ const TimelineCards = ({ cuentas, getEstadoCuenta, categoriaIcono, getCategoriaC
       </div>
       {/* Línea vertical */}
       <div style={{ position: 'absolute', left: 12, top: 0, bottom: 0, width: 4, background: '#e0e0e0', borderRadius: 2 }} />
-      {/* Grid de tarjetas */}
+      {/* Grid de tarjetas rediseñado */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))',
-        gap: '16px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+        gap: '20px',
         alignItems: 'stretch',
         width: '100%',
-        marginTop: 8
+        marginTop: 20,
+        padding: '0 4px'
       }}>
         {cuentasFiltradas.map((cuenta, idx) => {
           const { estado, clase } = getEstadoCuenta(cuenta);
           const tituloPrincipal = cuenta.proveedor_nombre || cuenta.descripcion || cuenta.categoria || 'Cuenta';
           const proveedorDisplay = cuenta.proveedor_nombre || (cuenta.proveedor ? `ID: ${cuenta.proveedor}` : 'N/A');
           const icono = categoriaIcono[cuenta.categoria] || '📦';
+          const categoriaColorValue = categoriaColor[cuenta.categoria] || '#BDBDBD';
+          
           return (
-            <div key={cuenta.id} style={{ display: 'flex', alignItems: 'flex-start', position: 'relative', transition: 'background 0.3s' }}>
-              {/* Nodo de la línea */}
-              <div style={{ position: 'absolute', left: -28, top: 18, width: 24, height: 24, background: '#fff', border: `3px solid ${clase === 'pagada' ? '#43a047' : clase === 'vencida' ? '#e53935' : '#ffc107'}`, borderRadius: '50%', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 18, color: '#1976d2', fontWeight: 700 }}>{idx + 1}</div>
-              {/* Tarjeta */}
+            <div key={cuenta.id} style={{ 
+              display: 'flex', 
+              alignItems: 'flex-start', 
+              position: 'relative',
+              marginBottom: 12
+            }}>
+              {/* Nodo de timeline optimizado */}
+              <div style={{ 
+                position: 'absolute', 
+                left: -30, 
+                top: 22, 
+                width: 24, 
+                height: 24, 
+                background: '#fff', 
+                border: `3px solid ${clase === 'pagada' ? '#4caf50' : clase === 'vencida' ? '#f44336' : '#ff9800'}`, 
+                borderRadius: '50%', 
+                zIndex: 3, 
+                display: 'flex', 
+                alignItems: 'center', 
+                justifyContent: 'center', 
+                fontSize: 10, 
+                color: '#333', 
+                fontWeight: 700,
+                boxShadow: '0 2px 6px rgba(0,0,0,0.12)'
+              }}>
+                {idx + 1}
+              </div>
+              
+              {/* Tarjeta completamente rediseñada */}
               <div
                 className={`cuenta-card-gc ${clase} ${getCategoriaClass(cuenta.categoria)}`}
                 style={{
-                  minWidth: 220,
-                  maxWidth: 320,
-                  background: '#fff',
-                  borderLeft: `7px solid ${categoriaColor[cuenta.categoria] || '#BDBDBD'}`,
-                  boxShadow: '0 1px 4px rgba(25,118,210,0.07)',
-                  borderRadius: 10,
-                  padding: 10,
-                  marginLeft: 18,
-                  marginBottom: 8,
+                  width: '100%',
+                  minHeight: 160,
+                  background: '#ffffff',
+                  borderRadius: 12,
+                  marginLeft: 16,
                   position: 'relative',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 6,
-                  transition: 'box-shadow 0.2s, background 0.2s',
-                  fontSize: 14,
                   cursor: 'pointer',
                   overflow: 'hidden',
+                  transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
+                  boxShadow: '0 2px 10px rgba(0,0,0,0.06)',
+                  border: '1px solid #f0f0f0'
                 }}
                 onClick={() => onAbrirPanel && onAbrirPanel(cuenta)}
-                onMouseEnter={e => e.currentTarget.style.boxShadow = '0 2px 8px rgba(25,118,210,0.13)'}
-                onMouseLeave={e => e.currentTarget.style.boxShadow = '0 1px 4px rgba(25,118,210,0.07)'}
+                onMouseEnter={e => {
+                  e.currentTarget.style.transform = 'translateY(-3px)';
+                  e.currentTarget.style.boxShadow = '0 6px 25px rgba(0,0,0,0.12)';
+                }}
+                onMouseLeave={e => {
+                  e.currentTarget.style.transform = 'translateY(0)';
+                  e.currentTarget.style.boxShadow = '0 2px 10px rgba(0,0,0,0.06)';
+                }}
               >
-                {/* Badge de estado en la esquina superior derecha */}
-                <span className={`cuenta-estado-badge ${clase}`}
-                  style={{
+                {/* Header simplificado */}
+                <div style={{
+                  background: `linear-gradient(90deg, ${categoriaColorValue}12, ${categoriaColorValue}05)`,
+                  padding: '14px 16px',
+                  borderBottom: '1px solid #f5f5f5',
+                  position: 'relative'
+                }}>
+                  {/* Badge de estado minimalista */}
+                  <span style={{
                     position: 'absolute',
-                    top: 8,
-                    right: 8,
-                    fontSize: 11,
-                    padding: '2px 8px',
-                    borderRadius: 8,
-                    background: clase === 'pagada' ? '#e8f5e9' : clase === 'vencida' ? '#ffebee' : '#fffde7',
-                    color: clase === 'pagada' ? '#388e3c' : clase === 'vencida' ? '#c62828' : '#f9a825',
+                    top: 10,
+                    right: 12,
+                    fontSize: 9,
+                    padding: '3px 8px',
+                    borderRadius: 10,
+                    background: clase === 'pagada' ? '#e8f5e9' : clase === 'vencida' ? '#ffebee' : '#fff8e1',
+                    color: clase === 'pagada' ? '#2e7d32' : clase === 'vencida' ? '#d32f2f' : '#f57c00',
                     fontWeight: 600,
-                    zIndex: 2,
-                    boxShadow: '0 1px 3px rgba(0,0,0,0.04)'
-                  }}
-                >{estado}</span>
-                {/* Contenido principal */}
-                <div style={{display:'flex',alignItems:'center',gap:8, marginBottom:2}}>
-                  <span style={{fontSize: '1.3rem'}}>{icono}</span>
-                  <span style={{fontWeight:700, fontSize:13, color:'#1976d2', flex:1, whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{tituloPrincipal}</span>
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.3px'
+                  }}>
+                    {estado}
+                  </span>
+                  
+                  {/* Título e ícono */}
+                  <div style={{display: 'flex', alignItems: 'center', gap: 10, paddingRight: 60}}>
+                    <span style={{
+                      fontSize: '1.4rem',
+                      padding: '4px',
+                      background: `${categoriaColorValue}15`,
+                      borderRadius: '6px',
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      minWidth: 32,
+                      height: 32
+                    }}>{icono}</span>
+                    <div style={{flex: 1, minWidth: 0}}>
+                      <h4 style={{
+                        margin: 0,
+                        fontSize: 14,
+                        fontWeight: 700,
+                        color: '#1a1a1a',
+                        lineHeight: 1.3,
+                        overflow: 'hidden',
+                        textOverflow: 'ellipsis',
+                        whiteSpace: 'nowrap'
+                      }}>
+                        {tituloPrincipal}
+                      </h4>
+                      <span style={{
+                        fontSize: 11,
+                        color: '#666',
+                        fontWeight: 500
+                      }}>
+                        {cuenta.categoria}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6, marginBottom:2}}>
-                  <span style={{fontWeight:600, color:'#1976d2'}}>{Number(cuenta.monto || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}</span>
-                  <span style={{fontSize:12, color:'#888'}}>Vence: {cuenta.fecha_vencimiento ? new Date(cuenta.fecha_vencimiento).toLocaleDateString('es-CL') : 'N/A'}</span>
+
+                {/* Contenido principal reorganizado */}
+                <div style={{ padding: '16px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+                  {/* Monto prominente */}
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '10px 0',
+                    background: '#fafbfc',
+                    borderRadius: 8,
+                    border: '1px solid #e8eaed'
+                  }}>
+                    <div style={{
+                      fontSize: 20,
+                      fontWeight: 800,
+                      color: '#1976d2',
+                      lineHeight: 1
+                    }}>
+                      {Number(cuenta.monto || 0).toLocaleString('es-CL', { style: 'currency', currency: 'CLP' })}
+                    </div>
+                  </div>
+
+                  {/* Información en filas compactas */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                    <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                      <span style={{fontSize: 11, color: '#888', minWidth: 16}}>📅</span>
+                      <span style={{fontSize: 12, color: '#555'}}>
+                        Vence: {cuenta.fecha_vencimiento ? new Date(cuenta.fecha_vencimiento).toLocaleDateString('es-CL') : 'Sin fecha'}
+                      </span>
+                    </div>
+                    
+                    {proveedorDisplay !== tituloPrincipal && proveedorDisplay !== 'N/A' && (
+                      <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                        <span style={{fontSize: 11, color: '#888', minWidth: 16}}>🏢</span>
+                        <span style={{fontSize: 12, color: '#666', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap'}}>
+                          {proveedorDisplay}
+                        </span>
+                      </div>
+                    )}
+                    
+                    {cuenta.factura && (
+                      <div style={{display: 'flex', alignItems: 'center', gap: 8}}>
+                        <span style={{fontSize: 11, color: '#888', minWidth: 16}}>📄</span>
+                        <span style={{fontSize: 12, color: '#4caf50', fontWeight: 500}}>Factura adjunta</span>
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div style={{display:'flex',justifyContent:'space-between',alignItems:'center',gap:6}}>
-                  <span style={{fontSize:12, color:'#555', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{cuenta.categoria}</span>
-                  {proveedorDisplay !== tituloPrincipal && proveedorDisplay !== 'N/A' && (
-                    <span style={{fontSize:12, color:'#888', whiteSpace:'nowrap', overflow:'hidden', textOverflow:'ellipsis'}}>{proveedorDisplay}</span>
+
+                {/* Footer con acciones */}
+                <div style={{ 
+                  padding: '10px 16px', 
+                  borderTop: '1px solid #f5f5f5',
+                  background: '#fafbfc',
+                  display: 'flex', 
+                  justifyContent: 'flex-end', 
+                  gap: 6
+                }}>
+                  {onAbrirPagoDesdeTarjeta && (
+                    <button 
+                      style={{
+                        background: '#43a047',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '5px 10px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onClick={e => { e.stopPropagation(); onAbrirPagoDesdeTarjeta(cuenta); }}
+                      onMouseEnter={e => e.target.style.background = '#388e3c'}
+                      onMouseLeave={e => e.target.style.background = '#43a047'}
+                    >
+                      Registrar pago
+                    </button>
                   )}
-                  {cuenta.factura && <span className="factura-indicator" title="Factura adjunta" style={{fontSize:15}}>📄</span>}
-                </div>
-                <div className="cuenta-card-actions" style={{ position:'absolute', bottom:8, right:8, display:'flex', gap:4, opacity:0.7 }}>
-                  <span title="Ver / Editar" style={{cursor:'pointer',fontSize:16}} onClick={e => { e.stopPropagation(); onAbrirPanel(cuenta); }}>✏️</span>
+                  <button 
+                    style={{
+                      background: '#1976d2',
+                      color: 'white',
+                      border: 'none',
+                      borderRadius: 6,
+                      padding: '5px 10px',
+                      fontSize: 11,
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'background 0.2s'
+                    }}
+                    onClick={e => { e.stopPropagation(); onAbrirPanel(cuenta); }}
+                    onMouseEnter={e => e.target.style.background = '#1565c0'}
+                    onMouseLeave={e => e.target.style.background = '#1976d2'}
+                  >
+                    Editar
+                  </button>
                   {onEliminarCuenta && (
-                    <span title="Eliminar" style={{cursor:'pointer',fontSize:16}} onClick={e => { e.stopPropagation(); onEliminarCuenta(cuenta.id); }}>🗑️</span>
+                    <button 
+                      style={{
+                        background: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: 6,
+                        padding: '5px 10px',
+                        fontSize: 11,
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'background 0.2s'
+                      }}
+                      onClick={e => { e.stopPropagation(); onEliminarCuenta(cuenta.id); }}
+                      onMouseEnter={e => e.target.style.background = '#d32f2f'}
+                      onMouseLeave={e => e.target.style.background = '#f44336'}
+                    >
+                      Eliminar
+                    </button>
                   )}
                 </div>
               </div>
@@ -394,6 +561,7 @@ const GestionCuentasListado = ({
   onAbrirPanel,
   onAbrirFormularioNuevo,
   onEliminarCuenta,
+  onAbrirPagoDesdeTarjeta,
 }) => {
   // Adaptar y agrupar cuentas SIEMPRE antes de cualquier return
   const cuentasAdaptadas = adaptarCuentasParaAgrupamiento(cuentas);
@@ -449,6 +617,7 @@ const GestionCuentasListado = ({
               getCategoriaClass={getCategoriaClass}
               onAbrirPanel={onAbrirPanel}
               onEliminarCuenta={onEliminarCuenta}
+              onAbrirPagoDesdeTarjeta={onAbrirPagoDesdeTarjeta}
               filtro={filtro}
               setFiltro={setFiltro}
               busqueda={busqueda}

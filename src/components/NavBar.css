@@ -276,3 +276,78 @@
       white-space: nowrap;
    }
 }
+
+/* Dark Mode Support */
+[data-theme="dark"] .navbar {
+  background-color: var(--theme-bg-navbar);
+  color: var(--theme-text-inverse);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+}
+
+[data-theme="light"] .navbar {
+  background-color: #4caf50;
+  color: white;
+}
+
+[data-theme="dark"] .nav-brand {
+  color: var(--theme-text-inverse);
+}
+
+[data-theme="dark"] .logo {
+  background-color: var(--theme-primary);
+  color: var(--theme-text-inverse);
+}
+
+[data-theme="dark"] .nav-link {
+  color: var(--theme-text-inverse);
+}
+
+[data-theme="dark"] .nav-link:hover {
+  color: var(--theme-primary);
+  background-color: rgba(100, 181, 246, 0.1);
+}
+
+[data-theme="dark"] .nav-link.active {
+  color: var(--theme-primary);
+  background-color: rgba(100, 181, 246, 0.15);
+}
+
+[data-theme="dark"] .user-name-badge {
+  background: var(--theme-primary) !important;
+  color: var(--theme-text-inverse) !important;
+  border-color: var(--theme-primary) !important;
+}
+
+[data-theme="dark"] .logout-button {
+  background-color: var(--theme-danger);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-danger);
+}
+
+[data-theme="dark"] .logout-button:hover {
+  background-color: #d32f2f;
+}
+
+[data-theme="dark"] .mobile-menu-button {
+  background-color: var(--theme-bg-tertiary);
+  color: var(--theme-text-inverse);
+  border-color: var(--theme-border-color);
+}
+
+[data-theme="dark"] .mobile-menu-button:hover {
+  background-color: var(--theme-bg-card-hover);
+}
+
+/* Responsive adjustments for theme toggle */
+@media (max-width: 768px) {
+  [data-theme="dark"] .nav-links.mobile-active {
+    background-color: var(--theme-bg-navbar);
+    border-color: var(--theme-border-color);
+  }
+}
+
+/* Ensure theme toggle is visible in both themes */
+.theme-toggle {
+  margin-left: 8px;
+  margin-right: 8px;
+}

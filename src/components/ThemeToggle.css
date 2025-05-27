@@ -1,0 +1,120 @@
+/* src/components/ThemeToggle.css */
+.theme-toggle {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: all 0.3s ease;
+  margin-left: 10px;
+}
+
+.theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+  transform: scale(1.1);
+}
+
+.theme-toggle:focus {
+  outline: 2px solid #4caf50;
+  outline-offset: 2px;
+}
+
+.theme-toggle-icon {
+  font-size: 20px;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+}
+
+/* Iconos del toggle */
+.theme-toggle.light .theme-toggle-icon {
+  color: #ffa000; /* Color dorado para el sol */
+}
+
+.theme-toggle.dark .theme-toggle-icon {
+  color: #64b5f6; /* Color azul claro para la luna */
+}
+
+/* Animación de rotación */
+.theme-toggle-icon.rotating {
+  animation: themeRotate 0.5s ease-in-out;
+}
+
+@keyframes themeRotate {
+  0% {
+    transform: rotate(0deg) scale(1);
+  }
+  50% {
+    transform: rotate(180deg) scale(0.8);
+  }
+  100% {
+    transform: rotate(360deg) scale(1);
+  }
+}
+
+/* Tooltip personalizado */
+.theme-toggle-tooltip {
+  position: absolute;
+  bottom: -35px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: rgba(0, 0, 0, 0.8);
+  color: white;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+  z-index: 1000;
+}
+
+.theme-toggle:hover .theme-toggle-tooltip {
+  opacity: 1;
+}
+
+/* Adaptaciones responsivas */
+@media (max-width: 768px) {
+  .theme-toggle {
+    padding: 6px;
+  }
+  
+  .theme-toggle-icon {
+    font-size: 18px;
+    width: 20px;
+    height: 20px;
+  }
+  
+  .theme-toggle-tooltip {
+    display: none; /* Ocultar tooltip en móvil */
+  }
+}
+
+/* Variaciones para diferentes temas */
+[data-theme="light"] .theme-toggle {
+  color: #333;
+}
+
+[data-theme="light"] .theme-toggle:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+[data-theme="dark"] .theme-toggle {
+  color: #fff;
+}
+
+[data-theme="dark"] .theme-toggle:hover {
+  background-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme="dark"] .theme-toggle-tooltip {
+  background-color: rgba(255, 255, 255, 0.9);
+  color: #333;
+}

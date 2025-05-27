@@ -1,18 +1,344 @@
-/* ... existing styles ... */
+/* --- MEJORAS VISUALES INTEGRALES --- */
+
+/* Botones principales y secundarios */
+.submit-button, .cancel-button, .crear-cuenta-btn, .crear-cuenta-btn-empty {
+  border-radius: 10px;
+  font-size: 1.1rem;
+  font-weight: 700;
+  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.10);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+.submit-button, .crear-cuenta-btn, .crear-cuenta-btn-empty {
+  background: linear-gradient(90deg, #1976d2 60%, #21cb7a 100%);
+  color: #fff;
+}
+.submit-button:hover, .crear-cuenta-btn:hover, .crear-cuenta-btn-empty:hover {
+  background: linear-gradient(90deg, #125ea7 60%, #198754 100%);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 6px 24px rgba(25, 118, 210, 0.18);
+}
+.cancel-button {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #ced4da;
+}
+.cancel-button:hover {
+  background: #e9ecef;
+  color: #495057;
+  transform: translateY(-1px) scale(1.01);
+}
+
+/* Inputs y selects mejorados */
+.form-group input[type="text"],
+.form-group input[type="number"],
+.form-group input[type="date"],
+.form-group select,
+.form-group textarea {
+  border-radius: 8px;
+  box-shadow: 0 1px 4px rgba(25,118,210,0.06);
+  transition: box-shadow 0.2s, border-color 0.2s;
+}
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus,
+.search-input-gc:focus {
+  border-color: #1976d2;
+  box-shadow: 0 0 0 0.18rem rgba(25, 118, 210, 0.18);
+}
+
+/* Tarjetas de cuentas */
+.cuenta-card-gc {
+  border-radius: 18px;
+  background: linear-gradient(135deg, #f7f9fb 80%, #e3f0fd 100%);
+  box-shadow: 0 2px 12px rgba(25, 118, 210, 0.10);
+  transition: box-shadow 0.2s, transform 0.2s;
+}
+.cuenta-card-gc:hover {
+  box-shadow: 0 8px 32px rgba(25, 118, 210, 0.18);
+  transform: translateY(-6px) scale(1.02);
+}
+
+/* Badge de estado */
+.cuenta-estado-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  padding: 5px 12px;
+  border-radius: 16px;
+  font-weight: 600;
+  box-shadow: 0 1px 4px rgba(25,118,210,0.06);
+}
+
+/* Panel lateral y modal */
+.form-area-gc, .panel-container {
+  box-shadow: -4px 0 24px rgba(25, 118, 210, 0.18);
+  border-radius: 18px 0 0 18px;
+  background: #fff;
+  animation: slideInRight 0.3s;
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+
+/* Modal backdrop */
+.modal-backdrop {
+  background: rgba(33, 37, 41, 0.45);
+  -webkit-backdrop-filter: blur(2px);
+  backdrop-filter: blur(2px);
+}
+
+/* Mejoras responsivas */
+@media (max-width: 700px) {
+  .crear-cuenta-btn, .submit-button, .cancel-button {
+    width: 100%;
+    font-size: 1rem;
+    padding: 12px 0;
+  }
+  .cuenta-card-gc {
+    border-radius: 12px;
+    padding: 10px 6px;
+  }
+  .form-area-gc, .panel-container {
+    border-radius: 0;
+  }
+}
+
+/* --- MEJORAS DE ARMONÍA VISUAL PARA SIDEBAR Y CONTENIDO --- */
+
+/* Layout principal mejorado */
+.gestion-cuentas-main-layout {
+  display: flex;
+  height: calc(100vh - 100px);
+  background: var(--color-fondo-pagina);
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(33, 150, 243, 0.12);
+  margin: 20px auto;
+  max-width: 1400px;
+}
+
+/* Área de contenido principal */
+.gestion-cuentas-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  background: #ffffff;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Header mejorado */
+.gestion-cuentas-header-enhanced {
+  background: linear-gradient(90deg, #1976d2 0%, #42a5f5 100%);
+  color: white;
+  padding: 20px 24px;
+  box-shadow: 0 4px 12px rgba(25, 118, 210, 0.2);
+  position: relative;
+  z-index: 10;
+}
+
+.gestion-cuentas-header-enhanced h1 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+
+.gestion-cuentas-header-enhanced p {
+  margin: 4px 0 0 0;
+  opacity: 0.9;
+  font-size: 14px;
+}
+
+/* Área de filtros mejorada */
+.gestion-cuentas-filtros-enhanced {
+  background: #f8fbff;
+  padding: 16px 24px;
+  border-bottom: 1px solid #e3f2fd;
+  position: -webkit-sticky;
+  position: sticky;
+  top: 0;
+  z-index: 5;
+}
+
+/* Área de listado principal */
+.gestion-cuentas-listado-area {
+  flex: 1;
+  padding: 24px;
+  overflow-y: auto;
+  background: linear-gradient(180deg, #ffffff 0%, #f8fbff 100%);
+}
+
+/* Scroll styling mejorado */
+.gestion-cuentas-listado-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.gestion-cuentas-listado-area::-webkit-scrollbar-track {
+  background: #f0f5ff;
+  border-radius: 4px;
+}
+
+.gestion-cuentas-listado-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(180deg, #1976d2, #42a5f5);
+  border-radius: 4px;
+}
+
+.gestion-cuentas-listado-area::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(180deg, #1565c0, #1976d2);
+}
+
+/* Transiciones de entrada para las tarjetas */
+.timeline-cards-container {
+  animation: fadeInUp 0.6s ease-out;
+}
+
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Mejoras para el resumen anual */
+.resumen-anual-enhanced {
+  background: linear-gradient(135deg, #ffffff 0%, #f0f7ff 100%);
+  border-radius: 16px;
+  padding: 20px;
+  margin-bottom: 24px;
+  box-shadow: 0 4px 16px rgba(33, 150, 243, 0.08);
+  border: 1px solid #e3f2fd;
+}
+
+/* Estados de carga mejorados */
+.loading-spinner-enhanced {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  font-size: 16px;
+  color: #1976d2;
+  font-weight: 500;
+}
+
+.loading-spinner-enhanced::before {
+  content: '';
+  width: 20px;
+  height: 20px;
+  border: 2px solid #e3f2fd;
+  border-top: 2px solid #1976d2;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+  margin-right: 12px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+/* Estados vacíos mejorados */
+.empty-state-enhanced {
+  text-align: center;
+  padding: 60px 20px;
+  color: #666;
+}
+
+.empty-state-enhanced .empty-icon {
+  font-size: 48px;
+  color: #e0e9f5;
+  margin-bottom: 16px;
+}
+
+.empty-state-enhanced h3 {
+  margin: 0 0 8px 0;
+  font-size: 18px;
+  color: #1976d2;
+}
+
+.empty-state-enhanced p {
+  margin: 0;
+  font-size: 14px;
+  opacity: 0.8;
+}
+
+/* Responsividad mejorada */
+@media (max-width: 1024px) {
+  .gestion-cuentas-main-layout {
+    flex-direction: column;
+    height: auto;
+    min-height: calc(100vh - 100px);
+  }
+  
+  .timeline-sidebar {
+    order: 2;
+    min-width: auto;
+    max-height: 300px;
+    border-right: none;
+    border-top: 2px solid var(--sidebar-border);
+  }
+  
+  .gestion-cuentas-content-area {
+    order: 1;
+  }
+}
+
+@media (max-width: 768px) {
+  .gestion-cuentas-main-layout {
+    margin: 10px;
+    border-radius: 16px;
+  }
+  
+  .gestion-cuentas-header-enhanced {
+    padding: 16px 20px;
+  }
+  
+  .gestion-cuentas-header-enhanced h1 {
+    font-size: 20px;
+  }
+  
+  .gestion-cuentas-listado-area {
+    padding: 16px;
+  }
+}
+
+/* Micro-interacciones */
+.fade-transition {
+  transition: opacity 0.3s ease-in-out, transform 0.3s ease-in-out;
+}
+
+.fade-transition.fade-out {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.fade-transition.fade-in {
+  opacity: 1;
+  transform: translateY(0);
+}
 
 /* Estilos generales de la página */
 .gestion-cuentas-page {
   min-height: 100vh;
-  background: #f7f9fb;
-  color: #222;
+  background: var(--theme-bg-primary);
+  color: var(--theme-text-primary);
   font-family: 'Segoe UI', 'Roboto', Arial, sans-serif;
   padding: 0;
   margin: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .gestion-cuentas-container {
   max-width: 1200px;
-  margin: 32px auto 0 auto;
+  margin: 0 auto;
   padding: 32px 18px 32px 18px;
   background: transparent;
   border-radius: 18px;
@@ -20,6 +346,9 @@
   display: flex;
   flex-direction: column;
   gap: 28px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
 /* Header */
@@ -28,8 +357,12 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 18px;
-  padding-bottom: 12px;
-  border-bottom: 1.5px solid #e0e0e0;
+  padding: 0 20px 12px 20px;
+  border-bottom: 1.5px solid var(--theme-border-color);
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
 
 .gestion-header h2 {
@@ -197,14 +530,6 @@
   gap: 15px;
 }
 
-.search-input-gc {
-  padding: 10px 15px;
-  border: 1.5px solid #ced4da;
-  border-radius: 8px;
-  font-size: 1rem;
-  min-width: 220px;
-}
-
 .sort-controls-gc {
   display: flex;
   align-items: center;
@@ -238,11 +563,18 @@
 .main-content-gc {
   position: relative; /* Necesario para el panel absoluto/fijo */
   transition: margin-right 0.3s ease-in-out; /* Transición para empujar contenido */
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .cuentas-list-area {
-  /* Ocupa el espacio disponible */
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
 }
+
 
 /* Estado Vacío */
 .empty-state-gc {
@@ -330,11 +662,15 @@
 .cat-aseo { border-left: 6px solid #43a047; /* Verde */ }
 .cat-otros { border-left: 6px solid #8e24aa; /* Morado */ }
 
+.cuenta-card-info,
+.cuenta-card-pagoform {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+}
+
 .cuenta-card-info {
   padding: 15px;
   flex-grow: 1;
-  backface-visibility: hidden;
-  transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1);
   position: absolute;
   width: 100%;
   height: 100%;
@@ -358,6 +694,7 @@
   align-items: center;
   justify-content: center;
   padding: 20px;
+  -webkit-backface-visibility: hidden;
   backface-visibility: hidden;
   transition: transform 0.6s cubic-bezier(0.4,0.2,0.2,1);
   position: absolute;
@@ -539,198 +876,451 @@ form, .panel-content {
   border: 1px solid #ced4da;
   border-radius: 6px;
   font-size: 15px;
-  background-color: white; /* Asegurar fondo blanco */
-  color: #333; /* Asegurar color de texto */
-  box-sizing: border-box; /* Incluir padding y borde en el ancho */
+  background-color: #ffffff;
 }
-.form-group input:focus,
+
+/* Enhanced Layout Styles for better sidebar harmony */
+.gestion-cuentas-container {
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  min-height: 100vh;
+  transition: all 0.3s ease;
+}
+
+.main-content-area {
+  background: rgba(255, 255, 255, 0.95);
+  -webkit-backdrop-filter: blur(10px);
+  backdrop-filter: blur(10px);
+  border-radius: 12px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  margin: 20px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.main-content-area:hover {
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+}
+
+/* Centrar módulos en pantalla de cuentas */
+.gestion-header,
+.filtros-bar-gc,
+.main-content-gc {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Ajustar área de filtros */
+.filtros-bar-gc {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* Ajustar lista de cuentas */
+.cuentas-list-area {
+  width: 100%;
+  max-width: 1200px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+/* Enhanced Card Styles */
+.cuenta-card {
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9fa 100%);
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  overflow: hidden;
+  position: relative;
+}
+
+.cuenta-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.cuenta-card:hover::before {
+  opacity: 1;
+}
+
+.cuenta-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  border-color: rgba(102, 126, 234, 0.3);
+}
+
+/* Enhanced Button Styles */
+.btn-primary {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.btn-primary::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.btn-primary:hover::before {
+  left: 100%;
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+}
+
+.btn-secondary {
+  background: rgba(108, 117, 125, 0.1);
+  border: 1px solid rgba(108, 117, 125, 0.3);
+  color: #6c757d;
+  border-radius: 8px;
+  padding: 12px 24px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: rgba(108, 117, 125, 0.2);
+  border-color: #6c757d;
+  transform: translateY(-1px);
+}
+
+/* Enhanced Form Styles */
+.form-group input[type="text"]:focus,
+.form-group input[type="number"]:focus,
+.form-group input[type="date"]:focus,
 .form-group select:focus,
 .form-group textarea:focus {
-  border-color: #86b7fe;
-  outline: 0;
-  box-shadow: 0 0 0 0.25rem rgba(13, 110, 253, 0.25);
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  outline: none;
+  transform: translateY(-1px);
 }
 
-.form-group select {
-  appearance: none; /* Quitar estilo nativo */
-  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3e%3cpath fill='none' stroke='%23343a40' stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M2 5l6 6 6-6'/%3e%3c/svg%3e");
-  background-repeat: no-repeat;
-  background-position: right 0.75rem center;
-  background-size: 16px 12px;
+/* Loading States */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 60px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  margin: 20px;
 }
 
-.form-group textarea {
-  min-height: 80px;
-  resize: vertical;
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid rgba(102, 126, 234, 0.1);
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
 }
 
-.form-input-disabled {
-  background-color: #e9ecef;
-  cursor: not-allowed;
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 
-.factura-actual-info {
-  display: block;
-  font-size: 13px;
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  background: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
+  margin: 20px;
+}
+
+.empty-state-icon {
+  font-size: 64px;
+  color: #dee2e6;
+  margin-bottom: 20px;
+}
+
+.empty-state h3 {
+  color: #495057;
+  margin-bottom: 10px;
+}
+
+.empty-state p {
   color: #6c757d;
-  margin-bottom: 8px;
-  background-color: #f8f9fa;
-  padding: 5px 10px;
+  margin-bottom: 30px;
+}
+
+/* Enhanced Responsive Design */
+@media (max-width: 768px) {
+  .main-content-area {
+    margin: 10px;
+    border-radius: 8px;
+  }
+  
+  .cuenta-card {
+    border-radius: 8px;
+  }
+  
+  .btn-primary,
+  .btn-secondary {
+    padding: 10px 20px;
+    font-size: 14px;
+  }
+}
+
+/* Toast Notifications */
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  transform: translateX(400px);
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  z-index: 1000;
+}
+
+.toast-notification.show {
+  transform: translateX(0);
+}
+
+.toast-success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+}
+
+.toast-error {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+}
+
+.toast-warning {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+}
+
+/* Enhanced Status Indicators */
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.status-badge.success {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+}
+
+.status-badge.warning {
+  background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+  color: #212529;
+}
+
+.status-badge.danger {
+  background: linear-gradient(135deg, #dc3545 0%, #fd7e14 100%);
+  color: white;
+}
+
+.status-badge.info {
+  background: linear-gradient(135deg, #17a2b8 0%, #6f42c1 100%);
+  color: white;
+}
+
+/* Enhanced Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-weight: 600;
+  line-height: 1.3;
+  color: #2d3748;
+}
+
+.text-muted {
+  color: #718096 !important;
+}
+
+.text-primary {
+  color: #667eea !important;
+}
+
+/* Enhanced Focus States */
+*:focus {
+  outline: 2px solid #667eea;
+  outline-offset: 2px;
+}
+
+/* Custom Scrollbar for Main Content */
+.main-content-area::-webkit-scrollbar {
+  width: 8px;
+}
+
+.main-content-area::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.05);
   border-radius: 4px;
 }
 
-.form-group input[type="file"] {
-  padding: 8px; /* Ajuste para input file */
+.main-content-area::-webkit-scrollbar-thumb {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 4px;
 }
 
-.form-buttons, .panel-actions {
-  padding: 15px 20px;
-  border-top: 1px solid #dee2e6;
-  background-color: #f8f9fa;
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+.main-content-area::-webkit-scrollbar-thumb:hover {
+  background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
 }
 
-.submit-button, .cancel-button {
-  padding: 10px 18px;
-  border-radius: 6px;
-  font-size: 15px;
-  font-weight: 500;
-  cursor: pointer;
-  border: none;
+/* Dark Mode Support using CSS Variables */
+[data-theme="dark"] .gestion-cuentas-page {
+  background: var(--theme-bg-gradient);
+  color: var(--theme-text-primary);
 }
 
-.submit-button {
-  background-color: #198754; /* Verde */
-  color: white;
-}
-.submit-button:disabled {
-  background-color: #a3d3b8;
-  cursor: not-allowed;
+[data-theme="dark"] .main-content-area {
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border-color);
+  color: var(--theme-text-primary);
 }
 
-.cancel-button {
-  background-color: #f8f9fa;
-  color: #6c757d;
-  border: 1px solid #ced4da;
+[data-theme="dark"] .card {
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border-color);
+  color: var(--theme-text-primary);
+  box-shadow: var(--theme-shadow-card);
 }
 
-.error-message {
-  color: #dc3545;
-  background-color: #f8d7da;
-  border: 1px solid #f5c2c7;
-  padding: 10px 15px;
-  border-radius: 6px;
-  margin-bottom: 15px;
-  font-size: 14px;
+[data-theme="dark"] .form-group input,
+[data-theme="dark"] .form-group select,
+[data-theme="dark"] .form-group textarea {
+  background: var(--theme-bg-tertiary);
+  border-color: var(--theme-border-color);
+  color: var(--theme-text-primary);
 }
 
-/* Estilos Panel Detalles */
-.detalle-panel .panel-content {
-  padding: 0; /* Quitar padding para que las secciones lo manejen */
+[data-theme="dark"] .form-group input:focus,
+[data-theme="dark"] .form-group select:focus,
+[data-theme="dark"] .form-group textarea:focus {
+  border-color: var(--theme-primary);
+  box-shadow: 0 0 0 3px rgba(100, 181, 246, 0.1);
 }
 
-.detalle-seccion {
-  padding: 15px 20px;
-  border-bottom: 1px solid #eee;
-}
-.detalle-seccion:last-child {
-  border-bottom: none;
+[data-theme="dark"] .form-group label {
+  color: var(--theme-text-secondary);
 }
 
-.detalle-seccion h4 {
-  margin: 0 0 15px 0;
-  font-size: 16px;
-  color: #333;
+[data-theme="dark"] .btn-primary {
+  background: linear-gradient(135deg, var(--theme-primary) 0%, var(--theme-info) 100%);
+  border-color: var(--theme-primary);
 }
 
-.detalle-item {
-  margin-bottom: 10px;
-  font-size: 15px;
-  display: flex;
+[data-theme="dark"] .btn-secondary {
+  background: var(--theme-bg-tertiary);
+  border-color: var(--theme-border-color);
+  color: var(--theme-text-primary);
 }
 
-.detalle-label {
-  font-weight: 500;
-  color: #555;
-  width: 150px; /* Ancho fijo para etiquetas */
-  flex-shrink: 0;
+[data-theme="dark"] .btn-secondary:hover {
+  background: var(--theme-bg-card-hover);
+  border-color: var(--theme-border-color-hover);
 }
 
-.comprobante-pago .detalle-label {
-  margin-bottom: 8px;
-  display: block;
-  width: auto;
+[data-theme="dark"] .loading-state {
+  background: rgba(42, 42, 42, 0.9);
+  color: var(--theme-primary);
 }
 
-/* Responsive */
-@media (max-width: 900px) {
-  .gestion-cuentas-container {
-    padding: 12px 2vw 12px 2vw;
-    gap: 16px;
-  }
-  .resumen-cards-gc {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 18px;
-  }
-  .resumen-card-gc {
-    padding: 22px 12px;
-    min-height: 90px;
-    gap: 14px;
-  }
-  .resumen-icono-gc {
-    font-size: 2.1rem;
-    width: 48px;
-    height: 48px;
-  }
-  .resumen-valor-gc {
-    font-size: 1.3rem;
-  }
-  .resumen-titulo-gc {
-    font-size: 1rem;
-  }
+[data-theme="dark"] .loading-spinner {
+  border-color: var(--theme-border-color);
+  border-top-color: var(--theme-primary);
 }
 
-@media (max-width: 768px) {
-  .resumen-cards-gc {
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-  }
-  .filtros-bar-gc {
-    flex-direction: column;
-    align-items: stretch;
-  }
-  .sort-controls-gc {
-    justify-content: space-between;
-  }
-  .cuentas-list-gc {
-    grid-template-columns: 1fr; /* Una columna en móviles */
-  }
-
-  /* Ajustar panel lateral en móviles */
-  .form-area-gc {
-    width: 90%; /* Más ancho en móviles */
-  }
-  .main-content-gc.panel-visible {
-    /* No empujar contenido en móviles, el panel se superpone */
-     margin-right: 0;
-  }
+[data-theme="dark"] .empty-state {
+  color: var(--theme-text-muted);
 }
 
-@media (max-width: 700px) {
-  .gestion-cuentas-container {
-    padding: 6px 0;
-    gap: 10px;
-  }
-  .resumen-cards-gc {
-    gap: 10px;
-  }
-  .filtros-bar-gc {
-    flex-direction: column;
-    align-items: stretch;
-    gap: 10px;
-  }
-  .sort-controls-gc {
-    justify-content: space-between;
-  }
+[data-theme="dark"] .status-badge.success {
+  background: var(--theme-status-paid);
+  color: var(--theme-status-paid-text);
+}
+
+[data-theme="dark"] .status-badge.warning {
+  background: var(--theme-status-pending);
+  color: var(--theme-status-pending-text);
+}
+
+[data-theme="dark"] .status-badge.danger {
+  background: var(--theme-status-overdue);
+  color: var(--theme-status-overdue-text);
+}
+
+[data-theme="dark"] .toast-notification {
+  background: var(--theme-bg-card);
+  border-color: var(--theme-border-color);
+  color: var(--theme-text-primary);
+}
+
+[data-theme="dark"] .toast-notification.success {
+  background: var(--theme-status-paid);
+  color: var(--theme-status-paid-text);
+}
+
+[data-theme="dark"] .toast-notification.error {
+  background: var(--theme-status-overdue);
+  color: var(--theme-status-overdue-text);
+}
+
+[data-theme="dark"] h1, [data-theme="dark"] h2, [data-theme="dark"] h3, 
+[data-theme="dark"] h4, [data-theme="dark"] h5, [data-theme="dark"] h6 {
+  color: var(--theme-text-primary);
+}
+
+[data-theme="dark"] .text-muted {
+  color: var(--theme-text-muted);
+}
+
+[data-theme="dark"] .text-primary {
+  color: var(--theme-primary);
+}
+
+/* Enhanced modal support for dark mode */
+[data-theme="dark"] .modal-backdrop {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+[data-theme="dark"] .modal-content {
+  background: var(--theme-bg-card);
+  color: var(--theme-text-primary);
+}
+
+[data-theme="dark"] .modal-close {
+  color: var(--theme-text-muted);
+}
+
+[data-theme="dark"] .modal-close:hover {
+  color: var(--theme-danger);
 }

@@ -7,6 +7,8 @@ import GestionCuentasListado from './GestionCuentasListado';
 import GestionCuentasForm from './GestionCuentasForm';
 import GestionCuentasDetalle from './GestionCuentasDetalle';
 import Modal from '../Modal';
+import PagoForm from '../PagoForm';
+import { getPresupuestos } from '../../services/presupuesto';
 import './GestionCuentas.css';
 import { procesarCuentasYPagosHistorial } from '../../utils/historialUtils';
 
@@ -43,6 +45,11 @@ const GestionCuentas = () => {
   const [error, setError] = useState(null);
   const [formError, setFormError] = useState(null);
   const [detalleError, setDetalleError] = useState(null);
+
+  // Estados para modal de pago desde tarjetas
+  const [showPagoModal, setShowPagoModal] = useState(false);
+  const [cuentaParaPago, setCuentaParaPago] = useState(null);
+  const [presupuestosDisponibles, setPresupuestosDisponibles] = useState([]);
 
   useEffect(() => {
     setCategorias(['Luz', 'Agua', 'Gas', 'Internet', 'Arriendo', 'Gasto Común', 'Otros']);
@@ -344,6 +351,34 @@ const GestionCuentas = () => {
     }
   }, [currentUser, fetchAPI, cargarCuentas, cuentaSeleccionada?.id, handleCancelar]);
 
+  // Funciones para modal de pago desde tarjetas
+  const cargarPresupuestosDisponibles = useCallback(async () => {
+    try {
+      const res = await getPresupuestos();
+      setPresupuestosDisponibles(res.data || []);
+    } catch (err) {
+      console.error("Error cargando presupuestos:", err);
+      setPresupuestosDisponibles([]);
+    }
+  }, []);
+
+  const handleAbrirPagoDesdeTarjeta = useCallback(async (cuenta) => {
+    setCuentaParaPago(cuenta);
+    setShowPagoModal(true);
+    await cargarPresupuestosDisponibles();
+  }, [cargarPresupuestosDisponibles]);
+
+  const handleCerrarModalPago = useCallback(() => {
+    setShowPagoModal(false);
+    setCuentaParaPago(null);
+    setPresupuestosDisponibles([]);
+  }, []);
+
+  const handlePagoRegistradoDesdeTarjeta = useCallback(async () => {
+    handleCerrarModalPago();
+    await cargarCuentas();
+  }, [handleCerrarModalPago, cargarCuentas]);
+
   const recargarPagosCuentaSeleccionada = useCallback(async () => {
     if (!cuentaSeleccionada?.id) return;
     setDetailLoading(true);
@@ -381,7 +416,7 @@ const GestionCuentas = () => {
   return (
     <div className="gestion-cuentas-page">
       <NavBar />
-      <div className="gestion-cuentas-container">
+      <div className="gestion-cuentas-container main-content-area">
         <div style={{flex:1, minWidth:0, display:'flex', flexDirection:'column', gap:24}}>
           {/* Encabezado y botón */}
           <GestionCuentasHeader onAbrirFormularioNuevo={handleAbrirFormularioNuevo} />
@@ -406,6 +441,7 @@ const GestionCuentas = () => {
                 cuentas={filteredCuentas}
                 onAbrirPanel={handleAbrirPanelDetalle}
                 onEliminarCuenta={handleEliminarCuenta}
+                onAbrirPagoDesdeTarjeta={handleAbrirPagoDesdeTarjeta}
               />
             </div>
             {showDetalleModal && cuentaSeleccionada && (
@@ -437,6 +473,16 @@ const GestionCuentas = () => {
                   error={formError}
                   isEditing={!!formData.id}
                   cuentaActual={cuentaSeleccionada}
+                />
+              </Modal>
+            )}
+            {showPagoModal && cuentaParaPago && (
+              <Modal onClose={handleCerrarModalPago}>
+                <PagoForm
+                  cuenta={cuentaParaPago}
+                  onSuccess={handlePagoRegistradoDesdeTarjeta}
+                  onCancel={handleCerrarModalPago}
+                  presupuestosDisponibles={presupuestosDisponibles}
                 />
               </Modal>
             )}
