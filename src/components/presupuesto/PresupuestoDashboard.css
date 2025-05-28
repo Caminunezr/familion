@@ -313,6 +313,14 @@
     flex-direction: column;
     gap: 10px;
   }
+  .presupuesto-listado-col {
+    padding: 12px; /* Reducido de 18px */
+    /* Considerar ajustar flex-grow/shrink si la altura se comporta de forma inesperada */
+  }
+  .presupuesto-listado-col .presupuesto-lista {
+    max-height: none; /* Permitir que la lista crezca con su contenido */
+    overflow-y: visible; /* Eliminar scrollbar interna de la lista */
+  }
   .responsive-modal {
     width: 95vw;
     min-width: unset;
